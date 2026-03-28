@@ -740,3 +740,229 @@ class AnimaEvent(BaseModel):
     data: dict[str, Any]
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Identity (DID / Verifiable Credentials)
+# ---------------------------------------------------------------------------
+
+
+class DidDocument(BaseModel):
+    did: str
+    agent_id: str = Field(alias="agentId")
+    document: dict[str, Any]
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class DidRotateOutput(BaseModel):
+    did: str
+    agent_id: str = Field(alias="agentId")
+    document: dict[str, Any]
+    previous_did: str | None = Field(None, alias="previousDid")
+    rotated_at: str = Field(alias="rotatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class VerifiableCredential(BaseModel):
+    id: str
+    type: str
+    issuer: str
+    subject: str
+    issuance_date: str = Field(alias="issuanceDate")
+    expiration_date: str | None = Field(None, alias="expirationDate")
+    credential_subject: dict[str, Any] = Field(alias="credentialSubject")
+    proof: dict[str, Any]
+
+    model_config = {"populate_by_name": True}
+
+
+class VerifyCredentialOutput(BaseModel):
+    valid: bool
+    credential: VerifiableCredential | None = None
+    errors: list[str]
+
+
+class AgentCardOutput(BaseModel):
+    did: str
+    agent_id: str = Field(alias="agentId")
+    name: str
+    description: str | None = None
+    capabilities: list[str]
+    endpoints: dict[str, str]
+    metadata: dict[str, Any]
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Registry
+# ---------------------------------------------------------------------------
+
+
+class RegistryAgentOutput(BaseModel):
+    did: str
+    name: str
+    description: str | None = None
+    category: str | None = None
+    capabilities: list[str]
+    endpoints: dict[str, str]
+    metadata: dict[str, Any]
+    verified: bool
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Wallet
+# ---------------------------------------------------------------------------
+
+
+class WalletStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    FROZEN = "FROZEN"
+
+
+class WalletOutput(BaseModel):
+    id: str
+    agent_id: str = Field(alias="agentId")
+    address: str
+    currency: str
+    balance: float
+    status: WalletStatus
+    spend_limit_daily: float | None = Field(None, alias="spendLimitDaily")
+    spend_limit_monthly: float | None = Field(None, alias="spendLimitMonthly")
+    metadata: dict[str, Any]
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class WalletPayOutput(BaseModel):
+    transaction_id: str = Field(alias="transactionId")
+    from_: str = Field(alias="from")
+    to: str
+    amount: float
+    currency: str
+    status: str
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class X402FetchOutput(BaseModel):
+    status: int
+    headers: dict[str, str]
+    body: str
+    payment_amount: float | None = Field(None, alias="paymentAmount")
+    transaction_id: str | None = Field(None, alias="transactionId")
+
+    model_config = {"populate_by_name": True}
+
+
+class WalletTransactionOutput(BaseModel):
+    id: str
+    wallet_id: str = Field(alias="walletId")
+    type: str
+    amount: float
+    currency: str
+    from_: str | None = Field(None, alias="from")
+    to: str | None = None
+    memo: str | None = None
+    status: str
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Pods
+# ---------------------------------------------------------------------------
+
+
+class PodStatus(str, Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+    CREATING = "CREATING"
+    ERROR = "ERROR"
+
+
+class PodResourceSpec(BaseModel):
+    cpu: str | None = None
+    memory: str | None = None
+    storage: str | None = None
+
+
+class PodOutput(BaseModel):
+    id: str
+    agent_id: str = Field(alias="agentId")
+    name: str
+    image: str
+    status: PodStatus
+    resources: PodResourceSpec
+    env: dict[str, str]
+    metadata: dict[str, Any]
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class PodUsageOutput(BaseModel):
+    pod_id: str = Field(alias="podId")
+    cpu_usage: float = Field(alias="cpuUsage")
+    memory_usage: float = Field(alias="memoryUsage")
+    storage_usage: float = Field(alias="storageUsage")
+    network_in: float = Field(alias="networkIn")
+    network_out: float = Field(alias="networkOut")
+    uptime_seconds: int = Field(alias="uptimeSeconds")
+    measured_at: str = Field(alias="measuredAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# A2A (Agent-to-Agent Protocol)
+# ---------------------------------------------------------------------------
+
+
+class A2ATaskStatus(str, Enum):
+    SUBMITTED = "SUBMITTED"
+    WORKING = "WORKING"
+    INPUT_REQUIRED = "INPUT_REQUIRED"
+    COMPLETED = "COMPLETED"
+    CANCELED = "CANCELED"
+    FAILED = "FAILED"
+
+
+class A2AArtifact(BaseModel):
+    name: str
+    mime_type: str = Field(alias="mimeType")
+    data: str
+
+    model_config = {"populate_by_name": True}
+
+
+class A2ATaskOutput(BaseModel):
+    id: str
+    agent_id: str = Field(alias="agentId")
+    type: str
+    status: A2ATaskStatus
+    input: dict[str, Any]
+    output: dict[str, Any] | None = None
+    artifacts: list[A2AArtifact]
+    from_did: str | None = Field(None, alias="fromDid")
+    error: str | None = None
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}

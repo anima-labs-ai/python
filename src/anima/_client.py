@@ -18,12 +18,17 @@ from .resources.cards import AsyncCardsResource, CardsResource
 from .resources.domains import AsyncDomainsResource, DomainsResource
 from .resources.emails import AsyncEmailsResource, EmailsResource
 from .resources.events import AsyncEventsResource, EventsResource
+from .resources.identity import AsyncIdentityResource, IdentityResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.organizations import AsyncOrganizationsResource, OrganizationsResource
 from .resources.phones import AsyncPhonesResource, PhonesResource
+from .resources.pods import AsyncPodsResource, PodsResource
+from .resources.registry import AsyncRegistryResource, RegistryResource
 from .resources.security import AsyncSecurityResource, SecurityResource
 from .resources.vault import AsyncVaultResource, VaultResource
+from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
+from .resources.a2a import A2AResource, AsyncA2AResource
 
 
 class Anima:
@@ -62,12 +67,17 @@ class Anima:
         self.domains = DomainsResource(self._http)
         self.emails = EmailsResource(self._http)
         self.events = EventsResource(self._http)
+        self.identity = IdentityResource(self._http)
         self.messages = MessagesResource(self._http)
         self.organizations = OrganizationsResource(self._http)
         self.phones = PhonesResource(self._http)
+        self.pods = PodsResource(self._http)
+        self.registry = RegistryResource(self._http)
         self.security = SecurityResource(self._http)
         self.vault = VaultResource(self._http)
+        self.wallet = WalletResource(self._http)
         self.webhooks = WebhooksResource(self._http)
+        self.a2a = A2AResource(self._http)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
@@ -145,12 +155,17 @@ class AsyncAnima:
         self.domains = AsyncDomainsResource(self._http)
         self.emails = AsyncEmailsResource(self._http)
         self.events = AsyncEventsResource(self._http)
+        self.identity = AsyncIdentityResource(self._http)
         self.messages = AsyncMessagesResource(self._http)
         self.organizations = AsyncOrganizationsResource(self._http)
         self.phones = AsyncPhonesResource(self._http)
+        self.pods = AsyncPodsResource(self._http)
+        self.registry = AsyncRegistryResource(self._http)
         self.security = AsyncSecurityResource(self._http)
         self.vault = AsyncVaultResource(self._http)
+        self.wallet = AsyncWalletResource(self._http)
         self.webhooks = AsyncWebhooksResource(self._http)
+        self.a2a = AsyncA2AResource(self._http)
 
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""
