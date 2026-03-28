@@ -29,6 +29,9 @@ from .resources.vault import AsyncVaultResource, VaultResource
 from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
 from .resources.a2a import A2AResource, AsyncA2AResource
+from .resources.audit import AsyncAuditResource, AuditResource
+from .resources.compliance import AsyncComplianceResource, ComplianceResource
+from .resources.anomaly import AnomalyResource, AsyncAnomalyResource
 
 
 class Anima:
@@ -78,6 +81,9 @@ class Anima:
         self.wallet = WalletResource(self._http)
         self.webhooks = WebhooksResource(self._http)
         self.a2a = A2AResource(self._http)
+        self.audit = AuditResource(self._http)
+        self.compliance = ComplianceResource(self._http)
+        self.anomaly = AnomalyResource(self._http)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
@@ -166,6 +172,9 @@ class AsyncAnima:
         self.wallet = AsyncWalletResource(self._http)
         self.webhooks = AsyncWebhooksResource(self._http)
         self.a2a = AsyncA2AResource(self._http)
+        self.audit = AsyncAuditResource(self._http)
+        self.compliance = AsyncComplianceResource(self._http)
+        self.anomaly = AsyncAnomalyResource(self._http)
 
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""

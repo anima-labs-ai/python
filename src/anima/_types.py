@@ -966,3 +966,275 @@ class A2ATaskOutput(BaseModel):
     updated_at: str = Field(alias="updatedAt")
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Audit
+# ---------------------------------------------------------------------------
+
+
+class AuditActorType(str, Enum):
+    API_KEY = "api_key"
+    USER = "user"
+    SYSTEM = "system"
+    AGENT = "agent"
+
+
+class AuditResult(str, Enum):
+    SUCCESS = "success"
+    FAILURE = "failure"
+    DENIED = "denied"
+
+
+class AuditLogOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    actor_type: AuditActorType = Field(alias="actorType")
+    actor_id: str = Field(alias="actorId")
+    action: str
+    resource_type: str = Field(alias="resourceType")
+    resource_id: str = Field(alias="resourceId")
+    result: AuditResult
+    ip_address: str | None = Field(None, alias="ipAddress")
+    user_agent: str | None = Field(None, alias="userAgent")
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class AuditLogExportOutput(BaseModel):
+    url: str
+    format: str
+    record_count: int = Field(alias="recordCount")
+    expires_at: str = Field(alias="expiresAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Compliance
+# ---------------------------------------------------------------------------
+
+
+class ComplianceFramework(str, Enum):
+    SOC2 = "SOC2"
+    GDPR = "GDPR"
+    PCI = "PCI"
+
+
+class ComplianceControlStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    IMPLEMENTED = "implemented"
+    VERIFIED = "verified"
+    FAILED = "failed"
+
+
+class DsarStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    REJECTED = "rejected"
+
+
+class ComplianceControlOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    framework: ComplianceFramework
+    control_id: str = Field(alias="controlId")
+    title: str
+    description: str
+    category: str
+    status: ComplianceControlStatus
+    owner: str | None = None
+    last_tested_at: str | None = Field(None, alias="lastTestedAt")
+    next_review_at: str | None = Field(None, alias="nextReviewAt")
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class SeedFrameworkOutput(BaseModel):
+    controls_created: int = Field(alias="controlsCreated")
+    framework: ComplianceFramework
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceReportOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    type: str
+    status: str
+    title: str
+    summary: str | None = None
+    data: dict[str, Any] | None = None
+    generated_at: str = Field(alias="generatedAt")
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceReportDownloadOutput(BaseModel):
+    url: str
+    format: str
+    expires_at: str = Field(alias="expiresAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceFrameworkSummary(BaseModel):
+    total_controls: int = Field(alias="totalControls")
+    implemented: int
+    verified: int
+    failed: int
+    not_started: int = Field(alias="notStarted")
+    score: float
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceDashboardOutput(BaseModel):
+    org_id: str = Field(alias="orgId")
+    frameworks: dict[str, ComplianceFrameworkSummary]
+    overall_score: float = Field(alias="overallScore")
+    recent_activity: list[ComplianceReportOutput] = Field(alias="recentActivity")
+
+    model_config = {"populate_by_name": True}
+
+
+class DsarOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    subject_email: str = Field(alias="subjectEmail")
+    request_type: str = Field(alias="requestType")
+    status: DsarStatus
+    description: str | None = None
+    metadata: dict[str, Any] | None = None
+    completed_at: str | None = Field(None, alias="completedAt")
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Anomaly Detection
+# ---------------------------------------------------------------------------
+
+
+class AnomalyMetric(str, Enum):
+    EMAIL_SEND_RATE = "email_send_rate"
+    SMS_SEND_RATE = "sms_send_rate"
+    CARD_TXN_COUNT = "card_txn_count"
+    VAULT_ACCESS_RATE = "vault_access_rate"
+    API_CALL_RATE = "api_call_rate"
+    UNIQUE_RECIPIENTS = "unique_recipients"
+
+
+class AnomalySeverity(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
+
+class AnomalyAlertStatus(str, Enum):
+    TRIGGERED = "TRIGGERED"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    RESOLVED = "RESOLVED"
+    FALSE_POSITIVE = "FALSE_POSITIVE"
+
+
+class AnomalyCondition(str, Enum):
+    ZSCORE_GT = "zscore_gt"
+    RATE_MULTIPLIER_GT = "rate_multiplier_gt"
+    ABSOLUTE_GT = "absolute_gt"
+    TIME_VIOLATION = "time_violation"
+
+
+class QuarantineAction(str, Enum):
+    NONE = "NONE"
+    SOFT = "SOFT"
+    HARD = "HARD"
+
+
+class QuarantineLevel(str, Enum):
+    NONE = "NONE"
+    SOFT = "SOFT"
+    HARD = "HARD"
+
+
+class BaselinePeriod(str, Enum):
+    HOURLY = "hourly"
+    DAILY = "daily"
+
+
+class AnomalyAlertOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    agent_id: str = Field(alias="agentId")
+    metric: AnomalyMetric
+    severity: AnomalySeverity
+    status: AnomalyAlertStatus
+    baseline_value: float = Field(alias="baselineValue")
+    actual_value: float = Field(alias="actualValue")
+    z_score: float = Field(alias="zScore")
+    rule_id: str | None = Field(None, alias="ruleId")
+    details: dict[str, Any] | None = None
+    acknowledged_by: str | None = Field(None, alias="acknowledgedBy")
+    acknowledged_at: str | None = Field(None, alias="acknowledgedAt")
+    resolved_by: str | None = Field(None, alias="resolvedBy")
+    resolved_at: str | None = Field(None, alias="resolvedAt")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class AnomalyRuleOutput(BaseModel):
+    id: str
+    org_id: str = Field(alias="orgId")
+    name: str
+    metric: AnomalyMetric
+    condition: AnomalyCondition
+    threshold: float
+    severity: AnomalySeverity
+    quarantine_action: QuarantineAction = Field(alias="quarantineAction")
+    cooldown_minutes: int = Field(alias="cooldownMinutes")
+    enabled: bool
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class BaselineMetric(BaseModel):
+    metric: AnomalyMetric
+    period: BaselinePeriod
+    mean: float
+    stddev: float
+    sample_count: int = Field(alias="sampleCount")
+    hourly_pattern: dict[str, float] | None = Field(None, alias="hourlyPattern")
+    window_start: str = Field(alias="windowStart")
+    window_end: str = Field(alias="windowEnd")
+
+    model_config = {"populate_by_name": True}
+
+
+class AgentBaselineOutput(BaseModel):
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
+    metrics: list[BaselineMetric]
+
+    model_config = {"populate_by_name": True}
+
+
+class QuarantineOutput(BaseModel):
+    agent_id: str = Field(alias="agentId")
+    quarantine_level: QuarantineLevel = Field(alias="quarantineLevel")
+    quarantined_at: str | None = Field(None, alias="quarantinedAt")
+    reason: str | None = None
+
+    model_config = {"populate_by_name": True}
