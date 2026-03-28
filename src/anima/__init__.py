@@ -15,6 +15,7 @@ from ._types import (
     AddressOutput,
     AddressType,
     AgentOutput,
+    AnimaEvent,
     AgentStatus,
     ApprovalList,
     ApprovalStatus,
@@ -81,6 +82,7 @@ from ._types import (
     WebhookTestOutput,
 )
 from ._webhooks import construct_webhook_event, verify_webhook_signature
+from .resources.events import AsyncEventStream, AsyncEventsResource, EventsResource, EventStream
 
 __all__ = [
     # Clients
@@ -120,6 +122,12 @@ __all__ = [
     "VaultCustomFieldType",
     "VerificationMethod",
     "WebhookEventType",
+    # Events (WebSocket)
+    "AnimaEvent",
+    "EventStream",
+    "AsyncEventStream",
+    "EventsResource",
+    "AsyncEventsResource",
     # Models
     "AddressOutput",
     "AgentOutput",

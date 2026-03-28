@@ -144,6 +144,7 @@ class AsyncAnima:
         self.cards = AsyncCardsResource(self._http)
         self.domains = AsyncDomainsResource(self._http)
         self.emails = AsyncEmailsResource(self._http)
+        self.events = AsyncEventsResource(self._http)
         self.messages = AsyncMessagesResource(self._http)
         self.organizations = AsyncOrganizationsResource(self._http)
         self.phones = AsyncPhonesResource(self._http)
