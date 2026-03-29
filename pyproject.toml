@@ -9,7 +9,7 @@ description = "Anima SDK for Python — unified agent identity infrastructure (e
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
-authors = [{ name = "Anima Labs", email = "support@anima.email" }]
+authors = [{ name = "Anima Labs", email = "support@useanima.sh" }]
 keywords = ["ai", "agent", "email", "phone", "cards", "vault", "identity", "mcp", "llm", "sdk"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -35,8 +35,8 @@ events = [
 ]
 
 [project.urls]
-Homepage = "https://anima.email"
-Documentation = "https://docs.anima.email"
+Homepage = "https://useanima.sh"
+Documentation = "https://docs.useanima.sh"
 Repository = "https://github.com/anima-labs-ai/anima-python"
 Issues = "https://github.com/anima-labs-ai/anima-python/issues"
 Changelog = "https://github.com/anima-labs-ai/anima-python/releases"

@@ -4,7 +4,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/anima-labs.svg)](https://pypi.org/project/anima-labs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-The official Python SDK for the [Anima API](https://anima.email) -- unified agent identity infrastructure for email, phone, cards, and vault.
+The official Python SDK for the [Anima API](https://useanima.sh) -- unified agent identity infrastructure for email, phone, cards, and vault.
 
 ## Installation
 
@@ -230,14 +230,14 @@ except APIError as e:
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `api_key` | *required* | Your Anima API key (`sk-...`) |
-| `base_url` | `https://api.anima.com` | API base URL |
+| `base_url` | `https://api.useanima.sh` | API base URL |
 | `timeout` | `30.0` | Request timeout in seconds |
 | `max_retries` | `3` | Max automatic retries on transient errors |
 
 ```python
 client = Anima(
     api_key="sk-...",
-    base_url="https://api.anima.email",  # custom endpoint
+    base_url="https://api.useanima.sh",  # custom endpoint
     timeout=60.0,
     max_retries=5,
 )
@@ -251,7 +251,7 @@ client = Anima(
 
 ## Documentation
 
-Full API documentation is available at [docs.anima.email](https://docs.anima.email).
+Full API documentation is available at [docs.useanima.sh](https://docs.useanima.sh).
 
 ## License
 

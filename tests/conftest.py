@@ -10,7 +10,7 @@ import pytest
 from anima._http import HTTPClient
 
 TEST_API_KEY = "sk-test-key-12345"
-TEST_BASE_URL = "https://api.anima.com"
+TEST_BASE_URL = "https://api.useanima.sh"
 
 
 @pytest.fixture()

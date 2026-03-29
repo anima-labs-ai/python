@@ -21,7 +21,7 @@ from ._exceptions import (
 
 T = TypeVar("T")
 
-DEFAULT_BASE_URL = "https://api.anima.com"
+DEFAULT_BASE_URL = "https://api.useanima.sh"
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_RETRIES = 3
 RETRY_DELAYS = (1.0, 2.0, 4.0)
