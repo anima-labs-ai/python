@@ -95,14 +95,10 @@ class AsyncEmailsResource:
             "sizeBytes": size_bytes,
         }
         return AttachmentOutput.model_validate(
-            await self._client.request(
-                "POST", f"/messages/{message_id}/attachments", payload
-            )
+            await self._client.request("POST", f"/messages/{message_id}/attachments", payload)
         )
 
     async def get_attachment_url(self, attachment_id: str) -> AttachmentDownloadOutput:
         return AttachmentDownloadOutput.model_validate(
-            await self._client.request(
-                "GET", f"/attachments/{attachment_id}/download"
-            )
+            await self._client.request("GET", f"/attachments/{attachment_id}/download")
         )

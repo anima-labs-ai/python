@@ -211,18 +211,14 @@ class AsyncHTTPClient:
                 raise
             except httpx.TimeoutException:
                 if attempt < self._max_retries:
-                    await asyncio.sleep(
-                        RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
-                    )
+                    await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
                 if attempt < self._max_retries:
-                    await asyncio.sleep(
-                        RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
-                    )
+                    await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
 

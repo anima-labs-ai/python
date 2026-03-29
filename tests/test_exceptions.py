@@ -73,15 +73,24 @@ class TestExceptionHierarchy:
 
     def test_all_inherit_from_anima_error(self) -> None:
         for cls in [
-            APIError, AuthenticationError, NotFoundError,
-            ValidationError, RateLimitError, ConflictError, InternalServerError,
+            APIError,
+            AuthenticationError,
+            NotFoundError,
+            ValidationError,
+            RateLimitError,
+            ConflictError,
+            InternalServerError,
         ]:
             assert issubclass(cls, AnimaError)
 
     def test_all_inherit_from_api_error(self) -> None:
         for cls in [
-            AuthenticationError, NotFoundError, ValidationError,
-            RateLimitError, ConflictError, InternalServerError,
+            AuthenticationError,
+            NotFoundError,
+            ValidationError,
+            RateLimitError,
+            ConflictError,
+            InternalServerError,
         ]:
             assert issubclass(cls, APIError)
 

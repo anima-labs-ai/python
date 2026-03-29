@@ -69,9 +69,7 @@ class TestVerifyWebhookSignature:
         ts = int(time.time())
         header = _sign(payload, ts)
         now_ms = ts * 1000.0
-        assert verify_webhook_signature(
-            payload.encode("utf-8"), header, SECRET, now=now_ms
-        ) is True
+        assert verify_webhook_signature(payload.encode("utf-8"), header, SECRET, now=now_ms) is True
 
     def test_invalid_signature(self) -> None:
         payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
@@ -85,18 +83,17 @@ class TestVerifyWebhookSignature:
         ts = int(time.time()) - 600  # 10 minutes ago
         header = _sign(payload, ts)
         now_ms = int(time.time()) * 1000.0
-        assert verify_webhook_signature(
-            payload, header, SECRET, tolerance_seconds=300, now=now_ms
-        ) is False
+        assert (
+            verify_webhook_signature(payload, header, SECRET, tolerance_seconds=300, now=now_ms)
+            is False
+        )
 
     def test_wrong_secret(self) -> None:
         payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
         ts = int(time.time())
         header = _sign(payload, ts)
         now_ms = ts * 1000.0
-        assert verify_webhook_signature(
-            payload, header, "wrong_secret", now=now_ms
-        ) is False
+        assert verify_webhook_signature(payload, header, "wrong_secret", now=now_ms) is False
 
     def test_tampered_payload(self) -> None:
         payload = '{"type":"agent.created","data":{"id":"agent_001"}}'

@@ -53,14 +53,10 @@ class WebhooksResource:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
-        return WebhookOutput.model_validate(
-            self._client.request("POST", "/webhooks", body)
-        )
+        return WebhookOutput.model_validate(self._client.request("POST", "/webhooks", body))
 
     def get(self, webhook_id: str) -> WebhookOutput:
-        return WebhookOutput.model_validate(
-            self._client.request("GET", f"/webhooks/{webhook_id}")
-        )
+        return WebhookOutput.model_validate(self._client.request("GET", f"/webhooks/{webhook_id}"))
 
     def list(
         self,
@@ -141,9 +137,7 @@ class AsyncWebhooksResource:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
-        return WebhookOutput.model_validate(
-            await self._client.request("POST", "/webhooks", body)
-        )
+        return WebhookOutput.model_validate(await self._client.request("POST", "/webhooks", body))
 
     async def get(self, webhook_id: str) -> WebhookOutput:
         return WebhookOutput.model_validate(

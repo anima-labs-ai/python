@@ -39,27 +39,21 @@ class APIError(AnimaError):
 class AuthenticationError(APIError):
     """Raised on 401 or 403 responses."""
 
-    def __init__(
-        self, message: str = "Authentication failed", details: Any | None = None
-    ) -> None:
+    def __init__(self, message: str = "Authentication failed", details: Any | None = None) -> None:
         super().__init__(message, 401, "AUTH_ERROR", details)
 
 
 class NotFoundError(APIError):
     """Raised on 404 responses."""
 
-    def __init__(
-        self, message: str = "Resource not found", details: Any | None = None
-    ) -> None:
+    def __init__(self, message: str = "Resource not found", details: Any | None = None) -> None:
         super().__init__(message, 404, "NOT_FOUND", details)
 
 
 class ValidationError(APIError):
     """Raised on 400 or 422 responses."""
 
-    def __init__(
-        self, message: str = "Validation failed", details: Any | None = None
-    ) -> None:
+    def __init__(self, message: str = "Validation failed", details: Any | None = None) -> None:
         super().__init__(message, 400, "VALIDATION_ERROR", details)
 
 
@@ -79,9 +73,7 @@ class RateLimitError(APIError):
 class ConflictError(APIError):
     """Raised on 409 responses."""
 
-    def __init__(
-        self, message: str = "Resource conflict", details: Any | None = None
-    ) -> None:
+    def __init__(self, message: str = "Resource conflict", details: Any | None = None) -> None:
         super().__init__(message, 409, "CONFLICT", details)
 
 

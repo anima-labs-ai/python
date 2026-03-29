@@ -15,14 +15,10 @@ class IdentityResource:
         self._client = client
 
     def get_did(self, agent_id: str) -> DidDocument:
-        return DidDocument.model_validate(
-            self._client.request("GET", f"/agents/{agent_id}/did")
-        )
+        return DidDocument.model_validate(self._client.request("GET", f"/agents/{agent_id}/did"))
 
     def resolve_did(self, did: str) -> DidDocument:
-        return DidDocument.model_validate(
-            self._client.request("GET", f"/identity/did/{did}")
-        )
+        return DidDocument.model_validate(self._client.request("GET", f"/identity/did/{did}"))
 
     def rotate_keys(self, agent_id: str) -> DidRotateOutput:
         return DidRotateOutput.model_validate(
@@ -54,9 +50,7 @@ class AsyncIdentityResource:
         )
 
     async def resolve_did(self, did: str) -> DidDocument:
-        return DidDocument.model_validate(
-            await self._client.request("GET", f"/identity/did/{did}")
-        )
+        return DidDocument.model_validate(await self._client.request("GET", f"/identity/did/{did}"))
 
     async def rotate_keys(self, agent_id: str) -> DidRotateOutput:
         return DidRotateOutput.model_validate(

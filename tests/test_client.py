@@ -43,10 +43,26 @@ class TestAnimaInit:
     def test_has_all_resources(self) -> None:
         client = Anima(api_key="sk-test")
         resource_names = [
-            "addresses", "agents", "cards", "domains", "emails",
-            "events", "identity", "messages", "organizations",
-            "phones", "pods", "registry", "security", "vault",
-            "wallet", "webhooks", "a2a", "audit", "compliance", "anomaly",
+            "addresses",
+            "agents",
+            "cards",
+            "domains",
+            "emails",
+            "events",
+            "identity",
+            "messages",
+            "organizations",
+            "phones",
+            "pods",
+            "registry",
+            "security",
+            "vault",
+            "wallet",
+            "webhooks",
+            "a2a",
+            "audit",
+            "compliance",
+            "anomaly",
         ]
         for name in resource_names:
             assert hasattr(client, name), f"Missing resource: {name}"
@@ -81,10 +97,26 @@ class TestAsyncAnimaInit:
     def test_has_all_resources(self) -> None:
         client = AsyncAnima(api_key="sk-test")
         resource_names = [
-            "addresses", "agents", "cards", "domains", "emails",
-            "events", "identity", "messages", "organizations",
-            "phones", "pods", "registry", "security", "vault",
-            "wallet", "webhooks", "a2a", "audit", "compliance", "anomaly",
+            "addresses",
+            "agents",
+            "cards",
+            "domains",
+            "emails",
+            "events",
+            "identity",
+            "messages",
+            "organizations",
+            "phones",
+            "pods",
+            "registry",
+            "security",
+            "vault",
+            "wallet",
+            "webhooks",
+            "a2a",
+            "audit",
+            "compliance",
+            "anomaly",
         ]
         for name in resource_names:
             assert hasattr(client, name), f"Missing resource: {name}"

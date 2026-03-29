@@ -137,7 +137,10 @@ class WalletResource:
         max_payment_amount: float | None = None,
     ) -> X402FetchOutput:
         req_body = _build_x402_body(
-            url=url, method=method, headers=headers, body=body,
+            url=url,
+            method=method,
+            headers=headers,
+            body=body,
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(
@@ -238,7 +241,10 @@ class AsyncWalletResource:
         max_payment_amount: float | None = None,
     ) -> X402FetchOutput:
         req_body = _build_x402_body(
-            url=url, method=method, headers=headers, body=body,
+            url=url,
+            method=method,
+            headers=headers,
+            body=body,
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(

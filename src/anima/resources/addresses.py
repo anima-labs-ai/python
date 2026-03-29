@@ -113,9 +113,7 @@ class AddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(
-            self._client.request("POST", "/addresses", body)
-        )
+        return AddressOutput.model_validate(self._client.request("POST", "/addresses", body))
 
     def list(
         self,
@@ -171,15 +169,11 @@ class AddressesResource:
         )
 
     def delete(self, address_id: str, *, agent_id: str) -> None:
-        self._client.request(
-            "DELETE", f"/addresses/{address_id}", {"agentId": agent_id}
-        )
+        self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id})
 
     def validate(self, address_id: str, *, agent_id: str) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
-            self._client.request(
-                "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}
-            )
+            self._client.request("POST", f"/addresses/{address_id}/validate", {"agentId": agent_id})
         )
 
 
@@ -211,9 +205,7 @@ class AsyncAddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(
-            await self._client.request("POST", "/addresses", body)
-        )
+        return AddressOutput.model_validate(await self._client.request("POST", "/addresses", body))
 
     async def list(
         self,
@@ -269,13 +261,9 @@ class AsyncAddressesResource:
         )
 
     async def delete(self, address_id: str, *, agent_id: str) -> None:
-        await self._client.request(
-            "DELETE", f"/addresses/{address_id}", {"agentId": agent_id}
-        )
+        await self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id})
 
-    async def validate(
-        self, address_id: str, *, agent_id: str
-    ) -> ValidateAddressOutput:
+    async def validate(self, address_id: str, *, agent_id: str) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
             await self._client.request(
                 "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}

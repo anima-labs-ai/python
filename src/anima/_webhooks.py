@@ -75,9 +75,7 @@ def construct_webhook_event(
     tolerance_seconds: int = DEFAULT_TOLERANCE_SECONDS,
     now: float | None = None,
 ) -> WebhookEvent:
-    if not verify_webhook_signature(
-        payload, signature_header, secret, tolerance_seconds, now
-    ):
+    if not verify_webhook_signature(payload, signature_header, secret, tolerance_seconds, now):
         raise ValidationError("Invalid webhook signature")
 
     payload_str = _to_payload_string(payload)

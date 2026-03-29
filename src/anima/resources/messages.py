@@ -88,14 +88,10 @@ class MessagesResource:
             payload["mediaUrls"] = media_urls
         if metadata is not None:
             payload["metadata"] = metadata
-        return MessageOutput.model_validate(
-            self._client.request("POST", "/messages/sms", payload)
-        )
+        return MessageOutput.model_validate(self._client.request("POST", "/messages/sms", payload))
 
     def get(self, message_id: str) -> MessageOutput:
-        return MessageOutput.model_validate(
-            self._client.request("GET", f"/messages/{message_id}")
-        )
+        return MessageOutput.model_validate(self._client.request("GET", f"/messages/{message_id}"))
 
     def list(
         self,
@@ -113,9 +109,14 @@ class MessagesResource:
             "GET",
             "/messages",
             query=_to_list_query(
-                cursor=cursor, limit=limit, agent_id=agent_id,
-                thread_id=thread_id, channel=channel, direction=direction,
-                date_from=date_from, date_to=date_to,
+                cursor=cursor,
+                limit=limit,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                channel=channel,
+                direction=direction,
+                date_from=date_from,
+                date_to=date_to,
             ),
         )
         return PaginatedResponse[MessageOutput].model_validate(raw)
@@ -262,9 +263,14 @@ class AsyncMessagesResource:
             "GET",
             "/messages",
             query=_to_list_query(
-                cursor=cursor, limit=limit, agent_id=agent_id,
-                thread_id=thread_id, channel=channel, direction=direction,
-                date_from=date_from, date_to=date_to,
+                cursor=cursor,
+                limit=limit,
+                agent_id=agent_id,
+                thread_id=thread_id,
+                channel=channel,
+                direction=direction,
+                date_from=date_from,
+                date_to=date_to,
             ),
         )
         return PaginatedResponse[MessageOutput].model_validate(raw)
@@ -326,14 +332,10 @@ class AsyncMessagesResource:
             "sizeBytes": size_bytes,
         }
         return AttachmentOutput.model_validate(
-            await self._client.request(
-                "POST", f"/messages/{message_id}/attachments", payload
-            )
+            await self._client.request("POST", f"/messages/{message_id}/attachments", payload)
         )
 
     async def get_attachment_url(self, attachment_id: str) -> AttachmentDownloadOutput:
         return AttachmentDownloadOutput.model_validate(
-            await self._client.request(
-                "GET", f"/attachments/{attachment_id}/download"
-            )
+            await self._client.request("GET", f"/attachments/{attachment_id}/download")
         )

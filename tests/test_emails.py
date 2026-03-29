@@ -99,9 +99,7 @@ class TestEmailsGetAttachmentUrl:
         resource = EmailsResource(mock_http)
         result = resource.get_attachment_url("att_001")
 
-        mock_http.request.assert_called_once_with(
-            "GET", "/attachments/att_001/download"
-        )
+        mock_http.request.assert_called_once_with("GET", "/attachments/att_001/download")
         assert isinstance(result, AttachmentDownloadOutput)
         assert "signed=1" in result.url
         assert result.expires_at == "2025-01-01T01:00:00Z"

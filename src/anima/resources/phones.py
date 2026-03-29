@@ -58,9 +58,7 @@ class PhonesResource:
         agent_id: str | None = None,
     ) -> list[PhoneIdentityOutput]:
         if agent_id is not None:
-            raw = self._client.request(
-                "GET", "/phone/numbers", query={"agentId": agent_id}
-            )
+            raw = self._client.request("GET", "/phone/numbers", query={"agentId": agent_id})
         else:
             raw = self._client.request(
                 "GET",
@@ -128,9 +126,7 @@ class AsyncPhonesResource:
         agent_id: str | None = None,
     ) -> list[PhoneIdentityOutput]:
         if agent_id is not None:
-            raw = await self._client.request(
-                "GET", "/phone/numbers", query={"agentId": agent_id}
-            )
+            raw = await self._client.request("GET", "/phone/numbers", query={"agentId": agent_id})
         else:
             raw = await self._client.request(
                 "GET",

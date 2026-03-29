@@ -86,9 +86,7 @@ class PodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(
-            self._client.request("POST", "/pods", body)
-        )
+        return PodOutput.model_validate(self._client.request("POST", "/pods", body))
 
     def list(
         self,
@@ -103,9 +101,7 @@ class PodsResource:
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
     def get(self, pod_id: str) -> PodOutput:
-        return PodOutput.model_validate(
-            self._client.request("GET", f"/pods/{pod_id}")
-        )
+        return PodOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}"))
 
     def update(
         self,
@@ -116,20 +112,14 @@ class PodsResource:
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> PodOutput:
-        body = _build_update_body(
-            name=name, resources=resources, env=env, metadata=metadata
-        )
-        return PodOutput.model_validate(
-            self._client.request("PUT", f"/pods/{pod_id}", body)
-        )
+        body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
+        return PodOutput.model_validate(self._client.request("PUT", f"/pods/{pod_id}", body))
 
     def delete(self, pod_id: str) -> None:
         self._client.request("DELETE", f"/pods/{pod_id}")
 
     def usage(self, pod_id: str) -> PodUsageOutput:
-        return PodUsageOutput.model_validate(
-            self._client.request("GET", f"/pods/{pod_id}/usage")
-        )
+        return PodUsageOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}/usage"))
 
 
 class AsyncPodsResource:
@@ -154,9 +144,7 @@ class AsyncPodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(
-            await self._client.request("POST", "/pods", body)
-        )
+        return PodOutput.model_validate(await self._client.request("POST", "/pods", body))
 
     async def list(
         self,
@@ -171,9 +159,7 @@ class AsyncPodsResource:
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
     async def get(self, pod_id: str) -> PodOutput:
-        return PodOutput.model_validate(
-            await self._client.request("GET", f"/pods/{pod_id}")
-        )
+        return PodOutput.model_validate(await self._client.request("GET", f"/pods/{pod_id}"))
 
     async def update(
         self,
@@ -184,12 +170,8 @@ class AsyncPodsResource:
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> PodOutput:
-        body = _build_update_body(
-            name=name, resources=resources, env=env, metadata=metadata
-        )
-        return PodOutput.model_validate(
-            await self._client.request("PUT", f"/pods/{pod_id}", body)
-        )
+        body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
+        return PodOutput.model_validate(await self._client.request("PUT", f"/pods/{pod_id}", body))
 
     async def delete(self, pod_id: str) -> None:
         await self._client.request("DELETE", f"/pods/{pod_id}")

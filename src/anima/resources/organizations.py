@@ -42,14 +42,10 @@ class OrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(
-            self._client.request("POST", "/orgs", body)
-        )
+        return OrganizationOutput.model_validate(self._client.request("POST", "/orgs", body))
 
     def get(self, org_id: str) -> OrganizationOutput:
-        return OrganizationOutput.model_validate(
-            self._client.request("GET", f"/orgs/{org_id}")
-        )
+        return OrganizationOutput.model_validate(self._client.request("GET", f"/orgs/{org_id}"))
 
     def list(
         self,
@@ -92,9 +88,7 @@ class OrganizationsResource:
         self._client.request("DELETE", f"/orgs/{org_id}")
 
     def rotate_key(self, org_id: str) -> dict[str, str]:
-        raw = self._client.request(
-            "POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}
-        )
+        raw = self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id})
         return {"master_key": raw["masterKey"]}
 
 
@@ -118,9 +112,7 @@ class AsyncOrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(
-            await self._client.request("POST", "/orgs", body)
-        )
+        return OrganizationOutput.model_validate(await self._client.request("POST", "/orgs", body))
 
     async def get(self, org_id: str) -> OrganizationOutput:
         return OrganizationOutput.model_validate(
@@ -168,7 +160,5 @@ class AsyncOrganizationsResource:
         await self._client.request("DELETE", f"/orgs/{org_id}")
 
     async def rotate_key(self, org_id: str) -> dict[str, str]:
-        raw = await self._client.request(
-            "POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}
-        )
+        raw = await self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id})
         return {"master_key": raw["masterKey"]}

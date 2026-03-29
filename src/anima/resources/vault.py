@@ -286,9 +286,7 @@ class AsyncVaultResource:
             body["numbers"] = numbers
         if symbols is not None:
             body["symbols"] = symbols
-        raw = await self._client.request(
-            "POST", "/vault/generate-password", body or None
-        )
+        raw = await self._client.request("POST", "/vault/generate-password", body or None)
         return raw["password"]
 
     async def get_totp(self, credential_id: str) -> VaultTotpOutput:
@@ -298,9 +296,7 @@ class AsyncVaultResource:
 
     async def status(self, agent_id: str) -> VaultStatusOutput:
         return VaultStatusOutput.model_validate(
-            await self._client.request(
-                "GET", "/vault/status", query={"agentId": agent_id}
-            )
+            await self._client.request("GET", "/vault/status", query={"agentId": agent_id})
         )
 
     async def sync(self, agent_id: str) -> None:

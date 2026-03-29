@@ -19,9 +19,7 @@ class DomainsResource:
         )
 
     def get(self, domain_id: str) -> DomainOutput:
-        return DomainOutput.model_validate(
-            self._client.request("GET", f"/domains/{domain_id}")
-        )
+        return DomainOutput.model_validate(self._client.request("GET", f"/domains/{domain_id}"))
 
     def list(self) -> list[DomainOutput]:
         raw = self._client.request("GET", "/domains")
@@ -30,9 +28,7 @@ class DomainsResource:
     def delete(self, domain_id: str) -> None:
         self._client.request("DELETE", f"/domains/{domain_id}")
 
-    def update(
-        self, domain_id: str, *, feedback_enabled: bool | None = None
-    ) -> DomainOutput:
+    def update(self, domain_id: str, *, feedback_enabled: bool | None = None) -> DomainOutput:
         body: dict[str, object] = {}
         if feedback_enabled is not None:
             body["feedbackEnabled"] = feedback_enabled
@@ -86,9 +82,7 @@ class AsyncDomainsResource:
     async def delete(self, domain_id: str) -> None:
         await self._client.request("DELETE", f"/domains/{domain_id}")
 
-    async def update(
-        self, domain_id: str, *, feedback_enabled: bool | None = None
-    ) -> DomainOutput:
+    async def update(self, domain_id: str, *, feedback_enabled: bool | None = None) -> DomainOutput:
         body: dict[str, object] = {}
         if feedback_enabled is not None:
             body["feedbackEnabled"] = feedback_enabled

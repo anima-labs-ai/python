@@ -108,9 +108,7 @@ class Anima:
         tolerance_seconds: int = 300,
     ) -> bool:
         """Verify an incoming webhook signature."""
-        return verify_webhook_signature(
-            payload, signature_header, secret, tolerance_seconds
-        )
+        return verify_webhook_signature(payload, signature_header, secret, tolerance_seconds)
 
     @staticmethod
     def construct_webhook_event(
@@ -120,9 +118,7 @@ class Anima:
         tolerance_seconds: int = 300,
     ) -> WebhookEvent:  # noqa: F821
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
-        return construct_webhook_event(
-            payload, signature_header, secret, tolerance_seconds
-        )
+        return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)
 
 
 class AsyncAnima:
@@ -199,9 +195,7 @@ class AsyncAnima:
         tolerance_seconds: int = 300,
     ) -> bool:
         """Verify an incoming webhook signature."""
-        return verify_webhook_signature(
-            payload, signature_header, secret, tolerance_seconds
-        )
+        return verify_webhook_signature(payload, signature_header, secret, tolerance_seconds)
 
     @staticmethod
     def construct_webhook_event(
@@ -211,6 +205,4 @@ class AsyncAnima:
         tolerance_seconds: int = 300,
     ) -> WebhookEvent:  # noqa: F821
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
-        return construct_webhook_event(
-            payload, signature_header, secret, tolerance_seconds
-        )
+        return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)

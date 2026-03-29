@@ -325,9 +325,7 @@ class DomainOutput(BaseModel):
     domain: str
     status: DomainStatus
     verified: bool
-    verification_cooldown_until: str | None = Field(
-        None, alias="verificationCooldownUntil"
-    )
+    verification_cooldown_until: str | None = Field(None, alias="verificationCooldownUntil")
     verification_token: str = Field(alias="verificationToken")
     verification_method: VerificationMethod = Field(alias="verificationMethod")
     dkim_selector: str | None = Field(None, alias="dkimSelector")
