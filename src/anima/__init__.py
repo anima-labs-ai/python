@@ -12,12 +12,16 @@ from ._exceptions import (
     ValidationError,
 )
 from ._types import (
+    # A2A (Agent-to-Agent Protocol)
+    A2AArtifact,
+    A2ATaskOutput,
+    A2ATaskStatus,
     AddressOutput,
     AddressType,
     AgentCardOutput,
     AgentOutput,
-    AnimaEvent,
     AgentStatus,
+    AnimaEvent,
     ApprovalList,
     ApprovalStatus,
     AttachmentDownloadOutput,
@@ -71,6 +75,7 @@ from ._types import (
     Tier,
     TransactionList,
     TransactionStatus,
+    ValidateAddressOutput,
     VaultCardData,
     VaultCredential,
     VaultCustomField,
@@ -80,7 +85,6 @@ from ._types import (
     VaultLoginData,
     VaultLoginUri,
     VaultStatusOutput,
-    ValidateAddressOutput,
     VaultTotpOutput,
     VerifiableCredential,
     VerificationMethod,
@@ -95,13 +99,9 @@ from ._types import (
     WebhookOutput,
     WebhookTestOutput,
     X402FetchOutput,
-    # A2A (Agent-to-Agent Protocol)
-    A2AArtifact,
-    A2ATaskOutput,
-    A2ATaskStatus,
 )
 from ._webhooks import construct_webhook_event, verify_webhook_signature
-from .resources.events import AsyncEventStream, AsyncEventsResource, EventsResource, EventStream
+from .resources.events import AsyncEventsResource, AsyncEventStream, EventsResource, EventStream
 
 __all__ = [
     # Clients

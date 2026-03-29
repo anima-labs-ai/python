@@ -1,3 +1,4 @@
+from .a2a import A2AResource, AsyncA2AResource
 from .agents import AgentsResource, AsyncAgentsResource
 from .cards import AsyncCardsResource, CardsResource
 from .domains import AsyncDomainsResource, DomainsResource
@@ -9,7 +10,6 @@ from .phones import AsyncPhonesResource, PhonesResource
 from .security import AsyncSecurityResource, SecurityResource
 from .vault import AsyncVaultResource, VaultResource
 from .webhooks import AsyncWebhooksResource, WebhooksResource
-from .a2a import A2AResource, AsyncA2AResource
 
 __all__ = [
     "AgentsResource",

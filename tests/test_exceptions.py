@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from anima._exceptions import (
-    APIError,
     AnimaError,
+    APIError,
     AuthenticationError,
     ConflictError,
     InternalServerError,
@@ -128,7 +126,8 @@ class TestParseError:
         assert isinstance(err, AuthenticationError)
 
     def test_404_returns_not_found(self) -> None:
-        resp = self._make_response(404, {"error": {"message": "Agent not found", "code": "NOT_FOUND"}})
+        body = {"error": {"message": "Agent not found", "code": "NOT_FOUND"}}
+        resp = self._make_response(404, body)
         err = _parse_error(resp)
         assert isinstance(err, NotFoundError)
 

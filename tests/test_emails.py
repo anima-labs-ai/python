@@ -4,15 +4,17 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
-from anima._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
+from anima._types import (
+    AttachmentDownloadOutput,
+    AttachmentOutput,
+    MessageOutput,
+    PaginatedResponse,
+)
 from anima.resources.emails import EmailsResource
 
 from .conftest import (
     ATTACHMENT_DOWNLOAD_RAW,
     ATTACHMENT_RAW,
-    MESSAGE_RAW,
     PAGINATED_MESSAGES_RAW,
 )
 

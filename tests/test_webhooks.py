@@ -17,7 +17,6 @@ from anima._webhooks import (
     verify_webhook_signature,
 )
 
-
 SECRET = "whsec_test_secret_123"
 
 

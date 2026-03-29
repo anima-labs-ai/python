@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import threading
-import time
 from types import TracebackType
 from typing import Any, Callable
 
@@ -112,10 +112,8 @@ class EventStream:
         """Close the connection and stop reconnecting."""
         self._closed = True
         if self._ws is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._ws.close()
-            except Exception:
-                pass
         if self._thread is not None and self._thread.is_alive():
             self._thread.join(timeout=5)
 
@@ -330,10 +328,8 @@ class AsyncEventStream:
             self._listen_task.cancel()
             self._listen_task = None
         if self._ws is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._ws.close()
-            except Exception:
-                pass
             self._ws = None
 
     async def __aenter__(self) -> AsyncEventStream:

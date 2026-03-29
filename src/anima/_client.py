@@ -12,9 +12,13 @@ from ._http import (
     HTTPClient,
 )
 from ._webhooks import construct_webhook_event, verify_webhook_signature
+from .resources.a2a import A2AResource, AsyncA2AResource
 from .resources.addresses import AddressesResource, AsyncAddressesResource
 from .resources.agents import AgentsResource, AsyncAgentsResource
+from .resources.anomaly import AnomalyResource, AsyncAnomalyResource
+from .resources.audit import AsyncAuditResource, AuditResource
 from .resources.cards import AsyncCardsResource, CardsResource
+from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.domains import AsyncDomainsResource, DomainsResource
 from .resources.emails import AsyncEmailsResource, EmailsResource
 from .resources.events import AsyncEventsResource, EventsResource
@@ -28,10 +32,6 @@ from .resources.security import AsyncSecurityResource, SecurityResource
 from .resources.vault import AsyncVaultResource, VaultResource
 from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
-from .resources.a2a import A2AResource, AsyncA2AResource
-from .resources.audit import AsyncAuditResource, AuditResource
-from .resources.compliance import AsyncComplianceResource, ComplianceResource
-from .resources.anomaly import AnomalyResource, AsyncAnomalyResource
 
 
 class Anima:
