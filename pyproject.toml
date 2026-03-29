@@ -44,6 +44,9 @@ Changelog = "https://github.com/anima-labs-ai/anima-python/releases"
 [tool.hatch.build.targets.wheel]
 packages = ["src/anima"]
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
 [tool.ruff]
 target-version = "py39"
 line-length = 100
