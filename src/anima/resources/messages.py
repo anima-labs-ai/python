@@ -88,7 +88,7 @@ class MessagesResource:
             payload["mediaUrls"] = media_urls
         if metadata is not None:
             payload["metadata"] = metadata
-        return MessageOutput.model_validate(self._client.request("POST", "/messages/sms", payload))
+        return MessageOutput.model_validate(self._client.request("POST", "/phone/send-sms", payload))
 
     def get(self, message_id: str) -> MessageOutput:
         return MessageOutput.model_validate(self._client.request("GET", f"/messages/{message_id}"))
@@ -239,7 +239,7 @@ class AsyncMessagesResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return MessageOutput.model_validate(
-            await self._client.request("POST", "/messages/sms", payload)
+            await self._client.request("POST", "/phone/send-sms", payload)
         )
 
     async def get(self, message_id: str) -> MessageOutput:
