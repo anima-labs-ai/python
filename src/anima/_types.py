@@ -545,6 +545,9 @@ class WebhookOutput(BaseModel):
     events: list[WebhookEventType]
     active: bool
     description: str | None = None
+    consecutive_failures: int = Field(alias="consecutiveFailures", default=0)
+    disabled_reason: str | None = Field(alias="disabledReason", default=None)
+    disabled_at: str | None = Field(alias="disabledAt", default=None)
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 
