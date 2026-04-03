@@ -31,6 +31,8 @@ from .resources.registry import AsyncRegistryResource, RegistryResource
 from .resources.security import AsyncSecurityResource, SecurityResource
 from .resources.vault import AsyncVaultResource, VaultResource
 from .resources.wallet import AsyncWalletResource, WalletResource
+from .resources.voices import AsyncVoicesResource, VoicesResource
+from .resources.calls import AsyncCallsResource, CallsResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
 
 
@@ -84,6 +86,8 @@ class Anima:
         self.audit = AuditResource(self._http)
         self.compliance = ComplianceResource(self._http)
         self.anomaly = AnomalyResource(self._http)
+        self.voices = VoicesResource(self._http)
+        self.calls = CallsResource(self._http)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
@@ -171,6 +175,8 @@ class AsyncAnima:
         self.audit = AsyncAuditResource(self._http)
         self.compliance = AsyncComplianceResource(self._http)
         self.anomaly = AsyncAnomalyResource(self._http)
+        self.voices = AsyncVoicesResource(self._http)
+        self.calls = AsyncCallsResource(self._http)
 
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""
