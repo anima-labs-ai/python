@@ -65,7 +65,7 @@ class TestCardsGet:
         resource = CardsResource(mock_http)
         result = resource.get("card_001")
 
-        mock_http.request.assert_called_once_with("GET", "/cards/card_001")
+        mock_http.request.assert_called_once_with("GET", "/cards/card_001", options=None)
         assert isinstance(result, Card)
         assert result.last4 == "4242"
         assert result.brand == "Visa"
@@ -101,7 +101,7 @@ class TestCardsUpdate:
         result = resource.update("card_001", label="New Label")
 
         mock_http.request.assert_called_once_with(
-            "PATCH", "/cards/card_001", {"label": "New Label"}
+            "PATCH", "/cards/card_001", {"label": "New Label"}, options=None
         )
         assert isinstance(result, Card)
 
@@ -121,7 +121,7 @@ class TestCardsDelete:
         resource = CardsResource(mock_http)
         resource.delete("card_001")
 
-        mock_http.request.assert_called_once_with("DELETE", "/cards/card_001")
+        mock_http.request.assert_called_once_with("DELETE", "/cards/card_001", options=None)
 
 
 class TestCardsFreezeUnfreeze:
@@ -131,7 +131,7 @@ class TestCardsFreezeUnfreeze:
         resource = CardsResource(mock_http)
         result = resource.freeze("card_001")
 
-        mock_http.request.assert_called_once_with("POST", "/cards/card_001/freeze")
+        mock_http.request.assert_called_once_with("POST", "/cards/card_001/freeze", options=None)
         assert isinstance(result, Card)
 
     def test_unfreeze(self, mock_http: MagicMock) -> None:
@@ -139,7 +139,7 @@ class TestCardsFreezeUnfreeze:
         resource = CardsResource(mock_http)
         result = resource.unfreeze("card_001")
 
-        mock_http.request.assert_called_once_with("POST", "/cards/card_001/unfreeze")
+        mock_http.request.assert_called_once_with("POST", "/cards/card_001/unfreeze", options=None)
         assert isinstance(result, Card)
 
 
@@ -167,7 +167,7 @@ class TestCardsTransactions:
         resource = CardsResource(mock_http)
         result = resource.get_transaction("txn_001")
 
-        mock_http.request.assert_called_once_with("GET", "/cards/transactions/txn_001")
+        mock_http.request.assert_called_once_with("GET", "/cards/transactions/txn_001", options=None)
         assert isinstance(result, CardTransaction)
         assert result.amount_cents == 1500
         assert result.merchant_name == "Amazon"
@@ -221,7 +221,7 @@ class TestCardsPolicies:
         resource = CardsResource(mock_http)
         resource.delete_policy("pol_001")
 
-        mock_http.request.assert_called_once_with("DELETE", "/cards/policies/pol_001")
+        mock_http.request.assert_called_once_with("DELETE", "/cards/policies/pol_001", options=None)
 
 
 class TestCardsKillSwitch:
@@ -264,5 +264,6 @@ class TestCardsApprovals:
             "POST",
             "/cards/approvals/apr_001/decision",
             {"decision": "APPROVED"},
+            options=None,
         )
         assert isinstance(result, CardApproval)

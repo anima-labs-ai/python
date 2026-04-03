@@ -20,6 +20,7 @@ class TestAgentsCreate:
             "POST",
             "/agents",
             {"orgId": "org_001", "name": "Test Agent", "slug": "test-agent"},
+            options=None,
         )
         assert isinstance(result, AgentOutput)
         assert result.id == "agent_001"
@@ -59,7 +60,7 @@ class TestAgentsGet:
         resource = AgentsResource(mock_http)
         result = resource.get("agent_001")
 
-        mock_http.request.assert_called_once_with("GET", "/agents/agent_001")
+        mock_http.request.assert_called_once_with("GET", "/agents/agent_001", options=None)
         assert isinstance(result, AgentOutput)
         assert result.id == "agent_001"
         assert result.org_id == "org_001"
@@ -80,17 +81,20 @@ class TestAgentsList:
         resource = AgentsResource(mock_http)
         result = resource.list()
 
+        # Trigger lazy fetch
+        items = result.items
         mock_http.request.assert_called_once_with("GET", "/agents", query=None)
-        assert isinstance(result, PaginatedResponse)
-        assert len(result.items) == 1
+        assert len(items) == 1
         assert result.pagination.has_more is True
         assert result.pagination.next_cursor == "cur_abc"
 
     def test_list_with_cursor_and_limit(self, mock_http: MagicMock) -> None:
         mock_http.request.return_value = PAGINATED_AGENTS_RAW
         resource = AgentsResource(mock_http)
-        resource.list(cursor="cur_xyz", limit=10)
+        result = resource.list(cursor="cur_xyz", limit=10)
 
+        # Trigger lazy fetch
+        _ = result.items
         _, kwargs = mock_http.request.call_args
         query = kwargs["query"]
         assert query["cursor"] == "cur_xyz"
@@ -99,8 +103,10 @@ class TestAgentsList:
     def test_list_with_filters(self, mock_http: MagicMock) -> None:
         mock_http.request.return_value = PAGINATED_AGENTS_RAW
         resource = AgentsResource(mock_http)
-        resource.list(org_id="org_001", status="ACTIVE", query="test")
+        result = resource.list(org_id="org_001", status="ACTIVE", query="test")
 
+        # Trigger lazy fetch
+        _ = result.items
         _, kwargs = mock_http.request.call_args
         query = kwargs["query"]
         assert query["orgId"] == "org_001"
@@ -118,6 +124,7 @@ class TestAgentsUpdate:
             "PATCH",
             "/agents/agent_001",
             {"id": "agent_001", "name": "Updated"},
+            options=None,
         )
         assert isinstance(result, AgentOutput)
 
@@ -148,7 +155,7 @@ class TestAgentsDelete:
         resource = AgentsResource(mock_http)
         resource.delete("agent_001")
 
-        mock_http.request.assert_called_once_with("DELETE", "/agents/agent_001")
+        mock_http.request.assert_called_once_with("DELETE", "/agents/agent_001", options=None)
 
 
 class TestAgentsRotateKey:
@@ -164,6 +171,7 @@ class TestAgentsRotateKey:
             "POST",
             "/agents/agent_001/rotate-key",
             {"id": "agent_001"},
+            options=None,
         )
         assert result == {
             "api_key": "sk-new-key-123",

@@ -25,16 +25,19 @@ class TestEmailsList:
         resource = EmailsResource(mock_http)
         result = resource.list()
 
+        # Trigger lazy fetch
+        items = result.items
         mock_http.request.assert_called_once_with("GET", "/email", query=None)
-        assert isinstance(result, PaginatedResponse)
-        assert len(result.items) == 1
+        assert len(items) == 1
         assert result.pagination.has_more is False
 
     def test_list_with_cursor_and_limit(self, mock_http: MagicMock) -> None:
         mock_http.request.return_value = PAGINATED_MESSAGES_RAW
         resource = EmailsResource(mock_http)
-        resource.list(cursor="cur_abc", limit=25)
+        result = resource.list(cursor="cur_abc", limit=25)
 
+        # Trigger lazy fetch
+        _ = result.items
         _, kwargs = mock_http.request.call_args
         query = kwargs["query"]
         assert query["cursor"] == "cur_abc"
@@ -43,8 +46,10 @@ class TestEmailsList:
     def test_list_with_agent_id(self, mock_http: MagicMock) -> None:
         mock_http.request.return_value = PAGINATED_MESSAGES_RAW
         resource = EmailsResource(mock_http)
-        resource.list(agent_id="agent_001")
+        result = resource.list(agent_id="agent_001")
 
+        # Trigger lazy fetch
+        _ = result.items
         _, kwargs = mock_http.request.call_args
         query = kwargs["query"]
         assert query["agentId"] == "agent_001"
@@ -85,6 +90,7 @@ class TestEmailsUploadAttachment:
                 "mimeType": "application/pdf",
                 "sizeBytes": 1024,
             },
+            options=None,
         )
         assert isinstance(result, AttachmentOutput)
         assert result.id == "att_001"
@@ -99,7 +105,7 @@ class TestEmailsGetAttachmentUrl:
         resource = EmailsResource(mock_http)
         result = resource.get_attachment_url("att_001")
 
-        mock_http.request.assert_called_once_with("GET", "/attachments/att_001/download")
+        mock_http.request.assert_called_once_with("GET", "/attachments/att_001/download", options=None)
         assert isinstance(result, AttachmentDownloadOutput)
         assert "signed=1" in result.url
         assert result.expires_at == "2025-01-01T01:00:00Z"
