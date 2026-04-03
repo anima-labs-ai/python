@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import random
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, TypeVar
 
 import httpx
@@ -26,7 +27,8 @@ T = TypeVar("T")
 DEFAULT_BASE_URL = "https://api.useanima.sh"
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_RETRIES = 3
-RETRY_DELAYS = (1.0, 2.0, 4.0)
+BASE_RETRY_DELAY = 0.5  # seconds
+MAX_RETRY_DELAY = 30.0  # seconds
 
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
@@ -42,6 +44,23 @@ class RequestOptions:
 
 def _should_retry(status_code: int) -> bool:
     return status_code == 429 or status_code >= 500
+
+
+def _jittered_delay(attempt: int) -> float:
+    """Jittered exponential backoff: random(0, BASE * 2^attempt), capped at MAX."""
+    exponential = BASE_RETRY_DELAY * (2 ** attempt)
+    return min(random.random() * exponential, MAX_RETRY_DELAY)
+
+
+def _parse_retry_after(response: httpx.Response) -> float | None:
+    """Parse Retry-After header (seconds) if present."""
+    header = response.headers.get("retry-after")
+    if not header:
+        return None
+    try:
+        return float(header)
+    except ValueError:
+        return None
 
 
 def _parse_error(response: httpx.Response) -> APIError:
@@ -145,11 +164,8 @@ class HTTPClient:
                     return response.json()
 
                 if _should_retry(response.status_code) and attempt < max_retries:
-                    delay = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
-                    retry_header = response.headers.get("retry-after")
-                    if retry_header and response.status_code == 429:
-                        with contextlib.suppress(ValueError):
-                            delay = max(delay, float(retry_header))
+                    retry_after = _parse_retry_after(response)
+                    delay = retry_after if retry_after is not None else _jittered_delay(attempt)
                     time.sleep(delay)
                     continue
 
@@ -159,14 +175,14 @@ class HTTPClient:
                 raise
             except httpx.TimeoutException:
                 if attempt < max_retries:
-                    time.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+                    time.sleep(_jittered_delay(attempt))
                     continue
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
                 if attempt < max_retries:
-                    time.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+                    time.sleep(_jittered_delay(attempt))
                     continue
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
 
@@ -228,11 +244,8 @@ class AsyncHTTPClient:
                     return response.json()
 
                 if _should_retry(response.status_code) and attempt < max_retries:
-                    delay = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
-                    retry_header = response.headers.get("retry-after")
-                    if retry_header and response.status_code == 429:
-                        with contextlib.suppress(ValueError):
-                            delay = max(delay, float(retry_header))
+                    retry_after = _parse_retry_after(response)
+                    delay = retry_after if retry_after is not None else _jittered_delay(attempt)
                     await asyncio.sleep(delay)
                     continue
 
@@ -242,14 +255,14 @@ class AsyncHTTPClient:
                 raise
             except httpx.TimeoutException:
                 if attempt < max_retries:
-                    await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+                    await asyncio.sleep(_jittered_delay(attempt))
                     continue
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
                 if attempt < max_retries:
-                    await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+                    await asyncio.sleep(_jittered_delay(attempt))
                     continue
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
 
