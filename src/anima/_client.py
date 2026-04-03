@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from types import TracebackType
 
 from ._http import (
@@ -53,15 +54,22 @@ class Anima:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str | None = None,
         *,
-        base_url: str = DEFAULT_BASE_URL,
+        base_url: str | None = None,
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> None:
+        resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
+        if not resolved_key:
+            raise ValueError(
+                "Missing API key. Pass it as `api_key` or set the ANIMA_API_KEY environment variable."
+            )
+        resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
+
         self._http = HTTPClient(
-            api_key=api_key,
-            base_url=base_url,
+            api_key=resolved_key,
+            base_url=resolved_url,
             timeout=timeout,
             max_retries=max_retries,
         )
@@ -142,15 +150,22 @@ class AsyncAnima:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: str | None = None,
         *,
-        base_url: str = DEFAULT_BASE_URL,
+        base_url: str | None = None,
         timeout: float = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> None:
+        resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
+        if not resolved_key:
+            raise ValueError(
+                "Missing API key. Pass it as `api_key` or set the ANIMA_API_KEY environment variable."
+            )
+        resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
+
         self._http = AsyncHTTPClient(
-            api_key=api_key,
-            base_url=base_url,
+            api_key=resolved_key,
+            base_url=resolved_url,
             timeout=timeout,
             max_retries=max_retries,
         )

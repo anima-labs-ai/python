@@ -12,6 +12,8 @@ from typing import Any, TypeVar
 
 import httpx
 
+from ._logger import logger
+
 from ._exceptions import (
     APIError,
     AuthenticationError,
@@ -128,6 +130,7 @@ class HTTPClient:
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.Client(timeout=timeout)
+        logger.debug("Client initialized base_url=%s timeout=%s max_retries=%s", self._base_url, timeout, max_retries)
 
     def close(self) -> None:
         self._client.close()
@@ -147,6 +150,8 @@ class HTTPClient:
             or (str(uuid.uuid4()) if method in _MUTATING_METHODS else None)
         )
         headers = _build_headers(self._api_key, body is not None, idem_key)
+        start = time.monotonic()
+        logger.debug("%s %s", method, path)
 
         for attempt in range(max_retries + 1):
             try:
@@ -158,7 +163,10 @@ class HTTPClient:
                     headers=headers,
                 )
 
+                duration_ms = (time.monotonic() - start) * 1000
+
                 if response.is_success:
+                    logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
                     if response.status_code == 204:
                         return None
                     return response.json()
@@ -166,24 +174,32 @@ class HTTPClient:
                 if _should_retry(response.status_code) and attempt < max_retries:
                     retry_after = _parse_retry_after(response)
                     delay = retry_after if retry_after is not None else _jittered_delay(attempt)
+                    logger.debug("%s %s -> %d, retrying in %.0fms (attempt %d)", method, path, response.status_code, delay * 1000, attempt + 1)
                     time.sleep(delay)
                     continue
 
+                logger.debug("%s %s -> %d (failed, %.0fms)", method, path, response.status_code, duration_ms)
                 raise _parse_error(response)
 
             except APIError:
                 raise
             except httpx.TimeoutException:
                 if attempt < max_retries:
-                    time.sleep(_jittered_delay(attempt))
+                    delay = _jittered_delay(attempt)
+                    logger.debug("%s %s -> timeout, retrying in %.0fms (attempt %d)", method, path, delay * 1000, attempt + 1)
+                    time.sleep(delay)
                     continue
+                logger.debug("%s %s -> timeout (failed)", method, path)
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
                 if attempt < max_retries:
-                    time.sleep(_jittered_delay(attempt))
+                    delay = _jittered_delay(attempt)
+                    logger.debug("%s %s -> network error, retrying in %.0fms (attempt %d)", method, path, delay * 1000, attempt + 1)
+                    time.sleep(delay)
                     continue
+                logger.debug("%s %s -> network error (failed)", method, path)
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
 
         raise APIError("Request failed after retries", 0, "RETRY_EXHAUSTED")
@@ -208,6 +224,7 @@ class AsyncHTTPClient:
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.AsyncClient(timeout=timeout)
+        logger.debug("AsyncClient initialized base_url=%s timeout=%s max_retries=%s", self._base_url, timeout, max_retries)
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -227,6 +244,8 @@ class AsyncHTTPClient:
             or (str(uuid.uuid4()) if method in _MUTATING_METHODS else None)
         )
         headers = _build_headers(self._api_key, body is not None, idem_key)
+        start = time.monotonic()
+        logger.debug("%s %s", method, path)
 
         for attempt in range(max_retries + 1):
             try:
@@ -238,7 +257,10 @@ class AsyncHTTPClient:
                     headers=headers,
                 )
 
+                duration_ms = (time.monotonic() - start) * 1000
+
                 if response.is_success:
+                    logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
                     if response.status_code == 204:
                         return None
                     return response.json()
@@ -246,24 +268,32 @@ class AsyncHTTPClient:
                 if _should_retry(response.status_code) and attempt < max_retries:
                     retry_after = _parse_retry_after(response)
                     delay = retry_after if retry_after is not None else _jittered_delay(attempt)
+                    logger.debug("%s %s -> %d, retrying in %.0fms (attempt %d)", method, path, response.status_code, delay * 1000, attempt + 1)
                     await asyncio.sleep(delay)
                     continue
 
+                logger.debug("%s %s -> %d (failed, %.0fms)", method, path, response.status_code, duration_ms)
                 raise _parse_error(response)
 
             except APIError:
                 raise
             except httpx.TimeoutException:
                 if attempt < max_retries:
-                    await asyncio.sleep(_jittered_delay(attempt))
+                    delay = _jittered_delay(attempt)
+                    logger.debug("%s %s -> timeout, retrying in %.0fms (attempt %d)", method, path, delay * 1000, attempt + 1)
+                    await asyncio.sleep(delay)
                     continue
+                logger.debug("%s %s -> timeout (failed)", method, path)
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
                 if attempt < max_retries:
-                    await asyncio.sleep(_jittered_delay(attempt))
+                    delay = _jittered_delay(attempt)
+                    logger.debug("%s %s -> network error, retrying in %.0fms (attempt %d)", method, path, delay * 1000, attempt + 1)
+                    await asyncio.sleep(delay)
                     continue
+                logger.debug("%s %s -> network error (failed)", method, path)
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
 
         raise APIError("Request failed after retries", 0, "RETRY_EXHAUSTED")
