@@ -11,6 +11,8 @@ from ._http import (
     DEFAULT_TIMEOUT,
     AsyncHTTPClient,
     HTTPClient,
+    RequestHook,
+    ResponseHook,
 )
 from ._webhooks import construct_webhook_event, verify_webhook_signature
 from .resources.a2a import A2AResource, AsyncA2AResource
@@ -96,6 +98,14 @@ class Anima:
         self.anomaly = AnomalyResource(self._http)
         self.voices = VoicesResource(self._http)
         self.calls = CallsResource(self._http)
+
+    def on_request(self, hook: RequestHook) -> None:
+        """Register a hook called before each HTTP request."""
+        self._http.on_request(hook)
+
+    def on_response(self, hook: ResponseHook) -> None:
+        """Register a hook called after each HTTP response."""
+        self._http.on_response(hook)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""
@@ -192,6 +202,14 @@ class AsyncAnima:
         self.anomaly = AsyncAnomalyResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
         self.calls = AsyncCallsResource(self._http)
+
+    def on_request(self, hook: RequestHook) -> None:
+        """Register a hook called before each HTTP request."""
+        self._http.on_request(hook)
+
+    def on_response(self, hook: ResponseHook) -> None:
+        """Register a hook called after each HTTP response."""
+        self._http.on_response(hook)
 
     async def close(self) -> None:
         """Close the underlying HTTP connection pool."""

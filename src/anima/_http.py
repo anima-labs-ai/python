@@ -7,8 +7,8 @@ import contextlib
 import random
 import time
 import uuid
-from dataclasses import dataclass
-from typing import Any, TypeVar
+from dataclasses import dataclass, field
+from typing import Any, Callable, TypeVar
 
 import httpx
 
@@ -53,6 +53,30 @@ class RawResponse:
     headers: dict[str, str]
     request_id: str | None
     response_time_ms: float
+
+
+@dataclass
+class RequestEvent:
+    """Emitted before each HTTP request."""
+
+    method: str
+    path: str
+    headers: dict[str, str]
+
+
+@dataclass
+class ResponseEvent:
+    """Emitted after each HTTP response."""
+
+    method: str
+    path: str
+    status: int
+    duration_ms: float
+    headers: dict[str, str]
+
+
+RequestHook = Callable[[RequestEvent], None]
+ResponseHook = Callable[[ResponseEvent], None]
 
 
 def _should_retry(status_code: int) -> bool:
@@ -151,7 +175,17 @@ class HTTPClient:
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.Client(timeout=timeout)
+        self._request_hooks: list[RequestHook] = []
+        self._response_hooks: list[ResponseHook] = []
         logger.debug("Client initialized base_url=%s timeout=%s max_retries=%s", self._base_url, timeout, max_retries)
+
+    def on_request(self, hook: RequestHook) -> None:
+        """Register a hook called before each HTTP request."""
+        self._request_hooks.append(hook)
+
+    def on_response(self, hook: ResponseHook) -> None:
+        """Register a hook called after each HTTP response."""
+        self._response_hooks.append(hook)
 
     def close(self) -> None:
         self._client.close()
@@ -175,6 +209,11 @@ class HTTPClient:
         logger.debug("%s %s", method, path)
 
         for attempt in range(max_retries + 1):
+            if attempt == 0:
+                redacted = {**headers, "Authorization": "Bearer [REDACTED]"}
+                for hook in self._request_hooks:
+                    hook(RequestEvent(method=method, path=path, headers=redacted))
+
             try:
                 response = self._client.request(
                     method,
@@ -185,6 +224,8 @@ class HTTPClient:
                 )
 
                 duration_ms = (time.monotonic() - start) * 1000
+                for hook in self._response_hooks:
+                    hook(ResponseEvent(method=method, path=path, status=response.status_code, duration_ms=duration_ms, headers=dict(response.headers)))
 
                 if response.is_success:
                     logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
@@ -248,7 +289,17 @@ class AsyncHTTPClient:
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.AsyncClient(timeout=timeout)
+        self._request_hooks: list[RequestHook] = []
+        self._response_hooks: list[ResponseHook] = []
         logger.debug("AsyncClient initialized base_url=%s timeout=%s max_retries=%s", self._base_url, timeout, max_retries)
+
+    def on_request(self, hook: RequestHook) -> None:
+        """Register a hook called before each HTTP request."""
+        self._request_hooks.append(hook)
+
+    def on_response(self, hook: ResponseHook) -> None:
+        """Register a hook called after each HTTP response."""
+        self._response_hooks.append(hook)
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -272,6 +323,11 @@ class AsyncHTTPClient:
         logger.debug("%s %s", method, path)
 
         for attempt in range(max_retries + 1):
+            if attempt == 0:
+                redacted = {**headers, "Authorization": "Bearer [REDACTED]"}
+                for hook in self._request_hooks:
+                    hook(RequestEvent(method=method, path=path, headers=redacted))
+
             try:
                 response = await self._client.request(
                     method,
@@ -282,6 +338,8 @@ class AsyncHTTPClient:
                 )
 
                 duration_ms = (time.monotonic() - start) * 1000
+                for hook in self._response_hooks:
+                    hook(ResponseEvent(method=method, path=path, status=response.status_code, duration_ms=duration_ms, headers=dict(response.headers)))
 
                 if response.is_success:
                     logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
