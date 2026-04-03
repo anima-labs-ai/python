@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import RegistryAgentOutput
 
 
@@ -86,6 +86,7 @@ class RegistryResource:
         capabilities: list[str] | None = None,
         endpoints: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> RegistryAgentOutput:
         body = _build_register_body(
             did=did,
@@ -97,7 +98,7 @@ class RegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            self._client.request("POST", "/registry/agents", body)
+            self._client.request("POST", "/registry/agents", body, options=options)
         )
 
     def search(
@@ -107,14 +108,15 @@ class RegistryResource:
         category: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> list[RegistryAgentOutput]:
         params = _to_search_query(q=query, category=category, cursor=cursor, limit=limit)
-        raw = self._client.request("GET", "/registry/agents/search", query=params)
+        raw = self._client.request("GET", "/registry/agents/search", query=params, options=options)
         return [RegistryAgentOutput.model_validate(item) for item in raw["items"]]
 
-    def lookup(self, did: str) -> RegistryAgentOutput:
+    def lookup(self, did: str, *, options: RequestOptions | None = None) -> RegistryAgentOutput:
         return RegistryAgentOutput.model_validate(
-            self._client.request("GET", f"/registry/agents/{did}")
+            self._client.request("GET", f"/registry/agents/{did}", options=options)
         )
 
     def update(
@@ -127,6 +129,7 @@ class RegistryResource:
         capabilities: list[str] | None = None,
         endpoints: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> RegistryAgentOutput:
         body = _build_update_body(
             name=name,
@@ -137,11 +140,11 @@ class RegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            self._client.request("PUT", f"/registry/agents/{did}", body)
+            self._client.request("PUT", f"/registry/agents/{did}", body, options=options)
         )
 
-    def unlist(self, did: str) -> None:
-        self._client.request("DELETE", f"/registry/agents/{did}")
+    def unlist(self, did: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/registry/agents/{did}", options=options)
 
 
 class AsyncRegistryResource:
@@ -158,6 +161,7 @@ class AsyncRegistryResource:
         capabilities: list[str] | None = None,
         endpoints: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> RegistryAgentOutput:
         body = _build_register_body(
             did=did,
@@ -169,7 +173,7 @@ class AsyncRegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            await self._client.request("POST", "/registry/agents", body)
+            await self._client.request("POST", "/registry/agents", body, options=options)
         )
 
     async def search(
@@ -179,14 +183,15 @@ class AsyncRegistryResource:
         category: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> list[RegistryAgentOutput]:
         params = _to_search_query(q=query, category=category, cursor=cursor, limit=limit)
-        raw = await self._client.request("GET", "/registry/agents/search", query=params)
+        raw = await self._client.request("GET", "/registry/agents/search", query=params, options=options)
         return [RegistryAgentOutput.model_validate(item) for item in raw["items"]]
 
-    async def lookup(self, did: str) -> RegistryAgentOutput:
+    async def lookup(self, did: str, *, options: RequestOptions | None = None) -> RegistryAgentOutput:
         return RegistryAgentOutput.model_validate(
-            await self._client.request("GET", f"/registry/agents/{did}")
+            await self._client.request("GET", f"/registry/agents/{did}", options=options)
         )
 
     async def update(
@@ -199,6 +204,7 @@ class AsyncRegistryResource:
         capabilities: list[str] | None = None,
         endpoints: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> RegistryAgentOutput:
         body = _build_update_body(
             name=name,
@@ -209,8 +215,8 @@ class AsyncRegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            await self._client.request("PUT", f"/registry/agents/{did}", body)
+            await self._client.request("PUT", f"/registry/agents/{did}", body, options=options)
         )
 
-    async def unlist(self, did: str) -> None:
-        await self._client.request("DELETE", f"/registry/agents/{did}")
+    async def unlist(self, did: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/registry/agents/{did}", options=options)

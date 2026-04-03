@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     ComplianceControlOutput,
     ComplianceDashboardOutput,
@@ -27,6 +27,7 @@ class ComplianceResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[ComplianceControlOutput]:
         query: dict[str, str] = {}
         if framework is not None:
@@ -39,12 +40,12 @@ class ComplianceResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls", query=query)
+        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls", query=query, options=options)
         return PaginatedResponse[ComplianceControlOutput].model_validate(raw)
 
-    def get_control(self, *, org_id: str, control_id: str) -> ComplianceControlOutput:
+    def get_control(self, *, org_id: str, control_id: str, options: RequestOptions | None = None) -> ComplianceControlOutput:
         return ComplianceControlOutput.model_validate(
-            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls/{control_id}")
+            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls/{control_id}", options=options)
         )
 
     def update_control_status(
@@ -54,6 +55,7 @@ class ComplianceResource:
         control_id: str,
         status: str,
         owner: str | None = None,
+        options: RequestOptions | None = None,
     ) -> ComplianceControlOutput:
         payload: dict[str, Any] = {"status": status}
         if owner is not None:
@@ -63,15 +65,17 @@ class ComplianceResource:
                 "PATCH",
                 f"/v1/orgs/{org_id}/compliance/controls/{control_id}",
                 payload,
+                options=options,
             )
         )
 
-    def seed_framework(self, *, org_id: str, framework: str) -> SeedFrameworkOutput:
+    def seed_framework(self, *, org_id: str, framework: str, options: RequestOptions | None = None) -> SeedFrameworkOutput:
         return SeedFrameworkOutput.model_validate(
             self._client.request(
                 "POST",
                 f"/v1/orgs/{org_id}/compliance/seed",
                 {"framework": framework},
+                options=options,
             )
         )
 
@@ -83,6 +87,7 @@ class ComplianceResource:
         from_: str | None = None,
         to: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> ComplianceReportOutput:
         payload: dict[str, Any] = {"type": type}
         if from_ is not None:
@@ -92,7 +97,7 @@ class ComplianceResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return ComplianceReportOutput.model_validate(
-            self._client.request("POST", f"/v1/orgs/{org_id}/compliance/reports", payload)
+            self._client.request("POST", f"/v1/orgs/{org_id}/compliance/reports", payload, options=options)
         )
 
     def list_reports(
@@ -102,6 +107,7 @@ class ComplianceResource:
         type: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[ComplianceReportOutput]:
         query: dict[str, str] = {}
         if type is not None:
@@ -110,25 +116,26 @@ class ComplianceResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports", query=query)
+        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports", query=query, options=options)
         return PaginatedResponse[ComplianceReportOutput].model_validate(raw)
 
-    def get_report(self, *, org_id: str, report_id: str) -> ComplianceReportOutput:
+    def get_report(self, *, org_id: str, report_id: str, options: RequestOptions | None = None) -> ComplianceReportOutput:
         return ComplianceReportOutput.model_validate(
-            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports/{report_id}")
+            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports/{report_id}", options=options)
         )
 
-    def download_report(self, *, org_id: str, report_id: str) -> ComplianceReportDownloadOutput:
+    def download_report(self, *, org_id: str, report_id: str, options: RequestOptions | None = None) -> ComplianceReportDownloadOutput:
         return ComplianceReportDownloadOutput.model_validate(
             self._client.request(
                 "GET",
                 f"/v1/orgs/{org_id}/compliance/reports/{report_id}/download",
+                options=options,
             )
         )
 
-    def get_dashboard(self, *, org_id: str) -> ComplianceDashboardOutput:
+    def get_dashboard(self, *, org_id: str, options: RequestOptions | None = None) -> ComplianceDashboardOutput:
         return ComplianceDashboardOutput.model_validate(
-            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dashboard")
+            self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dashboard", options=options)
         )
 
     def create_dsar(
@@ -139,6 +146,7 @@ class ComplianceResource:
         request_type: str,
         description: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> DsarOutput:
         payload: dict[str, Any] = {
             "subjectEmail": subject_email,
@@ -149,7 +157,7 @@ class ComplianceResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return DsarOutput.model_validate(
-            self._client.request("POST", f"/v1/orgs/{org_id}/compliance/dsars", payload)
+            self._client.request("POST", f"/v1/orgs/{org_id}/compliance/dsars", payload, options=options)
         )
 
     def list_dsars(
@@ -159,6 +167,7 @@ class ComplianceResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[DsarOutput]:
         query: dict[str, str] = {}
         if status is not None:
@@ -167,7 +176,7 @@ class ComplianceResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dsars", query=query)
+        raw = self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dsars", query=query, options=options)
         return PaginatedResponse[DsarOutput].model_validate(raw)
 
     def complete_dsar(
@@ -177,6 +186,7 @@ class ComplianceResource:
         dsar_id: str,
         notes: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> DsarOutput:
         payload: dict[str, Any] = {}
         if notes is not None:
@@ -188,6 +198,7 @@ class ComplianceResource:
                 "POST",
                 f"/v1/orgs/{org_id}/compliance/dsars/{dsar_id}/complete",
                 payload,
+                options=options,
             )
         )
 
@@ -205,6 +216,7 @@ class AsyncComplianceResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[ComplianceControlOutput]:
         query: dict[str, str] = {}
         if framework is not None:
@@ -218,13 +230,13 @@ class AsyncComplianceResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = await self._client.request(
-            "GET", f"/v1/orgs/{org_id}/compliance/controls", query=query
+            "GET", f"/v1/orgs/{org_id}/compliance/controls", query=query, options=options
         )
         return PaginatedResponse[ComplianceControlOutput].model_validate(raw)
 
-    async def get_control(self, *, org_id: str, control_id: str) -> ComplianceControlOutput:
+    async def get_control(self, *, org_id: str, control_id: str, options: RequestOptions | None = None) -> ComplianceControlOutput:
         return ComplianceControlOutput.model_validate(
-            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls/{control_id}")
+            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/controls/{control_id}", options=options)
         )
 
     async def update_control_status(
@@ -234,6 +246,7 @@ class AsyncComplianceResource:
         control_id: str,
         status: str,
         owner: str | None = None,
+        options: RequestOptions | None = None,
     ) -> ComplianceControlOutput:
         payload: dict[str, Any] = {"status": status}
         if owner is not None:
@@ -243,15 +256,17 @@ class AsyncComplianceResource:
                 "PATCH",
                 f"/v1/orgs/{org_id}/compliance/controls/{control_id}",
                 payload,
+                options=options,
             )
         )
 
-    async def seed_framework(self, *, org_id: str, framework: str) -> SeedFrameworkOutput:
+    async def seed_framework(self, *, org_id: str, framework: str, options: RequestOptions | None = None) -> SeedFrameworkOutput:
         return SeedFrameworkOutput.model_validate(
             await self._client.request(
                 "POST",
                 f"/v1/orgs/{org_id}/compliance/seed",
                 {"framework": framework},
+                options=options,
             )
         )
 
@@ -263,6 +278,7 @@ class AsyncComplianceResource:
         from_: str | None = None,
         to: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> ComplianceReportOutput:
         payload: dict[str, Any] = {"type": type}
         if from_ is not None:
@@ -272,7 +288,7 @@ class AsyncComplianceResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return ComplianceReportOutput.model_validate(
-            await self._client.request("POST", f"/v1/orgs/{org_id}/compliance/reports", payload)
+            await self._client.request("POST", f"/v1/orgs/{org_id}/compliance/reports", payload, options=options)
         )
 
     async def list_reports(
@@ -282,6 +298,7 @@ class AsyncComplianceResource:
         type: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[ComplianceReportOutput]:
         query: dict[str, str] = {}
         if type is not None:
@@ -291,28 +308,29 @@ class AsyncComplianceResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = await self._client.request(
-            "GET", f"/v1/orgs/{org_id}/compliance/reports", query=query
+            "GET", f"/v1/orgs/{org_id}/compliance/reports", query=query, options=options
         )
         return PaginatedResponse[ComplianceReportOutput].model_validate(raw)
 
-    async def get_report(self, *, org_id: str, report_id: str) -> ComplianceReportOutput:
+    async def get_report(self, *, org_id: str, report_id: str, options: RequestOptions | None = None) -> ComplianceReportOutput:
         return ComplianceReportOutput.model_validate(
-            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports/{report_id}")
+            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/reports/{report_id}", options=options)
         )
 
     async def download_report(
-        self, *, org_id: str, report_id: str
+        self, *, org_id: str, report_id: str, options: RequestOptions | None = None
     ) -> ComplianceReportDownloadOutput:
         return ComplianceReportDownloadOutput.model_validate(
             await self._client.request(
                 "GET",
                 f"/v1/orgs/{org_id}/compliance/reports/{report_id}/download",
+                options=options,
             )
         )
 
-    async def get_dashboard(self, *, org_id: str) -> ComplianceDashboardOutput:
+    async def get_dashboard(self, *, org_id: str, options: RequestOptions | None = None) -> ComplianceDashboardOutput:
         return ComplianceDashboardOutput.model_validate(
-            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dashboard")
+            await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dashboard", options=options)
         )
 
     async def create_dsar(
@@ -323,6 +341,7 @@ class AsyncComplianceResource:
         request_type: str,
         description: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> DsarOutput:
         payload: dict[str, Any] = {
             "subjectEmail": subject_email,
@@ -333,7 +352,7 @@ class AsyncComplianceResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return DsarOutput.model_validate(
-            await self._client.request("POST", f"/v1/orgs/{org_id}/compliance/dsars", payload)
+            await self._client.request("POST", f"/v1/orgs/{org_id}/compliance/dsars", payload, options=options)
         )
 
     async def list_dsars(
@@ -343,6 +362,7 @@ class AsyncComplianceResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[DsarOutput]:
         query: dict[str, str] = {}
         if status is not None:
@@ -351,7 +371,7 @@ class AsyncComplianceResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dsars", query=query)
+        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/compliance/dsars", query=query, options=options)
         return PaginatedResponse[DsarOutput].model_validate(raw)
 
     async def complete_dsar(
@@ -361,6 +381,7 @@ class AsyncComplianceResource:
         dsar_id: str,
         notes: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> DsarOutput:
         payload: dict[str, Any] = {}
         if notes is not None:
@@ -372,5 +393,6 @@ class AsyncComplianceResource:
                 "POST",
                 f"/v1/orgs/{org_id}/compliance/dsars/{dsar_id}/complete",
                 payload,
+                options=options,
             )
         )

@@ -37,11 +37,22 @@ _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 @dataclass
 class RequestOptions:
-    """Per-request overrides for mutating operations."""
+    """Per-request overrides."""
 
     idempotency_key: str | None = None
     timeout: float | None = None
     max_retries: int | None = None
+    raw_response: bool = False
+
+
+@dataclass
+class RawResponse:
+    """Raw HTTP response metadata."""
+
+    status: int
+    headers: dict[str, str]
+    request_id: str | None
+    response_time_ms: float
 
 
 def _should_retry(status_code: int) -> bool:
@@ -100,6 +111,16 @@ def _parse_error(response: httpx.Response) -> APIError:
         return InternalServerError(message, status, details)
 
     return APIError(message, status, code, details)
+
+
+def _build_raw_response(response: httpx.Response, duration_ms: float) -> RawResponse:
+    """Build a RawResponse from an httpx response."""
+    return RawResponse(
+        status=response.status_code,
+        headers=dict(response.headers),
+        request_id=response.headers.get("x-request-id"),
+        response_time_ms=duration_ms,
+    )
 
 
 def _build_headers(
@@ -167,9 +188,12 @@ class HTTPClient:
 
                 if response.is_success:
                     logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
-                    if response.status_code == 204:
-                        return None
-                    return response.json()
+                    data = None if response.status_code == 204 else response.json()
+
+                    if options and options.raw_response:
+                        return data, _build_raw_response(response, duration_ms)
+
+                    return data
 
                 if _should_retry(response.status_code) and attempt < max_retries:
                     retry_after = _parse_retry_after(response)
@@ -261,9 +285,12 @@ class AsyncHTTPClient:
 
                 if response.is_success:
                     logger.debug("%s %s -> %d (%.0fms)", method, path, response.status_code, duration_ms)
-                    if response.status_code == 204:
-                        return None
-                    return response.json()
+                    data = None if response.status_code == 204 else response.json()
+
+                    if options and options.raw_response:
+                        return data, _build_raw_response(response, duration_ms)
+
+                    return data
 
                 if _should_retry(response.status_code) and attempt < max_retries:
                     retry_after = _parse_retry_after(response)

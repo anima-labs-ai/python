@@ -4,7 +4,7 @@ from typing import Any
 
 import httpx
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import A2ATaskOutput, PaginatedResponse
 
 
@@ -46,17 +46,18 @@ class A2AResource:
         type: str,
         input: dict[str, Any],
         from_did: str | None = None,
+        options: RequestOptions | None = None,
     ) -> A2ATaskOutput:
         body: dict[str, Any] = {"type": type, "input": input}
         if from_did is not None:
             body["fromDid"] = from_did
         return A2ATaskOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body)
+            self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body, options=options)
         )
 
-    def get_task(self, agent_id: str, task_id: str) -> A2ATaskOutput:
+    def get_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}")
+            self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}", options=options)
         )
 
     def list_tasks(
@@ -66,17 +67,19 @@ class A2AResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[A2ATaskOutput]:
         raw = self._client.request(
             "GET",
             f"/agents/{agent_id}/a2a/tasks",
             query=_to_query(status=status, cursor=cursor, limit=limit),
+            options=options,
         )
         return PaginatedResponse[A2ATaskOutput].model_validate(raw)
 
-    def cancel_task(self, agent_id: str, task_id: str) -> A2ATaskOutput:
+    def cancel_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel")
+            self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options)
         )
 
 
@@ -103,17 +106,18 @@ class AsyncA2AResource:
         type: str,
         input: dict[str, Any],
         from_did: str | None = None,
+        options: RequestOptions | None = None,
     ) -> A2ATaskOutput:
         body: dict[str, Any] = {"type": type, "input": input}
         if from_did is not None:
             body["fromDid"] = from_did
         return A2ATaskOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body)
+            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body, options=options)
         )
 
-    async def get_task(self, agent_id: str, task_id: str) -> A2ATaskOutput:
+    async def get_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            await self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}")
+            await self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}", options=options)
         )
 
     async def list_tasks(
@@ -123,15 +127,17 @@ class AsyncA2AResource:
         status: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[A2ATaskOutput]:
         raw = await self._client.request(
             "GET",
             f"/agents/{agent_id}/a2a/tasks",
             query=_to_query(status=status, cursor=cursor, limit=limit),
+            options=options,
         )
         return PaginatedResponse[A2ATaskOutput].model_validate(raw)
 
-    async def cancel_task(self, agent_id: str, task_id: str) -> A2ATaskOutput:
+    async def cancel_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel")
+            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options)
         )

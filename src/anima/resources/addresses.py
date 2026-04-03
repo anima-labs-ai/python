@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import AddressOutput, ValidateAddressOutput
 
 
@@ -101,6 +101,7 @@ class AddressesResource:
         state: str,
         postal_code: str,
         country: str,
+        options: RequestOptions | None = None,
     ) -> AddressOutput:
         body = _build_create_body(
             agent_id=agent_id,
@@ -113,7 +114,7 @@ class AddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(self._client.request("POST", "/addresses", body))
+        return AddressOutput.model_validate(self._client.request("POST", "/addresses", body, options=options))
 
     def list(
         self,
@@ -122,20 +123,23 @@ class AddressesResource:
         limit: int | None = None,
         agent_id: str | None = None,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[AddressOutput]:
         raw = self._client.request(
             "GET",
             "/addresses",
             query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id, type=type),
+            options=options,
         )
         return [AddressOutput.model_validate(item) for item in raw["items"]]
 
-    def get(self, address_id: str, *, agent_id: str) -> AddressOutput:
+    def get(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> AddressOutput:
         return AddressOutput.model_validate(
             self._client.request(
                 "GET",
                 f"/addresses/{address_id}",
                 query={"agentId": agent_id},
+                options=options,
             )
         )
 
@@ -152,6 +156,7 @@ class AddressesResource:
         state: str | None = None,
         postal_code: str | None = None,
         country: str | None = None,
+        options: RequestOptions | None = None,
     ) -> AddressOutput:
         body = _build_update_body(
             agent_id=agent_id,
@@ -165,15 +170,15 @@ class AddressesResource:
             country=country,
         )
         return AddressOutput.model_validate(
-            self._client.request("PUT", f"/addresses/{address_id}", body)
+            self._client.request("PUT", f"/addresses/{address_id}", body, options=options)
         )
 
-    def delete(self, address_id: str, *, agent_id: str) -> None:
-        self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id})
+    def delete(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options)
 
-    def validate(self, address_id: str, *, agent_id: str) -> ValidateAddressOutput:
+    def validate(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
-            self._client.request("POST", f"/addresses/{address_id}/validate", {"agentId": agent_id})
+            self._client.request("POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}, options=options)
         )
 
 
@@ -193,6 +198,7 @@ class AsyncAddressesResource:
         state: str,
         postal_code: str,
         country: str,
+        options: RequestOptions | None = None,
     ) -> AddressOutput:
         body = _build_create_body(
             agent_id=agent_id,
@@ -205,7 +211,7 @@ class AsyncAddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(await self._client.request("POST", "/addresses", body))
+        return AddressOutput.model_validate(await self._client.request("POST", "/addresses", body, options=options))
 
     async def list(
         self,
@@ -214,20 +220,23 @@ class AsyncAddressesResource:
         limit: int | None = None,
         agent_id: str | None = None,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[AddressOutput]:
         raw = await self._client.request(
             "GET",
             "/addresses",
             query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id, type=type),
+            options=options,
         )
         return [AddressOutput.model_validate(item) for item in raw["items"]]
 
-    async def get(self, address_id: str, *, agent_id: str) -> AddressOutput:
+    async def get(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> AddressOutput:
         return AddressOutput.model_validate(
             await self._client.request(
                 "GET",
                 f"/addresses/{address_id}",
                 query={"agentId": agent_id},
+                options=options,
             )
         )
 
@@ -244,6 +253,7 @@ class AsyncAddressesResource:
         state: str | None = None,
         postal_code: str | None = None,
         country: str | None = None,
+        options: RequestOptions | None = None,
     ) -> AddressOutput:
         body = _build_update_body(
             agent_id=agent_id,
@@ -257,15 +267,15 @@ class AsyncAddressesResource:
             country=country,
         )
         return AddressOutput.model_validate(
-            await self._client.request("PUT", f"/addresses/{address_id}", body)
+            await self._client.request("PUT", f"/addresses/{address_id}", body, options=options)
         )
 
-    async def delete(self, address_id: str, *, agent_id: str) -> None:
-        await self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id})
+    async def delete(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options)
 
-    async def validate(self, address_id: str, *, agent_id: str) -> ValidateAddressOutput:
+    async def validate(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
             await self._client.request(
-                "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}
+                "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}, options=options
             )
         )

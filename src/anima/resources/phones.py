@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import PhoneIdentityOutput, PhoneProvisionOutput
 
 
@@ -52,6 +52,7 @@ class PhonesResource:
         area_code: str | None = None,
         capabilities: list[str] | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         return self._client.request(
             "GET",
@@ -62,6 +63,7 @@ class PhonesResource:
                 capabilities=capabilities,
                 limit=limit,
             ),
+            options=options,
         )
 
     def provision(
@@ -71,6 +73,7 @@ class PhonesResource:
         country_code: str | None = None,
         area_code: str | None = None,
         capabilities: list[str] | None = None,
+        options: RequestOptions | None = None,
     ) -> PhoneProvisionOutput:
         body: dict[str, Any] = {"agentId": agent_id}
         if country_code is not None:
@@ -80,15 +83,16 @@ class PhonesResource:
         if capabilities is not None:
             body["capabilities"] = capabilities
         return PhoneProvisionOutput.model_validate(
-            self._client.request("POST", "/phone/provision", body)
+            self._client.request("POST", "/phone/provision", body, options=options)
         )
 
     def list(
         self,
         *,
         agent_id: str,
+        options: RequestOptions | None = None,
     ) -> list[PhoneIdentityOutput]:
-        raw = self._client.request("GET", "/phone/numbers", query={"agentId": agent_id})
+        raw = self._client.request("GET", "/phone/numbers", query={"agentId": agent_id}, options=options)
         return [PhoneIdentityOutput.model_validate(item) for item in raw["items"]]
 
     def release(
@@ -96,11 +100,13 @@ class PhonesResource:
         *,
         agent_id: str,
         phone_number: str,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         return self._client.request(
             "POST",
             "/phone/release",
             {"agentId": agent_id, "phoneNumber": phone_number},
+            options=options,
         )
 
 
@@ -116,6 +122,7 @@ class AsyncPhonesResource:
         area_code: str | None = None,
         capabilities: list[str] | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         return await self._client.request(
             "GET",
@@ -126,6 +133,7 @@ class AsyncPhonesResource:
                 capabilities=capabilities,
                 limit=limit,
             ),
+            options=options,
         )
 
     async def provision(
@@ -135,6 +143,7 @@ class AsyncPhonesResource:
         country_code: str | None = None,
         area_code: str | None = None,
         capabilities: list[str] | None = None,
+        options: RequestOptions | None = None,
     ) -> PhoneProvisionOutput:
         body: dict[str, Any] = {"agentId": agent_id}
         if country_code is not None:
@@ -144,15 +153,16 @@ class AsyncPhonesResource:
         if capabilities is not None:
             body["capabilities"] = capabilities
         return PhoneProvisionOutput.model_validate(
-            await self._client.request("POST", "/phone/provision", body)
+            await self._client.request("POST", "/phone/provision", body, options=options)
         )
 
     async def list(
         self,
         *,
         agent_id: str,
+        options: RequestOptions | None = None,
     ) -> list[PhoneIdentityOutput]:
-        raw = await self._client.request("GET", "/phone/numbers", query={"agentId": agent_id})
+        raw = await self._client.request("GET", "/phone/numbers", query={"agentId": agent_id}, options=options)
         return [PhoneIdentityOutput.model_validate(item) for item in raw["items"]]
 
     async def release(
@@ -160,10 +170,11 @@ class AsyncPhonesResource:
         *,
         agent_id: str,
         phone_number: str,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         return await self._client.request(
             "POST",
             "/phone/release",
             {"agentId": agent_id, "phoneNumber": phone_number},
+            options=options,
         )
-

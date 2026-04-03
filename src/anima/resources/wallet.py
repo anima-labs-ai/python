@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     WalletOutput,
     WalletPayOutput,
@@ -75,6 +75,7 @@ class WalletResource:
         *,
         currency: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletOutput:
         body: dict[str, Any] = {}
         if currency is not None:
@@ -82,12 +83,12 @@ class WalletResource:
         if metadata is not None:
             body["metadata"] = metadata
         return WalletOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/wallet", body or None)
+            self._client.request("POST", f"/agents/{agent_id}/wallet", body or None, options=options)
         )
 
-    def get(self, agent_id: str) -> WalletOutput:
+    def get(self, agent_id: str, *, options: RequestOptions | None = None) -> WalletOutput:
         return WalletOutput.model_validate(
-            self._client.request("GET", f"/agents/{agent_id}/wallet")
+            self._client.request("GET", f"/agents/{agent_id}/wallet", options=options)
         )
 
     def update(
@@ -97,6 +98,7 @@ class WalletResource:
         metadata: dict[str, Any] | None = None,
         spend_limit_daily: float | None = None,
         spend_limit_monthly: float | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletOutput:
         body: dict[str, Any] = {}
         if metadata is not None:
@@ -106,7 +108,7 @@ class WalletResource:
         if spend_limit_monthly is not None:
             body["spendLimitMonthly"] = spend_limit_monthly
         return WalletOutput.model_validate(
-            self._client.request("PUT", f"/agents/{agent_id}/wallet", body)
+            self._client.request("PUT", f"/agents/{agent_id}/wallet", body, options=options)
         )
 
     def pay(
@@ -118,12 +120,13 @@ class WalletResource:
         currency: str | None = None,
         memo: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletPayOutput:
         body = _build_pay_body(
             to=to, amount=amount, currency=currency, memo=memo, metadata=metadata
         )
         return WalletPayOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/wallet/pay", body)
+            self._client.request("POST", f"/agents/{agent_id}/wallet/pay", body, options=options)
         )
 
     def x402_fetch(
@@ -135,6 +138,7 @@ class WalletResource:
         headers: dict[str, str] | None = None,
         body: str | None = None,
         max_payment_amount: float | None = None,
+        options: RequestOptions | None = None,
     ) -> X402FetchOutput:
         req_body = _build_x402_body(
             url=url,
@@ -144,7 +148,7 @@ class WalletResource:
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body)
+            self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options)
         )
 
     def transactions(
@@ -154,19 +158,21 @@ class WalletResource:
         cursor: str | None = None,
         limit: int | None = None,
         status: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[WalletTransactionOutput]:
         raw = self._client.request(
             "GET",
             f"/agents/{agent_id}/wallet/transactions",
             query=_to_tx_query(cursor=cursor, limit=limit, status=status),
+            options=options,
         )
         return [WalletTransactionOutput.model_validate(item) for item in raw["items"]]
 
-    def freeze(self, agent_id: str) -> None:
-        self._client.request("POST", f"/agents/{agent_id}/wallet/freeze")
+    def freeze(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("POST", f"/agents/{agent_id}/wallet/freeze", options=options)
 
-    def unfreeze(self, agent_id: str) -> None:
-        self._client.request("POST", f"/agents/{agent_id}/wallet/unfreeze")
+    def unfreeze(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("POST", f"/agents/{agent_id}/wallet/unfreeze", options=options)
 
 
 class AsyncWalletResource:
@@ -179,6 +185,7 @@ class AsyncWalletResource:
         *,
         currency: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletOutput:
         body: dict[str, Any] = {}
         if currency is not None:
@@ -186,12 +193,12 @@ class AsyncWalletResource:
         if metadata is not None:
             body["metadata"] = metadata
         return WalletOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet", body or None)
+            await self._client.request("POST", f"/agents/{agent_id}/wallet", body or None, options=options)
         )
 
-    async def get(self, agent_id: str) -> WalletOutput:
+    async def get(self, agent_id: str, *, options: RequestOptions | None = None) -> WalletOutput:
         return WalletOutput.model_validate(
-            await self._client.request("GET", f"/agents/{agent_id}/wallet")
+            await self._client.request("GET", f"/agents/{agent_id}/wallet", options=options)
         )
 
     async def update(
@@ -201,6 +208,7 @@ class AsyncWalletResource:
         metadata: dict[str, Any] | None = None,
         spend_limit_daily: float | None = None,
         spend_limit_monthly: float | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletOutput:
         body: dict[str, Any] = {}
         if metadata is not None:
@@ -210,7 +218,7 @@ class AsyncWalletResource:
         if spend_limit_monthly is not None:
             body["spendLimitMonthly"] = spend_limit_monthly
         return WalletOutput.model_validate(
-            await self._client.request("PUT", f"/agents/{agent_id}/wallet", body)
+            await self._client.request("PUT", f"/agents/{agent_id}/wallet", body, options=options)
         )
 
     async def pay(
@@ -222,12 +230,13 @@ class AsyncWalletResource:
         currency: str | None = None,
         memo: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> WalletPayOutput:
         body = _build_pay_body(
             to=to, amount=amount, currency=currency, memo=memo, metadata=metadata
         )
         return WalletPayOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet/pay", body)
+            await self._client.request("POST", f"/agents/{agent_id}/wallet/pay", body, options=options)
         )
 
     async def x402_fetch(
@@ -239,6 +248,7 @@ class AsyncWalletResource:
         headers: dict[str, str] | None = None,
         body: str | None = None,
         max_payment_amount: float | None = None,
+        options: RequestOptions | None = None,
     ) -> X402FetchOutput:
         req_body = _build_x402_body(
             url=url,
@@ -248,7 +258,7 @@ class AsyncWalletResource:
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body)
+            await self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options)
         )
 
     async def transactions(
@@ -258,16 +268,18 @@ class AsyncWalletResource:
         cursor: str | None = None,
         limit: int | None = None,
         status: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[WalletTransactionOutput]:
         raw = await self._client.request(
             "GET",
             f"/agents/{agent_id}/wallet/transactions",
             query=_to_tx_query(cursor=cursor, limit=limit, status=status),
+            options=options,
         )
         return [WalletTransactionOutput.model_validate(item) for item in raw["items"]]
 
-    async def freeze(self, agent_id: str) -> None:
-        await self._client.request("POST", f"/agents/{agent_id}/wallet/freeze")
+    async def freeze(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("POST", f"/agents/{agent_id}/wallet/freeze", options=options)
 
-    async def unfreeze(self, agent_id: str) -> None:
-        await self._client.request("POST", f"/agents/{agent_id}/wallet/unfreeze")
+    async def unfreeze(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("POST", f"/agents/{agent_id}/wallet/unfreeze", options=options)

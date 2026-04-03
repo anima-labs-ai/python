@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 
 
 def _to_query(
@@ -39,6 +39,7 @@ class CallsResource:
         state: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List voice calls, optionally filtered."""
         return self._client.request(
@@ -51,11 +52,12 @@ class CallsResource:
                 limit=limit,
                 offset=offset,
             ),
+            options=options,
         )
 
-    def get(self, call_id: str) -> dict[str, Any]:
+    def get(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
         """Get a specific call by ID."""
-        return self._client.request("GET", f"/voice/calls/{call_id}")
+        return self._client.request("GET", f"/voice/calls/{call_id}", options=options)
 
     def create(
         self,
@@ -65,6 +67,7 @@ class CallsResource:
         tier: str | None = None,
         greeting: str | None = None,
         from_number: str | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """Create an outbound call."""
         body: dict[str, Any] = {"to": to}
@@ -76,11 +79,11 @@ class CallsResource:
             body["greeting"] = greeting
         if from_number is not None:
             body["fromNumber"] = from_number
-        return self._client.request("POST", "/voice/calls", body)
+        return self._client.request("POST", "/voice/calls", body, options=options)
 
-    def get_transcript(self, call_id: str) -> dict[str, Any]:
+    def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
         """Get the transcript for a call."""
-        return self._client.request("GET", f"/voice/calls/{call_id}/transcript")
+        return self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
 
 
 class AsyncCallsResource:
@@ -95,6 +98,7 @@ class AsyncCallsResource:
         state: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List voice calls, optionally filtered."""
         return await self._client.request(
@@ -107,11 +111,12 @@ class AsyncCallsResource:
                 limit=limit,
                 offset=offset,
             ),
+            options=options,
         )
 
-    async def get(self, call_id: str) -> dict[str, Any]:
+    async def get(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
         """Get a specific call by ID."""
-        return await self._client.request("GET", f"/voice/calls/{call_id}")
+        return await self._client.request("GET", f"/voice/calls/{call_id}", options=options)
 
     async def create(
         self,
@@ -121,6 +126,7 @@ class AsyncCallsResource:
         tier: str | None = None,
         greeting: str | None = None,
         from_number: str | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """Create an outbound call."""
         body: dict[str, Any] = {"to": to}
@@ -132,8 +138,8 @@ class AsyncCallsResource:
             body["greeting"] = greeting
         if from_number is not None:
             body["fromNumber"] = from_number
-        return await self._client.request("POST", "/voice/calls", body)
+        return await self._client.request("POST", "/voice/calls", body, options=options)
 
-    async def get_transcript(self, call_id: str) -> dict[str, Any]:
+    async def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
         """Get the transcript for a call."""
-        return await self._client.request("GET", f"/voice/calls/{call_id}/transcript")
+        return await self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)

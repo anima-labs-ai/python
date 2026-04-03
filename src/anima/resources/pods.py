@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import PodOutput, PodUsageOutput
 
 
@@ -77,6 +77,7 @@ class PodsResource:
         resources: dict[str, str] | None = None,
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_create_body(
             agent_id=agent_id,
@@ -86,7 +87,7 @@ class PodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(self._client.request("POST", "/pods", body))
+        return PodOutput.model_validate(self._client.request("POST", "/pods", body, options=options))
 
     def list(
         self,
@@ -94,14 +95,15 @@ class PodsResource:
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[PodOutput]:
         raw = self._client.request(
-            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id)
+            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id), options=options
         )
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
-    def get(self, pod_id: str) -> PodOutput:
-        return PodOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}"))
+    def get(self, pod_id: str, *, options: RequestOptions | None = None) -> PodOutput:
+        return PodOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}", options=options))
 
     def update(
         self,
@@ -111,15 +113,16 @@ class PodsResource:
         resources: dict[str, str] | None = None,
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
-        return PodOutput.model_validate(self._client.request("PUT", f"/pods/{pod_id}", body))
+        return PodOutput.model_validate(self._client.request("PUT", f"/pods/{pod_id}", body, options=options))
 
-    def delete(self, pod_id: str) -> None:
-        self._client.request("DELETE", f"/pods/{pod_id}")
+    def delete(self, pod_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/pods/{pod_id}", options=options)
 
-    def usage(self, pod_id: str) -> PodUsageOutput:
-        return PodUsageOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}/usage"))
+    def usage(self, pod_id: str, *, options: RequestOptions | None = None) -> PodUsageOutput:
+        return PodUsageOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}/usage", options=options))
 
 
 class AsyncPodsResource:
@@ -135,6 +138,7 @@ class AsyncPodsResource:
         resources: dict[str, str] | None = None,
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_create_body(
             agent_id=agent_id,
@@ -144,7 +148,7 @@ class AsyncPodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(await self._client.request("POST", "/pods", body))
+        return PodOutput.model_validate(await self._client.request("POST", "/pods", body, options=options))
 
     async def list(
         self,
@@ -152,14 +156,15 @@ class AsyncPodsResource:
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[PodOutput]:
         raw = await self._client.request(
-            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id)
+            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id), options=options
         )
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
-    async def get(self, pod_id: str) -> PodOutput:
-        return PodOutput.model_validate(await self._client.request("GET", f"/pods/{pod_id}"))
+    async def get(self, pod_id: str, *, options: RequestOptions | None = None) -> PodOutput:
+        return PodOutput.model_validate(await self._client.request("GET", f"/pods/{pod_id}", options=options))
 
     async def update(
         self,
@@ -169,14 +174,15 @@ class AsyncPodsResource:
         resources: dict[str, str] | None = None,
         env: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
-        return PodOutput.model_validate(await self._client.request("PUT", f"/pods/{pod_id}", body))
+        return PodOutput.model_validate(await self._client.request("PUT", f"/pods/{pod_id}", body, options=options))
 
-    async def delete(self, pod_id: str) -> None:
-        await self._client.request("DELETE", f"/pods/{pod_id}")
+    async def delete(self, pod_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/pods/{pod_id}", options=options)
 
-    async def usage(self, pod_id: str) -> PodUsageOutput:
+    async def usage(self, pod_id: str, *, options: RequestOptions | None = None) -> PodUsageOutput:
         return PodUsageOutput.model_validate(
-            await self._client.request("GET", f"/pods/{pod_id}/usage")
+            await self._client.request("GET", f"/pods/{pod_id}/usage", options=options)
         )

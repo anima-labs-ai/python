@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 
 
 def _to_query(
@@ -31,12 +31,14 @@ class VoicesResource:
         tier: str | None = None,
         gender: str | None = None,
         language: str | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List available voices, optionally filtered by tier, gender, or language."""
         return self._client.request(
             "GET",
             "/voice/catalog",
             query=_to_query(tier=tier, gender=gender, language=language),
+            options=options,
         )
 
 
@@ -50,10 +52,12 @@ class AsyncVoicesResource:
         tier: str | None = None,
         gender: str | None = None,
         language: str | None = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List available voices, optionally filtered by tier, gender, or language."""
         return await self._client.request(
             "GET",
             "/voice/catalog",
             query=_to_query(tier=tier, gender=gender, language=language),
+            options=options,
         )

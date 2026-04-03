@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import PaginatedResponse, SecurityEventOutput, SecurityScanOutput
 
 
@@ -19,6 +19,7 @@ class SecurityResource:
         agent_id: str | None = None,
         subject: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> SecurityScanOutput:
         payload: dict[str, Any] = {"orgId": org_id, "channel": channel, "body": body}
         if agent_id is not None:
@@ -28,7 +29,7 @@ class SecurityResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return SecurityScanOutput.model_validate(
-            self._client.request("POST", "/security/scan", payload)
+            self._client.request("POST", "/security/scan", payload, options=options)
         )
 
     def list_events(
@@ -40,6 +41,7 @@ class SecurityResource:
         severity: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[SecurityEventOutput]:
         query: dict[str, str] = {"orgId": org_id}
         if agent_id is not None:
@@ -52,7 +54,7 @@ class SecurityResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query)
+        raw = self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options)
         return PaginatedResponse[SecurityEventOutput].model_validate(raw)
 
 
@@ -69,6 +71,7 @@ class AsyncSecurityResource:
         agent_id: str | None = None,
         subject: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> SecurityScanOutput:
         payload: dict[str, Any] = {"orgId": org_id, "channel": channel, "body": body}
         if agent_id is not None:
@@ -78,7 +81,7 @@ class AsyncSecurityResource:
         if metadata is not None:
             payload["metadata"] = metadata
         return SecurityScanOutput.model_validate(
-            await self._client.request("POST", "/security/scan", payload)
+            await self._client.request("POST", "/security/scan", payload, options=options)
         )
 
     async def list_events(
@@ -90,6 +93,7 @@ class AsyncSecurityResource:
         severity: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[SecurityEventOutput]:
         query: dict[str, str] = {"orgId": org_id}
         if agent_id is not None:
@@ -102,5 +106,5 @@ class AsyncSecurityResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query)
+        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options)
         return PaginatedResponse[SecurityEventOutput].model_validate(raw)

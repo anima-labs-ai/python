@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import AuditLogExportOutput, AuditLogOutput, PaginatedResponse
 
 
@@ -24,6 +24,7 @@ class AuditResource:
         to: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[AuditLogOutput]:
         query: dict[str, str] = {}
         if actor_id is not None:
@@ -46,12 +47,12 @@ class AuditResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs", query=query)
+        raw = self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs", query=query, options=options)
         return PaginatedResponse[AuditLogOutput].model_validate(raw)
 
-    def get(self, *, org_id: str, log_id: str) -> AuditLogOutput:
+    def get(self, *, org_id: str, log_id: str, options: RequestOptions | None = None) -> AuditLogOutput:
         return AuditLogOutput.model_validate(
-            self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs/{log_id}")
+            self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs/{log_id}", options=options)
         )
 
     def export(
@@ -64,6 +65,7 @@ class AuditResource:
         actor_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> AuditLogExportOutput:
         payload: dict[str, Any] = {}
         if format is not None:
@@ -79,7 +81,7 @@ class AuditResource:
         if resource_type is not None:
             payload["resourceType"] = resource_type
         return AuditLogExportOutput.model_validate(
-            self._client.request("POST", f"/v1/orgs/{org_id}/audit/export", payload)
+            self._client.request("POST", f"/v1/orgs/{org_id}/audit/export", payload, options=options)
         )
 
 
@@ -101,6 +103,7 @@ class AsyncAuditResource:
         to: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[AuditLogOutput]:
         query: dict[str, str] = {}
         if actor_id is not None:
@@ -123,12 +126,12 @@ class AsyncAuditResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs", query=query)
+        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs", query=query, options=options)
         return PaginatedResponse[AuditLogOutput].model_validate(raw)
 
-    async def get(self, *, org_id: str, log_id: str) -> AuditLogOutput:
+    async def get(self, *, org_id: str, log_id: str, options: RequestOptions | None = None) -> AuditLogOutput:
         return AuditLogOutput.model_validate(
-            await self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs/{log_id}")
+            await self._client.request("GET", f"/v1/orgs/{org_id}/audit/logs/{log_id}", options=options)
         )
 
     async def export(
@@ -141,6 +144,7 @@ class AsyncAuditResource:
         actor_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> AuditLogExportOutput:
         payload: dict[str, Any] = {}
         if format is not None:
@@ -156,5 +160,5 @@ class AsyncAuditResource:
         if resource_type is not None:
             payload["resourceType"] = resource_type
         return AuditLogExportOutput.model_validate(
-            await self._client.request("POST", f"/v1/orgs/{org_id}/audit/export", payload)
+            await self._client.request("POST", f"/v1/orgs/{org_id}/audit/export", payload, options=options)
         )

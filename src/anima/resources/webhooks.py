@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     PaginatedResponse,
     WebhookDeliveryOutput,
@@ -49,23 +49,25 @@ class WebhooksResource:
         events: list[str],
         description: str | None = None,
         active: bool = True,
+        options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
-        return WebhookOutput.model_validate(self._client.request("POST", "/webhooks", body))
+        return WebhookOutput.model_validate(self._client.request("POST", "/webhooks", body, options=options))
 
-    def get(self, webhook_id: str) -> WebhookOutput:
-        return WebhookOutput.model_validate(self._client.request("GET", f"/webhooks/{webhook_id}"))
+    def get(self, webhook_id: str, *, options: RequestOptions | None = None) -> WebhookOutput:
+        return WebhookOutput.model_validate(self._client.request("GET", f"/webhooks/{webhook_id}", options=options))
 
     def list(
         self,
         *,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[WebhookOutput]:
         raw = self._client.request(
-            "GET", "/webhooks", query=_to_list_query(cursor=cursor, limit=limit)
+            "GET", "/webhooks", query=_to_list_query(cursor=cursor, limit=limit), options=options
         )
         return PaginatedResponse[WebhookOutput].model_validate(raw)
 
@@ -77,6 +79,7 @@ class WebhooksResource:
         events: list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"id": webhook_id}
         if url is not None:
@@ -88,23 +91,24 @@ class WebhooksResource:
         if active is not None:
             body["active"] = active
         return WebhookOutput.model_validate(
-            self._client.request("PUT", f"/webhooks/{webhook_id}", body)
+            self._client.request("PUT", f"/webhooks/{webhook_id}", body, options=options)
         )
 
-    def delete(self, webhook_id: str) -> None:
-        self._client.request("DELETE", f"/webhooks/{webhook_id}")
+    def delete(self, webhook_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/webhooks/{webhook_id}", options=options)
 
     def test(
         self,
         webhook_id: str,
         *,
         event: str | None = None,
+        options: RequestOptions | None = None,
     ) -> WebhookTestOutput:
         body: dict[str, Any] = {"id": webhook_id}
         if event is not None:
             body["event"] = event
         return WebhookTestOutput.model_validate(
-            self._client.request("POST", f"/webhooks/{webhook_id}/test", body)
+            self._client.request("POST", f"/webhooks/{webhook_id}/test", body, options=options)
         )
 
     def list_deliveries(
@@ -113,11 +117,13 @@ class WebhooksResource:
         *,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[WebhookDeliveryOutput]:
         raw = self._client.request(
             "GET",
             f"/webhooks/{webhook_id}/deliveries",
             query=_to_delivery_query(webhook_id, cursor=cursor, limit=limit),
+            options=options,
         )
         return PaginatedResponse[WebhookDeliveryOutput].model_validate(raw)
 
@@ -133,15 +139,16 @@ class AsyncWebhooksResource:
         events: list[str],
         description: str | None = None,
         active: bool = True,
+        options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
-        return WebhookOutput.model_validate(await self._client.request("POST", "/webhooks", body))
+        return WebhookOutput.model_validate(await self._client.request("POST", "/webhooks", body, options=options))
 
-    async def get(self, webhook_id: str) -> WebhookOutput:
+    async def get(self, webhook_id: str, *, options: RequestOptions | None = None) -> WebhookOutput:
         return WebhookOutput.model_validate(
-            await self._client.request("GET", f"/webhooks/{webhook_id}")
+            await self._client.request("GET", f"/webhooks/{webhook_id}", options=options)
         )
 
     async def list(
@@ -149,9 +156,10 @@ class AsyncWebhooksResource:
         *,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[WebhookOutput]:
         raw = await self._client.request(
-            "GET", "/webhooks", query=_to_list_query(cursor=cursor, limit=limit)
+            "GET", "/webhooks", query=_to_list_query(cursor=cursor, limit=limit), options=options
         )
         return PaginatedResponse[WebhookOutput].model_validate(raw)
 
@@ -163,6 +171,7 @@ class AsyncWebhooksResource:
         events: list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"id": webhook_id}
         if url is not None:
@@ -174,23 +183,24 @@ class AsyncWebhooksResource:
         if active is not None:
             body["active"] = active
         return WebhookOutput.model_validate(
-            await self._client.request("PUT", f"/webhooks/{webhook_id}", body)
+            await self._client.request("PUT", f"/webhooks/{webhook_id}", body, options=options)
         )
 
-    async def delete(self, webhook_id: str) -> None:
-        await self._client.request("DELETE", f"/webhooks/{webhook_id}")
+    async def delete(self, webhook_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/webhooks/{webhook_id}", options=options)
 
     async def test(
         self,
         webhook_id: str,
         *,
         event: str | None = None,
+        options: RequestOptions | None = None,
     ) -> WebhookTestOutput:
         body: dict[str, Any] = {"id": webhook_id}
         if event is not None:
             body["event"] = event
         return WebhookTestOutput.model_validate(
-            await self._client.request("POST", f"/webhooks/{webhook_id}/test", body)
+            await self._client.request("POST", f"/webhooks/{webhook_id}/test", body, options=options)
         )
 
     async def list_deliveries(
@@ -199,10 +209,12 @@ class AsyncWebhooksResource:
         *,
         cursor: str | None = None,
         limit: int | None = None,
+        options: RequestOptions | None = None,
     ) -> PaginatedResponse[WebhookDeliveryOutput]:
         raw = await self._client.request(
             "GET",
             f"/webhooks/{webhook_id}/deliveries",
             query=_to_delivery_query(webhook_id, cursor=cursor, limit=limit),
+            options=options,
         )
         return PaginatedResponse[WebhookDeliveryOutput].model_validate(raw)

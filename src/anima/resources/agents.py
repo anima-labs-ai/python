@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AgentOutput, PaginatedResponse
 
@@ -42,6 +42,7 @@ class AgentsResource:
         email: str | None = None,
         provision_phone: bool | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> AgentOutput:
         body: dict[str, Any] = {"orgId": org_id, "name": name, "slug": slug}
         if email is not None:
@@ -50,10 +51,10 @@ class AgentsResource:
             body["provisionPhone"] = provision_phone
         if metadata is not None:
             body["metadata"] = metadata
-        return AgentOutput.model_validate(self._client.request("POST", "/agents", body))
+        return AgentOutput.model_validate(self._client.request("POST", "/agents", body, options=options))
 
-    def get(self, agent_id: str) -> AgentOutput:
-        return AgentOutput.model_validate(self._client.request("GET", f"/agents/{agent_id}"))
+    def get(self, agent_id: str, *, options: RequestOptions | None = None) -> AgentOutput:
+        return AgentOutput.model_validate(self._client.request("GET", f"/agents/{agent_id}", options=options))
 
     def list(
         self,
@@ -88,6 +89,7 @@ class AgentsResource:
         slug: str | None = None,
         status: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> AgentOutput:
         body: dict[str, Any] = {"id": agent_id}
         if name is not None:
@@ -99,14 +101,14 @@ class AgentsResource:
         if metadata is not None:
             body["metadata"] = metadata
         return AgentOutput.model_validate(
-            self._client.request("PATCH", f"/agents/{agent_id}", body)
+            self._client.request("PATCH", f"/agents/{agent_id}", body, options=options)
         )
 
-    def delete(self, agent_id: str) -> None:
-        self._client.request("DELETE", f"/agents/{agent_id}")
+    def delete(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/agents/{agent_id}", options=options)
 
-    def rotate_key(self, agent_id: str) -> dict[str, str]:
-        raw = self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id})
+    def rotate_key(self, agent_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
+        raw = self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options)
         return {"api_key": raw["apiKey"], "api_key_prefix": raw["apiKeyPrefix"]}
 
 
@@ -123,6 +125,7 @@ class AsyncAgentsResource:
         email: str | None = None,
         provision_phone: bool | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> AgentOutput:
         body: dict[str, Any] = {"orgId": org_id, "name": name, "slug": slug}
         if email is not None:
@@ -131,10 +134,10 @@ class AsyncAgentsResource:
             body["provisionPhone"] = provision_phone
         if metadata is not None:
             body["metadata"] = metadata
-        return AgentOutput.model_validate(await self._client.request("POST", "/agents", body))
+        return AgentOutput.model_validate(await self._client.request("POST", "/agents", body, options=options))
 
-    async def get(self, agent_id: str) -> AgentOutput:
-        return AgentOutput.model_validate(await self._client.request("GET", f"/agents/{agent_id}"))
+    async def get(self, agent_id: str, *, options: RequestOptions | None = None) -> AgentOutput:
+        return AgentOutput.model_validate(await self._client.request("GET", f"/agents/{agent_id}", options=options))
 
     def list(
         self,
@@ -169,6 +172,7 @@ class AsyncAgentsResource:
         slug: str | None = None,
         status: str | None = None,
         metadata: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> AgentOutput:
         body: dict[str, Any] = {"id": agent_id}
         if name is not None:
@@ -180,12 +184,12 @@ class AsyncAgentsResource:
         if metadata is not None:
             body["metadata"] = metadata
         return AgentOutput.model_validate(
-            await self._client.request("PATCH", f"/agents/{agent_id}", body)
+            await self._client.request("PATCH", f"/agents/{agent_id}", body, options=options)
         )
 
-    async def delete(self, agent_id: str) -> None:
-        await self._client.request("DELETE", f"/agents/{agent_id}")
+    async def delete(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/agents/{agent_id}", options=options)
 
-    async def rotate_key(self, agent_id: str) -> dict[str, str]:
-        raw = await self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id})
+    async def rotate_key(self, agent_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
+        raw = await self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options)
         return {"api_key": raw["apiKey"], "api_key_prefix": raw["apiKeyPrefix"]}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     VaultCredential,
     VaultIdentityOutput,
@@ -15,29 +15,30 @@ class VaultResource:
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
 
-    def provision(self, *, agent_id: str) -> VaultIdentityOutput:
+    def provision(self, *, agent_id: str, options: RequestOptions | None = None) -> VaultIdentityOutput:
         return VaultIdentityOutput.model_validate(
-            self._client.request("POST", "/vault/provision", {"agentId": agent_id})
+            self._client.request("POST", "/vault/provision", {"agentId": agent_id}, options=options)
         )
 
-    def deprovision(self, *, agent_id: str) -> None:
-        self._client.request("POST", "/vault/deprovision", {"agentId": agent_id})
+    def deprovision(self, *, agent_id: str, options: RequestOptions | None = None) -> None:
+        self._client.request("POST", "/vault/deprovision", {"agentId": agent_id}, options=options)
 
     def list_credentials(
         self,
         *,
         agent_id: str,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[VaultCredential]:
         query: dict[str, str] = {"agentId": agent_id}
         if type is not None:
             query["type"] = type
-        raw = self._client.request("GET", "/vault/credentials", query=query)
+        raw = self._client.request("GET", "/vault/credentials", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
-    def get_credential(self, credential_id: str) -> VaultCredential:
+    def get_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultCredential:
         return VaultCredential.model_validate(
-            self._client.request("GET", f"/vault/credentials/{credential_id}")
+            self._client.request("GET", f"/vault/credentials/{credential_id}", options=options)
         )
 
     def create_credential(
@@ -52,6 +53,7 @@ class VaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
+        options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {
             "agentId": agent_id,
@@ -70,7 +72,7 @@ class VaultResource:
         if fields is not None:
             body["fields"] = fields
         return VaultCredential.model_validate(
-            self._client.request("POST", "/vault/credentials", body)
+            self._client.request("POST", "/vault/credentials", body, options=options)
         )
 
     def update_credential(
@@ -84,6 +86,7 @@ class VaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {}
         if name is not None:
@@ -101,11 +104,11 @@ class VaultResource:
         if favorite is not None:
             body["favorite"] = favorite
         return VaultCredential.model_validate(
-            self._client.request("PUT", f"/vault/credentials/{credential_id}", body)
+            self._client.request("PUT", f"/vault/credentials/{credential_id}", body, options=options)
         )
 
-    def delete_credential(self, credential_id: str) -> None:
-        self._client.request("DELETE", f"/vault/credentials/{credential_id}")
+    def delete_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/vault/credentials/{credential_id}", options=options)
 
     def search(
         self,
@@ -113,11 +116,12 @@ class VaultResource:
         agent_id: str,
         search: str,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[VaultCredential]:
         query: dict[str, str] = {"agentId": agent_id, "search": search}
         if type is not None:
             query["type"] = type
-        raw = self._client.request("GET", "/vault/search", query=query)
+        raw = self._client.request("GET", "/vault/search", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
     def generate_password(
@@ -128,6 +132,7 @@ class VaultResource:
         lowercase: bool | None = None,
         numbers: bool | None = None,
         symbols: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> str:
         body: dict[str, Any] = {}
         if length is not None:
@@ -140,50 +145,51 @@ class VaultResource:
             body["numbers"] = numbers
         if symbols is not None:
             body["symbols"] = symbols
-        raw = self._client.request("POST", "/vault/generate-password", body or None)
+        raw = self._client.request("POST", "/vault/generate-password", body or None, options=options)
         return raw["password"]
 
-    def get_totp(self, credential_id: str) -> VaultTotpOutput:
+    def get_totp(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultTotpOutput:
         return VaultTotpOutput.model_validate(
-            self._client.request("GET", f"/vault/totp/{credential_id}")
+            self._client.request("GET", f"/vault/totp/{credential_id}", options=options)
         )
 
-    def status(self, agent_id: str) -> VaultStatusOutput:
+    def status(self, agent_id: str, *, options: RequestOptions | None = None) -> VaultStatusOutput:
         return VaultStatusOutput.model_validate(
-            self._client.request("GET", "/vault/status", query={"agentId": agent_id})
+            self._client.request("GET", "/vault/status", query={"agentId": agent_id}, options=options)
         )
 
-    def sync(self, agent_id: str) -> None:
-        self._client.request("POST", "/vault/sync", {"agentId": agent_id})
+    def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("POST", "/vault/sync", {"agentId": agent_id}, options=options)
 
 
 class AsyncVaultResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
 
-    async def provision(self, *, agent_id: str) -> VaultIdentityOutput:
+    async def provision(self, *, agent_id: str, options: RequestOptions | None = None) -> VaultIdentityOutput:
         return VaultIdentityOutput.model_validate(
-            await self._client.request("POST", "/vault/provision", {"agentId": agent_id})
+            await self._client.request("POST", "/vault/provision", {"agentId": agent_id}, options=options)
         )
 
-    async def deprovision(self, *, agent_id: str) -> None:
-        await self._client.request("POST", "/vault/deprovision", {"agentId": agent_id})
+    async def deprovision(self, *, agent_id: str, options: RequestOptions | None = None) -> None:
+        await self._client.request("POST", "/vault/deprovision", {"agentId": agent_id}, options=options)
 
     async def list_credentials(
         self,
         *,
         agent_id: str,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[VaultCredential]:
         query: dict[str, str] = {"agentId": agent_id}
         if type is not None:
             query["type"] = type
-        raw = await self._client.request("GET", "/vault/credentials", query=query)
+        raw = await self._client.request("GET", "/vault/credentials", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
-    async def get_credential(self, credential_id: str) -> VaultCredential:
+    async def get_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultCredential:
         return VaultCredential.model_validate(
-            await self._client.request("GET", f"/vault/credentials/{credential_id}")
+            await self._client.request("GET", f"/vault/credentials/{credential_id}", options=options)
         )
 
     async def create_credential(
@@ -198,6 +204,7 @@ class AsyncVaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
+        options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {
             "agentId": agent_id,
@@ -216,7 +223,7 @@ class AsyncVaultResource:
         if fields is not None:
             body["fields"] = fields
         return VaultCredential.model_validate(
-            await self._client.request("POST", "/vault/credentials", body)
+            await self._client.request("POST", "/vault/credentials", body, options=options)
         )
 
     async def update_credential(
@@ -230,6 +237,7 @@ class AsyncVaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {}
         if name is not None:
@@ -247,11 +255,11 @@ class AsyncVaultResource:
         if favorite is not None:
             body["favorite"] = favorite
         return VaultCredential.model_validate(
-            await self._client.request("PUT", f"/vault/credentials/{credential_id}", body)
+            await self._client.request("PUT", f"/vault/credentials/{credential_id}", body, options=options)
         )
 
-    async def delete_credential(self, credential_id: str) -> None:
-        await self._client.request("DELETE", f"/vault/credentials/{credential_id}")
+    async def delete_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/vault/credentials/{credential_id}", options=options)
 
     async def search(
         self,
@@ -259,11 +267,12 @@ class AsyncVaultResource:
         agent_id: str,
         search: str,
         type: str | None = None,
+        options: RequestOptions | None = None,
     ) -> list[VaultCredential]:
         query: dict[str, str] = {"agentId": agent_id, "search": search}
         if type is not None:
             query["type"] = type
-        raw = await self._client.request("GET", "/vault/search", query=query)
+        raw = await self._client.request("GET", "/vault/search", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
     async def generate_password(
@@ -274,6 +283,7 @@ class AsyncVaultResource:
         lowercase: bool | None = None,
         numbers: bool | None = None,
         symbols: bool | None = None,
+        options: RequestOptions | None = None,
     ) -> str:
         body: dict[str, Any] = {}
         if length is not None:
@@ -286,18 +296,18 @@ class AsyncVaultResource:
             body["numbers"] = numbers
         if symbols is not None:
             body["symbols"] = symbols
-        raw = await self._client.request("POST", "/vault/generate-password", body or None)
+        raw = await self._client.request("POST", "/vault/generate-password", body or None, options=options)
         return raw["password"]
 
-    async def get_totp(self, credential_id: str) -> VaultTotpOutput:
+    async def get_totp(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultTotpOutput:
         return VaultTotpOutput.model_validate(
-            await self._client.request("GET", f"/vault/totp/{credential_id}")
+            await self._client.request("GET", f"/vault/totp/{credential_id}", options=options)
         )
 
-    async def status(self, agent_id: str) -> VaultStatusOutput:
+    async def status(self, agent_id: str, *, options: RequestOptions | None = None) -> VaultStatusOutput:
         return VaultStatusOutput.model_validate(
-            await self._client.request("GET", "/vault/status", query={"agentId": agent_id})
+            await self._client.request("GET", "/vault/status", query={"agentId": agent_id}, options=options)
         )
 
-    async def sync(self, agent_id: str) -> None:
-        await self._client.request("POST", "/vault/sync", {"agentId": agent_id})
+    async def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("POST", "/vault/sync", {"agentId": agent_id}, options=options)

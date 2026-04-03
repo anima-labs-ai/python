@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
 
@@ -45,6 +45,7 @@ class EmailsResource:
         filename: str,
         mime_type: str,
         size_bytes: int,
+        options: RequestOptions | None = None,
     ) -> AttachmentOutput:
         payload = {
             "messageId": message_id,
@@ -53,12 +54,12 @@ class EmailsResource:
             "sizeBytes": size_bytes,
         }
         return AttachmentOutput.model_validate(
-            self._client.request("POST", f"/messages/{message_id}/attachments", payload)
+            self._client.request("POST", f"/messages/{message_id}/attachments", payload, options=options)
         )
 
-    def get_attachment_url(self, attachment_id: str) -> AttachmentDownloadOutput:
+    def get_attachment_url(self, attachment_id: str, *, options: RequestOptions | None = None) -> AttachmentDownloadOutput:
         return AttachmentDownloadOutput.model_validate(
-            self._client.request("GET", f"/attachments/{attachment_id}/download")
+            self._client.request("GET", f"/attachments/{attachment_id}/download", options=options)
         )
 
 
@@ -86,6 +87,7 @@ class AsyncEmailsResource:
         filename: str,
         mime_type: str,
         size_bytes: int,
+        options: RequestOptions | None = None,
     ) -> AttachmentOutput:
         payload = {
             "messageId": message_id,
@@ -94,10 +96,10 @@ class AsyncEmailsResource:
             "sizeBytes": size_bytes,
         }
         return AttachmentOutput.model_validate(
-            await self._client.request("POST", f"/messages/{message_id}/attachments", payload)
+            await self._client.request("POST", f"/messages/{message_id}/attachments", payload, options=options)
         )
 
-    async def get_attachment_url(self, attachment_id: str) -> AttachmentDownloadOutput:
+    async def get_attachment_url(self, attachment_id: str, *, options: RequestOptions | None = None) -> AttachmentDownloadOutput:
         return AttachmentDownloadOutput.model_validate(
-            await self._client.request("GET", f"/attachments/{attachment_id}/download")
+            await self._client.request("GET", f"/attachments/{attachment_id}/download", options=options)
         )

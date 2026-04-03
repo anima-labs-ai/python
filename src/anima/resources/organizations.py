@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import OrganizationOutput, PaginatedResponse
 
@@ -35,6 +35,7 @@ class OrganizationsResource:
         clerk_org_id: str | None = None,
         tier: str | None = None,
         settings: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> OrganizationOutput:
         body: dict[str, Any] = {"name": name, "slug": slug}
         if clerk_org_id is not None:
@@ -43,10 +44,10 @@ class OrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(self._client.request("POST", "/orgs", body))
+        return OrganizationOutput.model_validate(self._client.request("POST", "/orgs", body, options=options))
 
-    def get(self, org_id: str) -> OrganizationOutput:
-        return OrganizationOutput.model_validate(self._client.request("GET", f"/orgs/{org_id}"))
+    def get(self, org_id: str, *, options: RequestOptions | None = None) -> OrganizationOutput:
+        return OrganizationOutput.model_validate(self._client.request("GET", f"/orgs/{org_id}", options=options))
 
     def list(
         self,
@@ -70,6 +71,7 @@ class OrganizationsResource:
         clerk_org_id: str | None = None,
         tier: str | None = None,
         settings: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> OrganizationOutput:
         body: dict[str, Any] = {"id": org_id}
         if name is not None:
@@ -83,14 +85,14 @@ class OrganizationsResource:
         if settings is not None:
             body["settings"] = settings
         return OrganizationOutput.model_validate(
-            self._client.request("PATCH", f"/orgs/{org_id}", body)
+            self._client.request("PATCH", f"/orgs/{org_id}", body, options=options)
         )
 
-    def delete(self, org_id: str) -> None:
-        self._client.request("DELETE", f"/orgs/{org_id}")
+    def delete(self, org_id: str, *, options: RequestOptions | None = None) -> None:
+        self._client.request("DELETE", f"/orgs/{org_id}", options=options)
 
-    def rotate_key(self, org_id: str) -> dict[str, str]:
-        raw = self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id})
+    def rotate_key(self, org_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
+        raw = self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options)
         return {"master_key": raw["masterKey"]}
 
 
@@ -106,6 +108,7 @@ class AsyncOrganizationsResource:
         clerk_org_id: str | None = None,
         tier: str | None = None,
         settings: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> OrganizationOutput:
         body: dict[str, Any] = {"name": name, "slug": slug}
         if clerk_org_id is not None:
@@ -114,11 +117,11 @@ class AsyncOrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(await self._client.request("POST", "/orgs", body))
+        return OrganizationOutput.model_validate(await self._client.request("POST", "/orgs", body, options=options))
 
-    async def get(self, org_id: str) -> OrganizationOutput:
+    async def get(self, org_id: str, *, options: RequestOptions | None = None) -> OrganizationOutput:
         return OrganizationOutput.model_validate(
-            await self._client.request("GET", f"/orgs/{org_id}")
+            await self._client.request("GET", f"/orgs/{org_id}", options=options)
         )
 
     def list(
@@ -143,6 +146,7 @@ class AsyncOrganizationsResource:
         clerk_org_id: str | None = None,
         tier: str | None = None,
         settings: dict[str, Any] | None = None,
+        options: RequestOptions | None = None,
     ) -> OrganizationOutput:
         body: dict[str, Any] = {"id": org_id}
         if name is not None:
@@ -156,12 +160,12 @@ class AsyncOrganizationsResource:
         if settings is not None:
             body["settings"] = settings
         return OrganizationOutput.model_validate(
-            await self._client.request("PATCH", f"/orgs/{org_id}", body)
+            await self._client.request("PATCH", f"/orgs/{org_id}", body, options=options)
         )
 
-    async def delete(self, org_id: str) -> None:
-        await self._client.request("DELETE", f"/orgs/{org_id}")
+    async def delete(self, org_id: str, *, options: RequestOptions | None = None) -> None:
+        await self._client.request("DELETE", f"/orgs/{org_id}", options=options)
 
-    async def rotate_key(self, org_id: str) -> dict[str, str]:
-        raw = await self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id})
+    async def rotate_key(self, org_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
+        raw = await self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options)
         return {"master_key": raw["masterKey"]}
