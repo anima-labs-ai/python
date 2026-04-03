@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
+import uuid
+from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
 import httpx
@@ -25,6 +27,17 @@ DEFAULT_BASE_URL = "https://api.useanima.sh"
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_RETRIES = 3
 RETRY_DELAYS = (1.0, 2.0, 4.0)
+
+_MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+@dataclass
+class RequestOptions:
+    """Per-request overrides for mutating operations."""
+
+    idempotency_key: str | None = None
+    timeout: float | None = None
+    max_retries: int | None = None
 
 
 def _should_retry(status_code: int) -> bool:
@@ -68,10 +81,16 @@ def _parse_error(response: httpx.Response) -> APIError:
     return APIError(message, status, code, details)
 
 
-def _build_headers(api_key: str, has_body: bool) -> dict[str, str]:
+def _build_headers(
+    api_key: str,
+    has_body: bool,
+    idempotency_key: str | None = None,
+) -> dict[str, str]:
     headers: dict[str, str] = {"Authorization": f"Bearer {api_key}"}
     if has_body:
         headers["Content-Type"] = "application/json"
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key
     return headers
 
 
@@ -100,11 +119,17 @@ class HTTPClient:
         path: str,
         body: Any | None = None,
         query: dict[str, str] | None = None,
+        options: RequestOptions | None = None,
     ) -> Any:
         url = self._build_url(path)
-        headers = _build_headers(self._api_key, body is not None)
+        max_retries = (options and options.max_retries) or self._max_retries
+        idem_key = (
+            (options and options.idempotency_key)
+            or (str(uuid.uuid4()) if method in _MUTATING_METHODS else None)
+        )
+        headers = _build_headers(self._api_key, body is not None, idem_key)
 
-        for attempt in range(self._max_retries + 1):
+        for attempt in range(max_retries + 1):
             try:
                 response = self._client.request(
                     method,
@@ -119,7 +144,7 @@ class HTTPClient:
                         return None
                     return response.json()
 
-                if _should_retry(response.status_code) and attempt < self._max_retries:
+                if _should_retry(response.status_code) and attempt < max_retries:
                     delay = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
                     retry_header = response.headers.get("retry-after")
                     if retry_header and response.status_code == 429:
@@ -133,14 +158,14 @@ class HTTPClient:
             except APIError:
                 raise
             except httpx.TimeoutException:
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     time.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     time.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
@@ -177,11 +202,17 @@ class AsyncHTTPClient:
         path: str,
         body: Any | None = None,
         query: dict[str, str] | None = None,
+        options: RequestOptions | None = None,
     ) -> Any:
         url = self._build_url(path)
-        headers = _build_headers(self._api_key, body is not None)
+        max_retries = (options and options.max_retries) or self._max_retries
+        idem_key = (
+            (options and options.idempotency_key)
+            or (str(uuid.uuid4()) if method in _MUTATING_METHODS else None)
+        )
+        headers = _build_headers(self._api_key, body is not None, idem_key)
 
-        for attempt in range(self._max_retries + 1):
+        for attempt in range(max_retries + 1):
             try:
                 response = await self._client.request(
                     method,
@@ -196,7 +227,7 @@ class AsyncHTTPClient:
                         return None
                     return response.json()
 
-                if _should_retry(response.status_code) and attempt < self._max_retries:
+                if _should_retry(response.status_code) and attempt < max_retries:
                     delay = RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)]
                     retry_header = response.headers.get("retry-after")
                     if retry_header and response.status_code == 429:
@@ -210,14 +241,14 @@ class AsyncHTTPClient:
             except APIError:
                 raise
             except httpx.TimeoutException:
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(
                     f"Request timed out after {self._timeout}s", 408, "TIMEOUT"
                 ) from None
             except httpx.HTTPError as exc:
-                if attempt < self._max_retries:
+                if attempt < max_retries:
                     await asyncio.sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
                     continue
                 raise APIError(str(exc), 0, "NETWORK_ERROR") from exc
