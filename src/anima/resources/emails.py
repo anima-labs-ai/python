@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .._http import AsyncHTTPClient, HTTPClient
+from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
 
 
@@ -30,13 +31,12 @@ class EmailsResource:
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
-    ) -> PaginatedResponse[MessageOutput]:
-        raw = self._client.request(
-            "GET",
-            "/email",
-            query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id),
-        )
-        return PaginatedResponse[MessageOutput].model_validate(raw)
+    ) -> SyncPageIterator[MessageOutput]:
+        def _fetch(cursor: str | None = cursor, limit: int | None = limit, agent_id: str | None = agent_id) -> PaginatedResponse[MessageOutput]:
+            raw = self._client.request("GET", "/email", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id))
+            return PaginatedResponse[MessageOutput].model_validate(raw)
+
+        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, agent_id=agent_id)
 
     def upload_attachment(
         self,
@@ -66,19 +66,18 @@ class AsyncEmailsResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
 
-    async def list(
+    def list(
         self,
         *,
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
-    ) -> PaginatedResponse[MessageOutput]:
-        raw = await self._client.request(
-            "GET",
-            "/email",
-            query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id),
-        )
-        return PaginatedResponse[MessageOutput].model_validate(raw)
+    ) -> AsyncPageIterator[MessageOutput]:
+        async def _fetch(cursor: str | None = cursor, limit: int | None = limit, agent_id: str | None = agent_id) -> PaginatedResponse[MessageOutput]:
+            raw = await self._client.request("GET", "/email", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id))
+            return PaginatedResponse[MessageOutput].model_validate(raw)
+
+        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, agent_id=agent_id)
 
     async def upload_attachment(
         self,

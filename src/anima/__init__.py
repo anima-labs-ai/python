@@ -100,6 +100,7 @@ from ._types import (
     WebhookTestOutput,
     X402FetchOutput,
 )
+from ._pagination import AsyncPageIterator, SyncPageIterator
 from ._webhooks import construct_webhook_event, verify_webhook_signature
 from .resources.events import AsyncEventsResource, AsyncEventStream, EventsResource, EventStream
 
@@ -213,4 +214,7 @@ __all__ = [
     "A2AArtifact",
     "A2ATaskOutput",
     "A2ATaskStatus",
+    # Pagination
+    "SyncPageIterator",
+    "AsyncPageIterator",
 ]

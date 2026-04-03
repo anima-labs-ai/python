@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient
+from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import OrganizationOutput, PaginatedResponse
 
 
@@ -53,11 +54,12 @@ class OrganizationsResource:
         cursor: str | None = None,
         limit: int | None = None,
         query: str | None = None,
-    ) -> PaginatedResponse[OrganizationOutput]:
-        raw = self._client.request(
-            "GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query)
-        )
-        return PaginatedResponse[OrganizationOutput].model_validate(raw)
+    ) -> SyncPageIterator[OrganizationOutput]:
+        def _fetch(cursor: str | None = cursor, limit: int | None = limit, query: str | None = query) -> PaginatedResponse[OrganizationOutput]:
+            raw = self._client.request("GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query))
+            return PaginatedResponse[OrganizationOutput].model_validate(raw)
+
+        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
 
     def update(
         self,
@@ -119,17 +121,18 @@ class AsyncOrganizationsResource:
             await self._client.request("GET", f"/orgs/{org_id}")
         )
 
-    async def list(
+    def list(
         self,
         *,
         cursor: str | None = None,
         limit: int | None = None,
         query: str | None = None,
-    ) -> PaginatedResponse[OrganizationOutput]:
-        raw = await self._client.request(
-            "GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query)
-        )
-        return PaginatedResponse[OrganizationOutput].model_validate(raw)
+    ) -> AsyncPageIterator[OrganizationOutput]:
+        async def _fetch(cursor: str | None = cursor, limit: int | None = limit, query: str | None = query) -> PaginatedResponse[OrganizationOutput]:
+            raw = await self._client.request("GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query))
+            return PaginatedResponse[OrganizationOutput].model_validate(raw)
+
+        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
 
     async def update(
         self,

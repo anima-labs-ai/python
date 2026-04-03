@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient
+from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
 
 
@@ -104,22 +105,16 @@ class MessagesResource:
         direction: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
-    ) -> PaginatedResponse[MessageOutput]:
-        raw = self._client.request(
-            "GET",
-            "/messages",
-            query=_to_list_query(
-                cursor=cursor,
-                limit=limit,
-                agent_id=agent_id,
-                thread_id=thread_id,
-                channel=channel,
-                direction=direction,
-                date_from=date_from,
-                date_to=date_to,
-            ),
+    ) -> SyncPageIterator[MessageOutput]:
+        def _fetch(**kw: Any) -> PaginatedResponse[MessageOutput]:
+            raw = self._client.request("GET", "/messages", query=_to_list_query(**kw))
+            return PaginatedResponse[MessageOutput].model_validate(raw)
+
+        return SyncPageIterator(
+            _fetch,
+            cursor=cursor, limit=limit, agent_id=agent_id, thread_id=thread_id,
+            channel=channel, direction=direction, date_from=date_from, date_to=date_to,
         )
-        return PaginatedResponse[MessageOutput].model_validate(raw)
 
     def search(
         self,
@@ -247,7 +242,7 @@ class AsyncMessagesResource:
             await self._client.request("GET", f"/messages/{message_id}")
         )
 
-    async def list(
+    def list(
         self,
         *,
         cursor: str | None = None,
@@ -258,22 +253,16 @@ class AsyncMessagesResource:
         direction: str | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
-    ) -> PaginatedResponse[MessageOutput]:
-        raw = await self._client.request(
-            "GET",
-            "/messages",
-            query=_to_list_query(
-                cursor=cursor,
-                limit=limit,
-                agent_id=agent_id,
-                thread_id=thread_id,
-                channel=channel,
-                direction=direction,
-                date_from=date_from,
-                date_to=date_to,
-            ),
+    ) -> AsyncPageIterator[MessageOutput]:
+        async def _fetch(**kw: Any) -> PaginatedResponse[MessageOutput]:
+            raw = await self._client.request("GET", "/messages", query=_to_list_query(**kw))
+            return PaginatedResponse[MessageOutput].model_validate(raw)
+
+        return AsyncPageIterator(
+            _fetch,
+            cursor=cursor, limit=limit, agent_id=agent_id, thread_id=thread_id,
+            channel=channel, direction=direction, date_from=date_from, date_to=date_to,
         )
-        return PaginatedResponse[MessageOutput].model_validate(raw)
 
     async def search(
         self,

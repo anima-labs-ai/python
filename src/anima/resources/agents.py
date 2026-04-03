@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient
+from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AgentOutput, PaginatedResponse
 
 
@@ -62,13 +63,22 @@ class AgentsResource:
         org_id: str | None = None,
         status: str | None = None,
         query: str | None = None,
-    ) -> PaginatedResponse[AgentOutput]:
-        raw = self._client.request(
-            "GET",
-            "/agents",
-            query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
-        )
-        return PaginatedResponse[AgentOutput].model_validate(raw)
+    ) -> SyncPageIterator[AgentOutput]:
+        def _fetch(
+            cursor: str | None = cursor,
+            limit: int | None = limit,
+            org_id: str | None = org_id,
+            status: str | None = status,
+            query: str | None = query,
+        ) -> PaginatedResponse[AgentOutput]:
+            raw = self._client.request(
+                "GET",
+                "/agents",
+                query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
+            )
+            return PaginatedResponse[AgentOutput].model_validate(raw)
+
+        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query)
 
     def update(
         self,
@@ -126,7 +136,7 @@ class AsyncAgentsResource:
     async def get(self, agent_id: str) -> AgentOutput:
         return AgentOutput.model_validate(await self._client.request("GET", f"/agents/{agent_id}"))
 
-    async def list(
+    def list(
         self,
         *,
         cursor: str | None = None,
@@ -134,13 +144,22 @@ class AsyncAgentsResource:
         org_id: str | None = None,
         status: str | None = None,
         query: str | None = None,
-    ) -> PaginatedResponse[AgentOutput]:
-        raw = await self._client.request(
-            "GET",
-            "/agents",
-            query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
-        )
-        return PaginatedResponse[AgentOutput].model_validate(raw)
+    ) -> AsyncPageIterator[AgentOutput]:
+        async def _fetch(
+            cursor: str | None = cursor,
+            limit: int | None = limit,
+            org_id: str | None = org_id,
+            status: str | None = status,
+            query: str | None = query,
+        ) -> PaginatedResponse[AgentOutput]:
+            raw = await self._client.request(
+                "GET",
+                "/agents",
+                query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
+            )
+            return PaginatedResponse[AgentOutput].model_validate(raw)
+
+        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query)
 
     async def update(
         self,
