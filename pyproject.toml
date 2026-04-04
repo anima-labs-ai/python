@@ -37,9 +37,9 @@ events = [
 [project.urls]
 Homepage = "https://useanima.sh"
 Documentation = "https://docs.useanima.sh"
-Repository = "https://github.com/anima-labs-ai/anima-python"
-Issues = "https://github.com/anima-labs-ai/anima-python/issues"
-Changelog = "https://github.com/anima-labs-ai/anima-python/releases"
+Repository = "https://github.com/anima-labs-ai/python"
+Issues = "https://github.com/anima-labs-ai/python/issues"
+Changelog = "https://github.com/anima-labs-ai/python/releases"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/anima"]
