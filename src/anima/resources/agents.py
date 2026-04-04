@@ -51,10 +51,14 @@ class AgentsResource:
             body["provisionPhone"] = provision_phone
         if metadata is not None:
             body["metadata"] = metadata
-        return AgentOutput.model_validate(self._client.request("POST", "/agents", body, options=options))
+        return AgentOutput.model_validate(
+            self._client.request("POST", "/agents", body, options=options)
+        )
 
     def get(self, agent_id: str, *, options: RequestOptions | None = None) -> AgentOutput:
-        return AgentOutput.model_validate(self._client.request("GET", f"/agents/{agent_id}", options=options))
+        return AgentOutput.model_validate(
+            self._client.request("GET", f"/agents/{agent_id}", options=options)
+        )
 
     def list(
         self,
@@ -75,11 +79,15 @@ class AgentsResource:
             raw = self._client.request(
                 "GET",
                 "/agents",
-                query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
+                query=_to_query(
+                    cursor=cursor, limit=limit, org_id=org_id, status=status, query=query
+                ),
             )
             return PaginatedResponse[AgentOutput].model_validate(raw)
 
-        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query)
+        return SyncPageIterator(
+            _fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query
+        )
 
     def update(
         self,
@@ -108,7 +116,9 @@ class AgentsResource:
         self._client.request("DELETE", f"/agents/{agent_id}", options=options)
 
     def rotate_key(self, agent_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
-        raw = self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options)
+        raw = self._client.request(
+            "POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options
+        )
         return {"api_key": raw["apiKey"], "api_key_prefix": raw["apiKeyPrefix"]}
 
 
@@ -134,10 +144,14 @@ class AsyncAgentsResource:
             body["provisionPhone"] = provision_phone
         if metadata is not None:
             body["metadata"] = metadata
-        return AgentOutput.model_validate(await self._client.request("POST", "/agents", body, options=options))
+        return AgentOutput.model_validate(
+            await self._client.request("POST", "/agents", body, options=options)
+        )
 
     async def get(self, agent_id: str, *, options: RequestOptions | None = None) -> AgentOutput:
-        return AgentOutput.model_validate(await self._client.request("GET", f"/agents/{agent_id}", options=options))
+        return AgentOutput.model_validate(
+            await self._client.request("GET", f"/agents/{agent_id}", options=options)
+        )
 
     def list(
         self,
@@ -158,11 +172,15 @@ class AsyncAgentsResource:
             raw = await self._client.request(
                 "GET",
                 "/agents",
-                query=_to_query(cursor=cursor, limit=limit, org_id=org_id, status=status, query=query),
+                query=_to_query(
+                    cursor=cursor, limit=limit, org_id=org_id, status=status, query=query
+                ),
             )
             return PaginatedResponse[AgentOutput].model_validate(raw)
 
-        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query)
+        return AsyncPageIterator(
+            _fetch, cursor=cursor, limit=limit, org_id=org_id, status=status, query=query
+        )
 
     async def update(
         self,
@@ -190,6 +208,10 @@ class AsyncAgentsResource:
     async def delete(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("DELETE", f"/agents/{agent_id}", options=options)
 
-    async def rotate_key(self, agent_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
-        raw = await self._client.request("POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options)
+    async def rotate_key(
+        self, agent_id: str, *, options: RequestOptions | None = None
+    ) -> dict[str, str]:
+        raw = await self._client.request(
+            "POST", f"/agents/{agent_id}/rotate-key", {"id": agent_id}, options=options
+        )
         return {"api_key": raw["apiKey"], "api_key_prefix": raw["apiKeyPrefix"]}

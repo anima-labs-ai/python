@@ -20,6 +20,7 @@ from .resources.addresses import AddressesResource, AsyncAddressesResource
 from .resources.agents import AgentsResource, AsyncAgentsResource
 from .resources.anomaly import AnomalyResource, AsyncAnomalyResource
 from .resources.audit import AsyncAuditResource, AuditResource
+from .resources.calls import AsyncCallsResource, CallsResource
 from .resources.cards import AsyncCardsResource, CardsResource
 from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.domains import AsyncDomainsResource, DomainsResource
@@ -33,9 +34,8 @@ from .resources.pods import AsyncPodsResource, PodsResource
 from .resources.registry import AsyncRegistryResource, RegistryResource
 from .resources.security import AsyncSecurityResource, SecurityResource
 from .resources.vault import AsyncVaultResource, VaultResource
-from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.voices import AsyncVoicesResource, VoicesResource
-from .resources.calls import AsyncCallsResource, CallsResource
+from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
 
 
@@ -65,7 +65,7 @@ class Anima:
         resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
         if not resolved_key:
             raise ValueError(
-                "Missing API key. Pass it as `api_key` or set the ANIMA_API_KEY environment variable."
+                "Missing API key. Pass `api_key` or set ANIMA_API_KEY."
             )
         resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
 
@@ -169,7 +169,7 @@ class AsyncAnima:
         resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
         if not resolved_key:
             raise ValueError(
-                "Missing API key. Pass it as `api_key` or set the ANIMA_API_KEY environment variable."
+                "Missing API key. Pass `api_key` or set ANIMA_API_KEY."
             )
         resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
 

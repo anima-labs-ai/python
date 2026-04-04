@@ -186,10 +186,14 @@ class AsyncRegistryResource:
         options: RequestOptions | None = None,
     ) -> list[RegistryAgentOutput]:
         params = _to_search_query(q=query, category=category, cursor=cursor, limit=limit)
-        raw = await self._client.request("GET", "/registry/agents/search", query=params, options=options)
+        raw = await self._client.request(
+            "GET", "/registry/agents/search", query=params, options=options
+        )
         return [RegistryAgentOutput.model_validate(item) for item in raw["items"]]
 
-    async def lookup(self, did: str, *, options: RequestOptions | None = None) -> RegistryAgentOutput:
+    async def lookup(
+        self, did: str, *, options: RequestOptions | None = None
+    ) -> RegistryAgentOutput:
         return RegistryAgentOutput.model_validate(
             await self._client.request("GET", f"/registry/agents/{did}", options=options)
         )

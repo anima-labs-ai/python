@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import httpx
-import pytest
 
 from anima._http import HTTPClient, RawResponse, RequestOptions
 
@@ -13,7 +12,9 @@ from anima._http import HTTPClient, RawResponse, RequestOptions
 class TestRawResponse:
     """Test raw response mode."""
 
-    def _mock_response(self, status: int = 200, json_data: dict | None = None, headers: dict | None = None) -> httpx.Response:
+    def _mock_response(
+        self, status: int = 200, json_data: dict | None = None, headers: dict | None = None
+    ) -> httpx.Response:
         response = MagicMock(spec=httpx.Response)
         response.status_code = status
         response.is_success = 200 <= status < 300
@@ -37,7 +38,9 @@ class TestRawResponse:
         mock_resp = self._mock_response(200, {"id": "agent_1"}, {"x-request-id": "req_abc"})
 
         with patch.object(client._client, "request", return_value=mock_resp):
-            data, raw = client.request("GET", "/agents/1", options=RequestOptions(raw_response=True))
+            data, raw = client.request(
+                "GET", "/agents/1", options=RequestOptions(raw_response=True)
+            )
 
         assert data == {"id": "agent_1"}
         assert isinstance(raw, RawResponse)
@@ -51,7 +54,9 @@ class TestRawResponse:
         mock_resp = self._mock_response(204, headers={"x-request-id": "req_del"})
 
         with patch.object(client._client, "request", return_value=mock_resp):
-            data, raw = client.request("DELETE", "/agents/1", options=RequestOptions(raw_response=True))
+            data, raw = client.request(
+                "DELETE", "/agents/1", options=RequestOptions(raw_response=True)
+            )
 
         assert data is None
         assert raw.status == 204
@@ -60,7 +65,9 @@ class TestRawResponse:
 
     def test_raw_response_includes_all_headers(self) -> None:
         client = HTTPClient(api_key="sk_test", max_retries=0)
-        mock_resp = self._mock_response(200, {"ok": True}, {"x-custom": "value", "content-type": "application/json"})
+        mock_resp = self._mock_response(
+            200, {"ok": True}, {"x-custom": "value", "content-type": "application/json"}
+        )
 
         with patch.object(client._client, "request", return_value=mock_resp):
             _, raw = client.request("GET", "/test", options=RequestOptions(raw_response=True))

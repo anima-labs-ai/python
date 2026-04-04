@@ -83,7 +83,9 @@ class WalletResource:
         if metadata is not None:
             body["metadata"] = metadata
         return WalletOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/wallet", body or None, options=options)
+            self._client.request(
+                "POST", f"/agents/{agent_id}/wallet", body or None, options=options
+            )
         )
 
     def get(self, agent_id: str, *, options: RequestOptions | None = None) -> WalletOutput:
@@ -148,7 +150,9 @@ class WalletResource:
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options)
+            self._client.request(
+                "POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options
+            )
         )
 
     def transactions(
@@ -193,7 +197,9 @@ class AsyncWalletResource:
         if metadata is not None:
             body["metadata"] = metadata
         return WalletOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet", body or None, options=options)
+            await self._client.request(
+                "POST", f"/agents/{agent_id}/wallet", body or None, options=options
+            )
         )
 
     async def get(self, agent_id: str, *, options: RequestOptions | None = None) -> WalletOutput:
@@ -236,7 +242,9 @@ class AsyncWalletResource:
             to=to, amount=amount, currency=currency, memo=memo, metadata=metadata
         )
         return WalletPayOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet/pay", body, options=options)
+            await self._client.request(
+                "POST", f"/agents/{agent_id}/wallet/pay", body, options=options
+            )
         )
 
     async def x402_fetch(
@@ -258,7 +266,9 @@ class AsyncWalletResource:
             max_payment_amount=max_payment_amount,
         )
         return X402FetchOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options)
+            await self._client.request(
+                "POST", f"/agents/{agent_id}/wallet/x402-fetch", req_body, options=options
+            )
         )
 
     async def transactions(

@@ -19,7 +19,9 @@ class DomainsResource:
         )
 
     def get(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainOutput:
-        return DomainOutput.model_validate(self._client.request("GET", f"/domains/{domain_id}", options=options))
+        return DomainOutput.model_validate(
+            self._client.request("GET", f"/domains/{domain_id}", options=options)
+        )
 
     def list(self, *, options: RequestOptions | None = None) -> list[DomainOutput]:
         raw = self._client.request("GET", "/domains", options=options)
@@ -28,7 +30,13 @@ class DomainsResource:
     def delete(self, domain_id: str, *, options: RequestOptions | None = None) -> None:
         self._client.request("DELETE", f"/domains/{domain_id}", options=options)
 
-    def update(self, domain_id: str, *, feedback_enabled: bool | None = None, options: RequestOptions | None = None) -> DomainOutput:
+    def update(
+        self,
+        domain_id: str,
+        *,
+        feedback_enabled: bool | None = None,
+        options: RequestOptions | None = None,
+    ) -> DomainOutput:
         body: dict[str, object] = {}
         if feedback_enabled is not None:
             body["feedbackEnabled"] = feedback_enabled
@@ -46,17 +54,23 @@ class DomainsResource:
             )
         )
 
-    def dns_records(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainDnsRecordsOutput:
+    def dns_records(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DomainDnsRecordsOutput:
         return DomainDnsRecordsOutput.model_validate(
             self._client.request("GET", f"/domains/{domain_id}/dns-records", options=options)
         )
 
-    def deliverability(self, domain_id: str, *, options: RequestOptions | None = None) -> DeliverabilityStatsOutput:
+    def deliverability(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DeliverabilityStatsOutput:
         return DeliverabilityStatsOutput.model_validate(
             self._client.request("GET", f"/domains/{domain_id}/deliverability", options=options)
         )
 
-    def zone_file(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainZoneFileOutput:
+    def zone_file(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DomainZoneFileOutput:
         return DomainZoneFileOutput.model_validate(
             self._client.request("GET", f"/domains/{domain_id}/zone-file", options=options)
         )
@@ -83,7 +97,13 @@ class AsyncDomainsResource:
     async def delete(self, domain_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("DELETE", f"/domains/{domain_id}", options=options)
 
-    async def update(self, domain_id: str, *, feedback_enabled: bool | None = None, options: RequestOptions | None = None) -> DomainOutput:
+    async def update(
+        self,
+        domain_id: str,
+        *,
+        feedback_enabled: bool | None = None,
+        options: RequestOptions | None = None,
+    ) -> DomainOutput:
         body: dict[str, object] = {}
         if feedback_enabled is not None:
             body["feedbackEnabled"] = feedback_enabled
@@ -91,7 +111,9 @@ class AsyncDomainsResource:
             await self._client.request("PATCH", f"/domains/{domain_id}", body, options=options)
         )
 
-    async def verify(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainOutput:
+    async def verify(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DomainOutput:
         return DomainOutput.model_validate(
             await self._client.request(
                 "POST",
@@ -101,17 +123,25 @@ class AsyncDomainsResource:
             )
         )
 
-    async def dns_records(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainDnsRecordsOutput:
+    async def dns_records(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DomainDnsRecordsOutput:
         return DomainDnsRecordsOutput.model_validate(
             await self._client.request("GET", f"/domains/{domain_id}/dns-records", options=options)
         )
 
-    async def deliverability(self, domain_id: str, *, options: RequestOptions | None = None) -> DeliverabilityStatsOutput:
+    async def deliverability(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DeliverabilityStatsOutput:
         return DeliverabilityStatsOutput.model_validate(
-            await self._client.request("GET", f"/domains/{domain_id}/deliverability", options=options)
+            await self._client.request(
+                "GET", f"/domains/{domain_id}/deliverability", options=options
+            )
         )
 
-    async def zone_file(self, domain_id: str, *, options: RequestOptions | None = None) -> DomainZoneFileOutput:
+    async def zone_file(
+        self, domain_id: str, *, options: RequestOptions | None = None
+    ) -> DomainZoneFileOutput:
         return DomainZoneFileOutput.model_validate(
             await self._client.request("GET", f"/domains/{domain_id}/zone-file", options=options)
         )

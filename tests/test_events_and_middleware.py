@@ -60,9 +60,11 @@ class TestRequestResponseHooks:
         mock_500 = self._mock_response(500)
         mock_500.is_success = False
         mock_200 = self._mock_response(200, {"ok": True})
-        with patch.object(client._client, "request", side_effect=[mock_500, mock_200]):
-            with patch("anima._http._jittered_delay", return_value=0):
-                client.request("GET", "/agents")
+        with (
+            patch.object(client._client, "request", side_effect=[mock_500, mock_200]),
+            patch("anima._http._jittered_delay", return_value=0),
+        ):
+            client.request("GET", "/agents")
 
         assert len(events) == 1
         client.close()
@@ -90,5 +92,6 @@ class TestFastapiWebhookDependency:
 
     def test_import_succeeds(self) -> None:
         from anima._middleware import fastapi_webhook_dependency
+
         dep = fastapi_webhook_dependency("whsec_test")
         assert callable(dep)

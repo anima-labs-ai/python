@@ -10,7 +10,7 @@ import threading
 from types import TracebackType
 from typing import Any, Callable
 
-from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
+from .._http import AsyncHTTPClient, HTTPClient
 from .._types import AnimaEvent
 
 logger = logging.getLogger("anima.events")

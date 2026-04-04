@@ -87,7 +87,9 @@ class PodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(self._client.request("POST", "/pods", body, options=options))
+        return PodOutput.model_validate(
+            self._client.request("POST", "/pods", body, options=options)
+        )
 
     def list(
         self,
@@ -98,12 +100,17 @@ class PodsResource:
         options: RequestOptions | None = None,
     ) -> list[PodOutput]:
         raw = self._client.request(
-            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id), options=options
+            "GET",
+            "/pods",
+            query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id),
+            options=options,
         )
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
     def get(self, pod_id: str, *, options: RequestOptions | None = None) -> PodOutput:
-        return PodOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}", options=options))
+        return PodOutput.model_validate(
+            self._client.request("GET", f"/pods/{pod_id}", options=options)
+        )
 
     def update(
         self,
@@ -116,13 +123,17 @@ class PodsResource:
         options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
-        return PodOutput.model_validate(self._client.request("PUT", f"/pods/{pod_id}", body, options=options))
+        return PodOutput.model_validate(
+            self._client.request("PUT", f"/pods/{pod_id}", body, options=options)
+        )
 
     def delete(self, pod_id: str, *, options: RequestOptions | None = None) -> None:
         self._client.request("DELETE", f"/pods/{pod_id}", options=options)
 
     def usage(self, pod_id: str, *, options: RequestOptions | None = None) -> PodUsageOutput:
-        return PodUsageOutput.model_validate(self._client.request("GET", f"/pods/{pod_id}/usage", options=options))
+        return PodUsageOutput.model_validate(
+            self._client.request("GET", f"/pods/{pod_id}/usage", options=options)
+        )
 
 
 class AsyncPodsResource:
@@ -148,7 +159,9 @@ class AsyncPodsResource:
             env=env,
             metadata=metadata,
         )
-        return PodOutput.model_validate(await self._client.request("POST", "/pods", body, options=options))
+        return PodOutput.model_validate(
+            await self._client.request("POST", "/pods", body, options=options)
+        )
 
     async def list(
         self,
@@ -159,12 +172,17 @@ class AsyncPodsResource:
         options: RequestOptions | None = None,
     ) -> list[PodOutput]:
         raw = await self._client.request(
-            "GET", "/pods", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id), options=options
+            "GET",
+            "/pods",
+            query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id),
+            options=options,
         )
         return [PodOutput.model_validate(item) for item in raw["items"]]
 
     async def get(self, pod_id: str, *, options: RequestOptions | None = None) -> PodOutput:
-        return PodOutput.model_validate(await self._client.request("GET", f"/pods/{pod_id}", options=options))
+        return PodOutput.model_validate(
+            await self._client.request("GET", f"/pods/{pod_id}", options=options)
+        )
 
     async def update(
         self,
@@ -177,7 +195,9 @@ class AsyncPodsResource:
         options: RequestOptions | None = None,
     ) -> PodOutput:
         body = _build_update_body(name=name, resources=resources, env=env, metadata=metadata)
-        return PodOutput.model_validate(await self._client.request("PUT", f"/pods/{pod_id}", body, options=options))
+        return PodOutput.model_validate(
+            await self._client.request("PUT", f"/pods/{pod_id}", body, options=options)
+        )
 
     async def delete(self, pod_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("DELETE", f"/pods/{pod_id}", options=options)

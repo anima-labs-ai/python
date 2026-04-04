@@ -15,7 +15,9 @@ class VaultResource:
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
 
-    def provision(self, *, agent_id: str, options: RequestOptions | None = None) -> VaultIdentityOutput:
+    def provision(
+        self, *, agent_id: str, options: RequestOptions | None = None
+    ) -> VaultIdentityOutput:
         return VaultIdentityOutput.model_validate(
             self._client.request("POST", "/vault/provision", {"agentId": agent_id}, options=options)
         )
@@ -36,7 +38,9 @@ class VaultResource:
         raw = self._client.request("GET", "/vault/credentials", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
-    def get_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultCredential:
+    def get_credential(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredential:
         return VaultCredential.model_validate(
             self._client.request("GET", f"/vault/credentials/{credential_id}", options=options)
         )
@@ -104,10 +108,14 @@ class VaultResource:
         if favorite is not None:
             body["favorite"] = favorite
         return VaultCredential.model_validate(
-            self._client.request("PUT", f"/vault/credentials/{credential_id}", body, options=options)
+            self._client.request(
+                "PUT", f"/vault/credentials/{credential_id}", body, options=options
+            )
         )
 
-    def delete_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> None:
+    def delete_credential(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> None:
         self._client.request("DELETE", f"/vault/credentials/{credential_id}", options=options)
 
     def search(
@@ -145,17 +153,23 @@ class VaultResource:
             body["numbers"] = numbers
         if symbols is not None:
             body["symbols"] = symbols
-        raw = self._client.request("POST", "/vault/generate-password", body or None, options=options)
+        raw = self._client.request(
+            "POST", "/vault/generate-password", body or None, options=options
+        )
         return raw["password"]
 
-    def get_totp(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultTotpOutput:
+    def get_totp(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> VaultTotpOutput:
         return VaultTotpOutput.model_validate(
             self._client.request("GET", f"/vault/totp/{credential_id}", options=options)
         )
 
     def status(self, agent_id: str, *, options: RequestOptions | None = None) -> VaultStatusOutput:
         return VaultStatusOutput.model_validate(
-            self._client.request("GET", "/vault/status", query={"agentId": agent_id}, options=options)
+            self._client.request(
+                "GET", "/vault/status", query={"agentId": agent_id}, options=options
+            )
         )
 
     def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
@@ -166,13 +180,19 @@ class AsyncVaultResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
 
-    async def provision(self, *, agent_id: str, options: RequestOptions | None = None) -> VaultIdentityOutput:
+    async def provision(
+        self, *, agent_id: str, options: RequestOptions | None = None
+    ) -> VaultIdentityOutput:
         return VaultIdentityOutput.model_validate(
-            await self._client.request("POST", "/vault/provision", {"agentId": agent_id}, options=options)
+            await self._client.request(
+                "POST", "/vault/provision", {"agentId": agent_id}, options=options
+            )
         )
 
     async def deprovision(self, *, agent_id: str, options: RequestOptions | None = None) -> None:
-        await self._client.request("POST", "/vault/deprovision", {"agentId": agent_id}, options=options)
+        await self._client.request(
+            "POST", "/vault/deprovision", {"agentId": agent_id}, options=options
+        )
 
     async def list_credentials(
         self,
@@ -187,9 +207,13 @@ class AsyncVaultResource:
         raw = await self._client.request("GET", "/vault/credentials", query=query, options=options)
         return [VaultCredential.model_validate(item) for item in raw["items"]]
 
-    async def get_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultCredential:
+    async def get_credential(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredential:
         return VaultCredential.model_validate(
-            await self._client.request("GET", f"/vault/credentials/{credential_id}", options=options)
+            await self._client.request(
+                "GET", f"/vault/credentials/{credential_id}", options=options
+            )
         )
 
     async def create_credential(
@@ -255,10 +279,14 @@ class AsyncVaultResource:
         if favorite is not None:
             body["favorite"] = favorite
         return VaultCredential.model_validate(
-            await self._client.request("PUT", f"/vault/credentials/{credential_id}", body, options=options)
+            await self._client.request(
+                "PUT", f"/vault/credentials/{credential_id}", body, options=options
+            )
         )
 
-    async def delete_credential(self, credential_id: str, *, options: RequestOptions | None = None) -> None:
+    async def delete_credential(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> None:
         await self._client.request("DELETE", f"/vault/credentials/{credential_id}", options=options)
 
     async def search(
@@ -296,17 +324,25 @@ class AsyncVaultResource:
             body["numbers"] = numbers
         if symbols is not None:
             body["symbols"] = symbols
-        raw = await self._client.request("POST", "/vault/generate-password", body or None, options=options)
+        raw = await self._client.request(
+            "POST", "/vault/generate-password", body or None, options=options
+        )
         return raw["password"]
 
-    async def get_totp(self, credential_id: str, *, options: RequestOptions | None = None) -> VaultTotpOutput:
+    async def get_totp(
+        self, credential_id: str, *, options: RequestOptions | None = None
+    ) -> VaultTotpOutput:
         return VaultTotpOutput.model_validate(
             await self._client.request("GET", f"/vault/totp/{credential_id}", options=options)
         )
 
-    async def status(self, agent_id: str, *, options: RequestOptions | None = None) -> VaultStatusOutput:
+    async def status(
+        self, agent_id: str, *, options: RequestOptions | None = None
+    ) -> VaultStatusOutput:
         return VaultStatusOutput.model_validate(
-            await self._client.request("GET", "/vault/status", query={"agentId": agent_id}, options=options)
+            await self._client.request(
+                "GET", "/vault/status", query={"agentId": agent_id}, options=options
+            )
         )
 
     async def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:

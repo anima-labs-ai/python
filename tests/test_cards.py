@@ -167,7 +167,9 @@ class TestCardsTransactions:
         resource = CardsResource(mock_http)
         result = resource.get_transaction("txn_001")
 
-        mock_http.request.assert_called_once_with("GET", "/cards/transactions/txn_001", options=None)
+        mock_http.request.assert_called_once_with(
+            "GET", "/cards/transactions/txn_001", options=None
+        )
         assert isinstance(result, CardTransaction)
         assert result.amount_cents == 1500
         assert result.merchant_name == "Amazon"

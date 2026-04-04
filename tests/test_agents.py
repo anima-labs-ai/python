@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from anima._types import AgentOutput, PaginatedResponse
+from anima._types import AgentOutput
 from anima.resources.agents import AgentsResource
 
 from .conftest import AGENT_RAW, PAGINATED_AGENTS_RAW

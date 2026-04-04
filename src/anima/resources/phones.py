@@ -92,7 +92,9 @@ class PhonesResource:
         agent_id: str,
         options: RequestOptions | None = None,
     ) -> list[PhoneIdentityOutput]:
-        raw = self._client.request("GET", "/phone/numbers", query={"agentId": agent_id}, options=options)
+        raw = self._client.request(
+            "GET", "/phone/numbers", query={"agentId": agent_id}, options=options
+        )
         return [PhoneIdentityOutput.model_validate(item) for item in raw["items"]]
 
     def release(
@@ -108,7 +110,6 @@ class PhonesResource:
             {"agentId": agent_id, "phoneNumber": phone_number},
             options=options,
         )
-
 
 
 class AsyncPhonesResource:
@@ -162,7 +163,9 @@ class AsyncPhonesResource:
         agent_id: str,
         options: RequestOptions | None = None,
     ) -> list[PhoneIdentityOutput]:
-        raw = await self._client.request("GET", "/phone/numbers", query={"agentId": agent_id}, options=options)
+        raw = await self._client.request(
+            "GET", "/phone/numbers", query={"agentId": agent_id}, options=options
+        )
         return [PhoneIdentityOutput.model_validate(item) for item in raw["items"]]
 
     async def release(

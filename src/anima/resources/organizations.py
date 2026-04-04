@@ -44,10 +44,14 @@ class OrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(self._client.request("POST", "/orgs", body, options=options))
+        return OrganizationOutput.model_validate(
+            self._client.request("POST", "/orgs", body, options=options)
+        )
 
     def get(self, org_id: str, *, options: RequestOptions | None = None) -> OrganizationOutput:
-        return OrganizationOutput.model_validate(self._client.request("GET", f"/orgs/{org_id}", options=options))
+        return OrganizationOutput.model_validate(
+            self._client.request("GET", f"/orgs/{org_id}", options=options)
+        )
 
     def list(
         self,
@@ -56,8 +60,12 @@ class OrganizationsResource:
         limit: int | None = None,
         query: str | None = None,
     ) -> SyncPageIterator[OrganizationOutput]:
-        def _fetch(cursor: str | None = cursor, limit: int | None = limit, query: str | None = query) -> PaginatedResponse[OrganizationOutput]:
-            raw = self._client.request("GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query))
+        def _fetch(
+            cursor: str | None = cursor, limit: int | None = limit, query: str | None = query
+        ) -> PaginatedResponse[OrganizationOutput]:
+            raw = self._client.request(
+                "GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query)
+            )
             return PaginatedResponse[OrganizationOutput].model_validate(raw)
 
         return SyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
@@ -92,7 +100,9 @@ class OrganizationsResource:
         self._client.request("DELETE", f"/orgs/{org_id}", options=options)
 
     def rotate_key(self, org_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
-        raw = self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options)
+        raw = self._client.request(
+            "POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options
+        )
         return {"master_key": raw["masterKey"]}
 
 
@@ -117,9 +127,13 @@ class AsyncOrganizationsResource:
             body["tier"] = tier
         if settings is not None:
             body["settings"] = settings
-        return OrganizationOutput.model_validate(await self._client.request("POST", "/orgs", body, options=options))
+        return OrganizationOutput.model_validate(
+            await self._client.request("POST", "/orgs", body, options=options)
+        )
 
-    async def get(self, org_id: str, *, options: RequestOptions | None = None) -> OrganizationOutput:
+    async def get(
+        self, org_id: str, *, options: RequestOptions | None = None
+    ) -> OrganizationOutput:
         return OrganizationOutput.model_validate(
             await self._client.request("GET", f"/orgs/{org_id}", options=options)
         )
@@ -131,8 +145,12 @@ class AsyncOrganizationsResource:
         limit: int | None = None,
         query: str | None = None,
     ) -> AsyncPageIterator[OrganizationOutput]:
-        async def _fetch(cursor: str | None = cursor, limit: int | None = limit, query: str | None = query) -> PaginatedResponse[OrganizationOutput]:
-            raw = await self._client.request("GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query))
+        async def _fetch(
+            cursor: str | None = cursor, limit: int | None = limit, query: str | None = query
+        ) -> PaginatedResponse[OrganizationOutput]:
+            raw = await self._client.request(
+                "GET", "/orgs", query=_to_query(cursor=cursor, limit=limit, query=query)
+            )
             return PaginatedResponse[OrganizationOutput].model_validate(raw)
 
         return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
@@ -166,6 +184,10 @@ class AsyncOrganizationsResource:
     async def delete(self, org_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("DELETE", f"/orgs/{org_id}", options=options)
 
-    async def rotate_key(self, org_id: str, *, options: RequestOptions | None = None) -> dict[str, str]:
-        raw = await self._client.request("POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options)
+    async def rotate_key(
+        self, org_id: str, *, options: RequestOptions | None = None
+    ) -> dict[str, str]:
+        raw = await self._client.request(
+            "POST", f"/orgs/{org_id}/rotate-key", {"id": org_id}, options=options
+        )
         return {"master_key": raw["masterKey"]}

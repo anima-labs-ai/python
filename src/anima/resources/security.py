@@ -54,7 +54,9 @@ class SecurityResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options)
+        raw = self._client.request(
+            "GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options
+        )
         return PaginatedResponse[SecurityEventOutput].model_validate(raw)
 
 
@@ -106,5 +108,7 @@ class AsyncSecurityResource:
             query["cursor"] = cursor
         if limit is not None:
             query["limit"] = str(limit)
-        raw = await self._client.request("GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options)
+        raw = await self._client.request(
+            "GET", f"/v1/orgs/{org_id}/security/events", query=query, options=options
+        )
         return PaginatedResponse[SecurityEventOutput].model_validate(raw)

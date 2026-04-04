@@ -8,8 +8,6 @@ from unittest.mock import MagicMock
 from anima._types import CallOutput, CallTranscript, CreateCallOutput
 from anima.resources.calls import CallsResource
 
-from .conftest import mock_http  # noqa: F401 – used via fixture name
-
 # ---------------------------------------------------------------------------
 # Raw API response fixtures
 # ---------------------------------------------------------------------------
@@ -74,9 +72,7 @@ class TestCallsList:
         resource = CallsResource(mock_http)
         result = resource.list()
 
-        mock_http.request.assert_called_once_with(
-            "GET", "/voice/calls", query=None, options=None
-        )
+        mock_http.request.assert_called_once_with("GET", "/voice/calls", query=None, options=None)
         assert isinstance(result["calls"][0], CallOutput)
         assert result["total"] == 1
 
@@ -113,16 +109,20 @@ class TestCallsGet:
         resource = CallsResource(mock_http)
         result = resource.get("call_001")
 
-        mock_http.request.assert_called_once_with(
-            "GET", "/voice/calls/call_001", options=None
-        )
+        mock_http.request.assert_called_once_with("GET", "/voice/calls/call_001", options=None)
         assert isinstance(result, CallOutput)
         assert result.id == "call_001"
         assert result.state == "completed"
         assert result.end_reason == "hangup"
 
     def test_get_parses_nullable_fields(self, mock_http: MagicMock) -> None:
-        in_progress = {**CALL_RAW, "answeredAt": None, "endedAt": None, "endReason": None, "durationSeconds": None}
+        in_progress = {
+            **CALL_RAW,
+            "answeredAt": None,
+            "endedAt": None,
+            "endReason": None,
+            "durationSeconds": None,
+        }
         mock_http.request.return_value = in_progress
         resource = CallsResource(mock_http)
         result = resource.get("call_001")

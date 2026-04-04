@@ -57,7 +57,9 @@ class CardsResource:
         return Card.model_validate(self._client.request("POST", "/cards", body, options=options))
 
     def get(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(self._client.request("GET", f"/cards/{card_id}", options=options))
+        return Card.model_validate(
+            self._client.request("GET", f"/cards/{card_id}", options=options)
+        )
 
     def list(
         self,
@@ -98,16 +100,22 @@ class CardsResource:
             body["spendLimitMonthly"] = spend_limit_monthly
         if spend_limit_per_auth is not None:
             body["spendLimitPerAuth"] = spend_limit_per_auth
-        return Card.model_validate(self._client.request("PATCH", f"/cards/{card_id}", body, options=options))
+        return Card.model_validate(
+            self._client.request("PATCH", f"/cards/{card_id}", body, options=options)
+        )
 
     def delete(self, card_id: str, *, options: RequestOptions | None = None) -> None:
         self._client.request("DELETE", f"/cards/{card_id}", options=options)
 
     def freeze(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(self._client.request("POST", f"/cards/{card_id}/freeze", options=options))
+        return Card.model_validate(
+            self._client.request("POST", f"/cards/{card_id}/freeze", options=options)
+        )
 
     def unfreeze(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(self._client.request("POST", f"/cards/{card_id}/unfreeze", options=options))
+        return Card.model_validate(
+            self._client.request("POST", f"/cards/{card_id}/unfreeze", options=options)
+        )
 
     def create_policy(
         self,
@@ -148,10 +156,16 @@ class CardsResource:
             body["allowedCountries"] = allowed_countries
         if blocked_countries is not None:
             body["blockedCountries"] = blocked_countries
-        return SpendingPolicy.model_validate(self._client.request("POST", "/cards/policies", body, options=options))
+        return SpendingPolicy.model_validate(
+            self._client.request("POST", "/cards/policies", body, options=options)
+        )
 
-    def list_policies(self, card_id: str, *, options: RequestOptions | None = None) -> list[SpendingPolicy]:
-        raw = self._client.request("GET", "/cards/policies", query={"cardId": card_id}, options=options)
+    def list_policies(
+        self, card_id: str, *, options: RequestOptions | None = None
+    ) -> list[SpendingPolicy]:
+        raw = self._client.request(
+            "GET", "/cards/policies", query={"cardId": card_id}, options=options
+        )
         items = raw if isinstance(raw, list) else raw.get("items", raw)
         return [SpendingPolicy.model_validate(item) for item in items]
 
@@ -222,7 +236,9 @@ class CardsResource:
             )
         )
 
-    def get_transaction(self, transaction_id: str, *, options: RequestOptions | None = None) -> CardTransaction:
+    def get_transaction(
+        self, transaction_id: str, *, options: RequestOptions | None = None
+    ) -> CardTransaction:
         return CardTransaction.model_validate(
             self._client.request("GET", f"/cards/transactions/{transaction_id}", options=options)
         )
@@ -270,7 +286,10 @@ class CardsResource:
     ) -> CardApproval:
         return CardApproval.model_validate(
             self._client.request(
-                "POST", f"/cards/approvals/{approval_id}/decision", {"decision": decision}, options=options
+                "POST",
+                f"/cards/approvals/{approval_id}/decision",
+                {"decision": decision},
+                options=options,
             )
         )
 
@@ -304,10 +323,14 @@ class AsyncCardsResource:
             body["spendLimitMonthly"] = spend_limit_monthly
         if spend_limit_per_auth is not None:
             body["spendLimitPerAuth"] = spend_limit_per_auth
-        return Card.model_validate(await self._client.request("POST", "/cards", body, options=options))
+        return Card.model_validate(
+            await self._client.request("POST", "/cards", body, options=options)
+        )
 
     async def get(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(await self._client.request("GET", f"/cards/{card_id}", options=options))
+        return Card.model_validate(
+            await self._client.request("GET", f"/cards/{card_id}", options=options)
+        )
 
     async def list(
         self,
@@ -348,16 +371,22 @@ class AsyncCardsResource:
             body["spendLimitMonthly"] = spend_limit_monthly
         if spend_limit_per_auth is not None:
             body["spendLimitPerAuth"] = spend_limit_per_auth
-        return Card.model_validate(await self._client.request("PATCH", f"/cards/{card_id}", body, options=options))
+        return Card.model_validate(
+            await self._client.request("PATCH", f"/cards/{card_id}", body, options=options)
+        )
 
     async def delete(self, card_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("DELETE", f"/cards/{card_id}", options=options)
 
     async def freeze(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(await self._client.request("POST", f"/cards/{card_id}/freeze", options=options))
+        return Card.model_validate(
+            await self._client.request("POST", f"/cards/{card_id}/freeze", options=options)
+        )
 
     async def unfreeze(self, card_id: str, *, options: RequestOptions | None = None) -> Card:
-        return Card.model_validate(await self._client.request("POST", f"/cards/{card_id}/unfreeze", options=options))
+        return Card.model_validate(
+            await self._client.request("POST", f"/cards/{card_id}/unfreeze", options=options)
+        )
 
     async def create_policy(
         self,
@@ -402,8 +431,12 @@ class AsyncCardsResource:
             await self._client.request("POST", "/cards/policies", body, options=options)
         )
 
-    async def list_policies(self, card_id: str, *, options: RequestOptions | None = None) -> list[SpendingPolicy]:
-        raw = await self._client.request("GET", "/cards/policies", query={"cardId": card_id}, options=options)
+    async def list_policies(
+        self, card_id: str, *, options: RequestOptions | None = None
+    ) -> list[SpendingPolicy]:
+        raw = await self._client.request(
+            "GET", "/cards/policies", query={"cardId": card_id}, options=options
+        )
         items = raw if isinstance(raw, list) else raw.get("items", raw)
         return [SpendingPolicy.model_validate(item) for item in items]
 
@@ -448,7 +481,9 @@ class AsyncCardsResource:
         if blocked_countries is not None:
             body["blockedCountries"] = blocked_countries
         return SpendingPolicy.model_validate(
-            await self._client.request("PATCH", f"/cards/policies/{policy_id}", body, options=options)
+            await self._client.request(
+                "PATCH", f"/cards/policies/{policy_id}", body, options=options
+            )
         )
 
     async def delete_policy(self, policy_id: str, *, options: RequestOptions | None = None) -> None:
@@ -474,9 +509,13 @@ class AsyncCardsResource:
             )
         )
 
-    async def get_transaction(self, transaction_id: str, *, options: RequestOptions | None = None) -> CardTransaction:
+    async def get_transaction(
+        self, transaction_id: str, *, options: RequestOptions | None = None
+    ) -> CardTransaction:
         return CardTransaction.model_validate(
-            await self._client.request("GET", f"/cards/transactions/{transaction_id}", options=options)
+            await self._client.request(
+                "GET", f"/cards/transactions/{transaction_id}", options=options
+            )
         )
 
     async def kill_switch(

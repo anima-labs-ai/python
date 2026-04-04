@@ -16,7 +16,8 @@ Single-page access (backwards compatible):
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, Iterator, AsyncIterator, TypeVar
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Callable, Generic, TypeVar
 
 from ._types import CursorPagination, PaginatedResponse
 

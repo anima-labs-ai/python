@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
 import re
+from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import CallOutput, CallTranscript, CreateCallOutput
@@ -92,7 +91,9 @@ class CallsResource:
         raw = self._client.request("POST", "/voice/calls", body, options=options)
         return CreateCallOutput.model_validate(raw)
 
-    def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> CallTranscript:
+    def get_transcript(
+        self, call_id: str, *, options: RequestOptions | None = None
+    ) -> CallTranscript:
         """Get the transcript for a call."""
         raw = self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
         return CallTranscript.model_validate(raw)
@@ -176,9 +177,13 @@ class AsyncCallsResource:
         raw = await self._client.request("POST", "/voice/calls", body, options=options)
         return CreateCallOutput.model_validate(raw)
 
-    async def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> CallTranscript:
+    async def get_transcript(
+        self, call_id: str, *, options: RequestOptions | None = None
+    ) -> CallTranscript:
         """Get the transcript for a call."""
-        raw = await self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
+        raw = await self._client.request(
+            "GET", f"/voice/calls/{call_id}/transcript", options=options
+        )
         return CallTranscript.model_validate(raw)
 
     def connect(self, *, agent_id: str | None = None) -> VoiceConnection:

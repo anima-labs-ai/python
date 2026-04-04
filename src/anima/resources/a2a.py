@@ -55,7 +55,9 @@ class A2AResource:
             self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body, options=options)
         )
 
-    def get_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
+    def get_task(
+        self, agent_id: str, task_id: str, *, options: RequestOptions | None = None
+    ) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
             self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}", options=options)
         )
@@ -77,9 +79,13 @@ class A2AResource:
         )
         return PaginatedResponse[A2ATaskOutput].model_validate(raw)
 
-    def cancel_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
+    def cancel_task(
+        self, agent_id: str, task_id: str, *, options: RequestOptions | None = None
+    ) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options)
+            self._client.request(
+                "POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options
+            )
         )
 
 
@@ -112,12 +118,18 @@ class AsyncA2AResource:
         if from_did is not None:
             body["fromDid"] = from_did
         return A2ATaskOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks", body, options=options)
+            await self._client.request(
+                "POST", f"/agents/{agent_id}/a2a/tasks", body, options=options
+            )
         )
 
-    async def get_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
+    async def get_task(
+        self, agent_id: str, task_id: str, *, options: RequestOptions | None = None
+    ) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            await self._client.request("GET", f"/agents/{agent_id}/a2a/tasks/{task_id}", options=options)
+            await self._client.request(
+                "GET", f"/agents/{agent_id}/a2a/tasks/{task_id}", options=options
+            )
         )
 
     async def list_tasks(
@@ -137,7 +149,11 @@ class AsyncA2AResource:
         )
         return PaginatedResponse[A2ATaskOutput].model_validate(raw)
 
-    async def cancel_task(self, agent_id: str, task_id: str, *, options: RequestOptions | None = None) -> A2ATaskOutput:
+    async def cancel_task(
+        self, agent_id: str, task_id: str, *, options: RequestOptions | None = None
+    ) -> A2ATaskOutput:
         return A2ATaskOutput.model_validate(
-            await self._client.request("POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options)
+            await self._client.request(
+                "POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options
+            )
         )

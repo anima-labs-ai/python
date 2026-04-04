@@ -8,8 +8,6 @@ from unittest.mock import MagicMock
 from anima._types import Voice
 from anima.resources.voices import VoicesResource
 
-from .conftest import mock_http  # noqa: F401 – used via fixture name
-
 # ---------------------------------------------------------------------------
 # Raw API response fixtures
 # ---------------------------------------------------------------------------
@@ -47,9 +45,7 @@ class TestVoicesList:
         resource = VoicesResource(mock_http)
         result = resource.list()
 
-        mock_http.request.assert_called_once_with(
-            "GET", "/voice/catalog", query=None, options=None
-        )
+        mock_http.request.assert_called_once_with("GET", "/voice/catalog", query=None, options=None)
         assert len(result["voices"]) == 2
         assert isinstance(result["voices"][0], Voice)
 

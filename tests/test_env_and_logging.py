@@ -29,18 +29,28 @@ class TestEnvVarFallback:
 
     def test_raises_without_key(self) -> None:
         env = {k: v for k, v in os.environ.items() if k != "ANIMA_API_KEY"}
-        with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValueError, match="Missing API key"):
-                Anima()
+        with (
+            patch.dict(os.environ, env, clear=True),
+            pytest.raises(ValueError, match="Missing API key"),
+        ):
+            Anima()
 
     def test_uses_env_api_url(self) -> None:
-        with patch.dict(os.environ, {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://custom.example.com"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://custom.example.com"},
+            clear=False,
+        ):
             client = Anima()
             assert client._http._base_url == "https://custom.example.com"
             client.close()
 
     def test_explicit_url_takes_precedence(self) -> None:
-        with patch.dict(os.environ, {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://env.example.com"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://env.example.com"},
+            clear=False,
+        ):
             client = Anima(base_url="https://explicit.example.com")
             assert client._http._base_url == "https://explicit.example.com"
             client.close()
@@ -63,12 +73,18 @@ class TestAsyncEnvVarFallback:
 
     def test_raises_without_key(self) -> None:
         env = {k: v for k, v in os.environ.items() if k != "ANIMA_API_KEY"}
-        with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValueError, match="Missing API key"):
-                AsyncAnima()
+        with (
+            patch.dict(os.environ, env, clear=True),
+            pytest.raises(ValueError, match="Missing API key"),
+        ):
+            AsyncAnima()
 
     def test_uses_env_api_url(self) -> None:
-        with patch.dict(os.environ, {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://async.example.com"}, clear=False):
+        with patch.dict(
+            os.environ,
+            {"ANIMA_API_KEY": "sk_test", "ANIMA_API_URL": "https://async.example.com"},
+            clear=False,
+        ):
             client = AsyncAnima()
             assert client._http._base_url == "https://async.example.com"
 
@@ -84,7 +100,9 @@ class TestDebugLogging:
         with patch.dict(os.environ, {"ANIMA_LOG": "debug"}, clear=False):
             # Re-import to trigger module-level setup
             import importlib
+
             import anima._logger
+
             importlib.reload(anima._logger)
 
             anima_logger = logging.getLogger("anima")

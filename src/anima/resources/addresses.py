@@ -114,7 +114,9 @@ class AddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(self._client.request("POST", "/addresses", body, options=options))
+        return AddressOutput.model_validate(
+            self._client.request("POST", "/addresses", body, options=options)
+        )
 
     def list(
         self,
@@ -133,7 +135,9 @@ class AddressesResource:
         )
         return [AddressOutput.model_validate(item) for item in raw["items"]]
 
-    def get(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> AddressOutput:
+    def get(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> AddressOutput:
         return AddressOutput.model_validate(
             self._client.request(
                 "GET",
@@ -173,12 +177,20 @@ class AddressesResource:
             self._client.request("PUT", f"/addresses/{address_id}", body, options=options)
         )
 
-    def delete(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> None:
-        self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options)
+    def delete(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> None:
+        self._client.request(
+            "DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options
+        )
 
-    def validate(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> ValidateAddressOutput:
+    def validate(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
-            self._client.request("POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}, options=options)
+            self._client.request(
+                "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}, options=options
+            )
         )
 
 
@@ -211,7 +223,9 @@ class AsyncAddressesResource:
             postal_code=postal_code,
             country=country,
         )
-        return AddressOutput.model_validate(await self._client.request("POST", "/addresses", body, options=options))
+        return AddressOutput.model_validate(
+            await self._client.request("POST", "/addresses", body, options=options)
+        )
 
     async def list(
         self,
@@ -230,7 +244,9 @@ class AsyncAddressesResource:
         )
         return [AddressOutput.model_validate(item) for item in raw["items"]]
 
-    async def get(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> AddressOutput:
+    async def get(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> AddressOutput:
         return AddressOutput.model_validate(
             await self._client.request(
                 "GET",
@@ -270,10 +286,16 @@ class AsyncAddressesResource:
             await self._client.request("PUT", f"/addresses/{address_id}", body, options=options)
         )
 
-    async def delete(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> None:
-        await self._client.request("DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options)
+    async def delete(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> None:
+        await self._client.request(
+            "DELETE", f"/addresses/{address_id}", {"agentId": agent_id}, options=options
+        )
 
-    async def validate(self, address_id: str, *, agent_id: str, options: RequestOptions | None = None) -> ValidateAddressOutput:
+    async def validate(
+        self, address_id: str, *, agent_id: str, options: RequestOptions | None = None
+    ) -> ValidateAddressOutput:
         return ValidateAddressOutput.model_validate(
             await self._client.request(
                 "POST", f"/addresses/{address_id}/validate", {"agentId": agent_id}, options=options
