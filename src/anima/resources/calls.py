@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+import re
+
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import CallOutput, CallTranscript, CreateCallOutput
+from .._voice_connection import VoiceConnection
 
 
 def _to_query(
@@ -29,8 +32,10 @@ def _to_query(
 
 
 class CallsResource:
-    def __init__(self, client: HTTPClient) -> None:
+    def __init__(self, client: HTTPClient, api_key: str = "", base_url: str = "") -> None:
         self._client = client
+        self._api_key = api_key
+        self._ws_base_url = re.sub(r"^https://", "wss://", re.sub(r"^http://", "ws://", base_url))
 
     def list(
         self,
@@ -92,10 +97,29 @@ class CallsResource:
         raw = self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
         return CallTranscript.model_validate(raw)
 
+    def connect(self, *, agent_id: str | None = None) -> VoiceConnection:
+        """Open a bidirectional WebSocket for real-time voice call control.
+
+        Usage::
+
+            conn = client.calls.connect()
+            conn.on_message(lambda msg: print(msg["type"], msg.get("data")))
+            conn.create_call("+15551234567")
+            # ... handle events ...
+            conn.close()
+        """
+        params = f"token={self._api_key}"
+        if agent_id:
+            params += f"&agentId={agent_id}"
+        ws_url = f"{self._ws_base_url}/ws/voice?{params}"
+        return VoiceConnection(ws_url)
+
 
 class AsyncCallsResource:
-    def __init__(self, client: AsyncHTTPClient) -> None:
+    def __init__(self, client: AsyncHTTPClient, api_key: str = "", base_url: str = "") -> None:
         self._client = client
+        self._api_key = api_key
+        self._ws_base_url = re.sub(r"^https://", "wss://", re.sub(r"^http://", "ws://", base_url))
 
     async def list(
         self,
@@ -156,3 +180,11 @@ class AsyncCallsResource:
         """Get the transcript for a call."""
         raw = await self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
         return CallTranscript.model_validate(raw)
+
+    def connect(self, *, agent_id: str | None = None) -> VoiceConnection:
+        """Open a bidirectional WebSocket for real-time voice call control."""
+        params = f"token={self._api_key}"
+        if agent_id:
+            params += f"&agentId={agent_id}"
+        ws_url = f"{self._ws_base_url}/ws/voice?{params}"
+        return VoiceConnection(ws_url)

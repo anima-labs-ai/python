@@ -113,6 +113,7 @@ from ._types import (
 from ._http import RawResponse, RequestEvent, RequestOptions, ResponseEvent
 from ._middleware import fastapi_webhook_dependency
 from ._pagination import AsyncPageIterator, SyncPageIterator
+from ._voice_connection import VoiceConnection
 from ._webhooks import construct_webhook_event, verify_webhook_signature
 from .resources.events import AsyncEventsResource, AsyncEventStream, EventsResource, EventStream
 
@@ -232,6 +233,7 @@ __all__ = [
     "CreateCallOutput",
     "TranscriptSegment",
     "Voice",
+    "VoiceConnection",
     # A2A (Agent-to-Agent Protocol)
     "A2AArtifact",
     "A2ATaskOutput",

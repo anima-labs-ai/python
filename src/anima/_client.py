@@ -97,7 +97,7 @@ class Anima:
         self.compliance = ComplianceResource(self._http)
         self.anomaly = AnomalyResource(self._http)
         self.voices = VoicesResource(self._http)
-        self.calls = CallsResource(self._http)
+        self.calls = CallsResource(self._http, api_key=resolved_key, base_url=resolved_url)
 
     def on_request(self, hook: RequestHook) -> None:
         """Register a hook called before each HTTP request."""
@@ -201,7 +201,7 @@ class AsyncAnima:
         self.compliance = AsyncComplianceResource(self._http)
         self.anomaly = AsyncAnomalyResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
-        self.calls = AsyncCallsResource(self._http)
+        self.calls = AsyncCallsResource(self._http, api_key=resolved_key, base_url=resolved_url)
 
     def on_request(self, hook: RequestHook) -> None:
         """Register a hook called before each HTTP request."""
