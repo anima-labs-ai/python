@@ -28,7 +28,6 @@ class AgentStatus(str, Enum):
 
 class PhoneProvider(str, Enum):
     TELNYX = "TELNYX"
-    TWILIO = "TWILIO"
 
 
 class TenDlcStatus(str, Enum):
