@@ -99,6 +99,16 @@ from ._types import (
     WebhookOutput,
     WebhookTestOutput,
     X402FetchOutput,
+    # Voice / Calls
+    CallDirection,
+    CallOutput,
+    CallTranscript,
+    CreateCallOutput,
+    TranscriptSegment,
+    Voice,
+    VoiceGender,
+    VoiceProvider,
+    VoiceTier,
 )
 from ._http import RawResponse, RequestEvent, RequestOptions, ResponseEvent
 from ._middleware import fastapi_webhook_dependency
@@ -143,6 +153,10 @@ __all__ = [
     "TransactionStatus",
     "VaultCustomFieldType",
     "VerificationMethod",
+    "CallDirection",
+    "VoiceGender",
+    "VoiceProvider",
+    "VoiceTier",
     "WebhookEventType",
     # Events (WebSocket)
     "AnimaEvent",
@@ -212,6 +226,12 @@ __all__ = [
     "WebhookOutput",
     "WebhookTestOutput",
     "X402FetchOutput",
+    # Voice / Calls
+    "CallOutput",
+    "CallTranscript",
+    "CreateCallOutput",
+    "TranscriptSegment",
+    "Voice",
     # A2A (Agent-to-Agent Protocol)
     "A2AArtifact",
     "A2ATaskOutput",

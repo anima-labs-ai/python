@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
+from .._types import CallOutput, CallTranscript, CreateCallOutput
 
 
 def _to_query(
@@ -42,7 +43,7 @@ class CallsResource:
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List voice calls, optionally filtered."""
-        return self._client.request(
+        raw = self._client.request(
             "GET",
             "/voice/calls",
             query=_to_query(
@@ -54,10 +55,14 @@ class CallsResource:
             ),
             options=options,
         )
+        if isinstance(raw, dict) and "calls" in raw:
+            raw["calls"] = [CallOutput.model_validate(c) for c in raw["calls"]]
+        return raw
 
-    def get(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
+    def get(self, call_id: str, *, options: RequestOptions | None = None) -> CallOutput:
         """Get a specific call by ID."""
-        return self._client.request("GET", f"/voice/calls/{call_id}", options=options)
+        raw = self._client.request("GET", f"/voice/calls/{call_id}", options=options)
+        return CallOutput.model_validate(raw)
 
     def create(
         self,
@@ -68,7 +73,7 @@ class CallsResource:
         greeting: str | None = None,
         from_number: str | None = None,
         options: RequestOptions | None = None,
-    ) -> dict[str, Any]:
+    ) -> CreateCallOutput:
         """Create an outbound call."""
         body: dict[str, Any] = {"to": to}
         if agent_id is not None:
@@ -79,11 +84,13 @@ class CallsResource:
             body["greeting"] = greeting
         if from_number is not None:
             body["fromNumber"] = from_number
-        return self._client.request("POST", "/voice/calls", body, options=options)
+        raw = self._client.request("POST", "/voice/calls", body, options=options)
+        return CreateCallOutput.model_validate(raw)
 
-    def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
+    def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> CallTranscript:
         """Get the transcript for a call."""
-        return self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
+        raw = self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
+        return CallTranscript.model_validate(raw)
 
 
 class AsyncCallsResource:
@@ -101,7 +108,7 @@ class AsyncCallsResource:
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List voice calls, optionally filtered."""
-        return await self._client.request(
+        raw = await self._client.request(
             "GET",
             "/voice/calls",
             query=_to_query(
@@ -113,10 +120,14 @@ class AsyncCallsResource:
             ),
             options=options,
         )
+        if isinstance(raw, dict) and "calls" in raw:
+            raw["calls"] = [CallOutput.model_validate(c) for c in raw["calls"]]
+        return raw
 
-    async def get(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
+    async def get(self, call_id: str, *, options: RequestOptions | None = None) -> CallOutput:
         """Get a specific call by ID."""
-        return await self._client.request("GET", f"/voice/calls/{call_id}", options=options)
+        raw = await self._client.request("GET", f"/voice/calls/{call_id}", options=options)
+        return CallOutput.model_validate(raw)
 
     async def create(
         self,
@@ -127,7 +138,7 @@ class AsyncCallsResource:
         greeting: str | None = None,
         from_number: str | None = None,
         options: RequestOptions | None = None,
-    ) -> dict[str, Any]:
+    ) -> CreateCallOutput:
         """Create an outbound call."""
         body: dict[str, Any] = {"to": to}
         if agent_id is not None:
@@ -138,8 +149,10 @@ class AsyncCallsResource:
             body["greeting"] = greeting
         if from_number is not None:
             body["fromNumber"] = from_number
-        return await self._client.request("POST", "/voice/calls", body, options=options)
+        raw = await self._client.request("POST", "/voice/calls", body, options=options)
+        return CreateCallOutput.model_validate(raw)
 
-    async def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> dict[str, Any]:
+    async def get_transcript(self, call_id: str, *, options: RequestOptions | None = None) -> CallTranscript:
         """Get the transcript for a call."""
-        return await self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
+        raw = await self._client.request("GET", f"/voice/calls/{call_id}/transcript", options=options)
+        return CallTranscript.model_validate(raw)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
+from .._types import Voice
 
 
 def _to_query(
@@ -34,12 +35,15 @@ class VoicesResource:
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List available voices, optionally filtered by tier, gender, or language."""
-        return self._client.request(
+        raw = self._client.request(
             "GET",
             "/voice/catalog",
             query=_to_query(tier=tier, gender=gender, language=language),
             options=options,
         )
+        if isinstance(raw, dict) and "voices" in raw:
+            raw["voices"] = [Voice.model_validate(v) for v in raw["voices"]]
+        return raw
 
 
 class AsyncVoicesResource:
@@ -55,9 +59,12 @@ class AsyncVoicesResource:
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         """List available voices, optionally filtered by tier, gender, or language."""
-        return await self._client.request(
+        raw = await self._client.request(
             "GET",
             "/voice/catalog",
             query=_to_query(tier=tier, gender=gender, language=language),
             options=options,
         )
+        if isinstance(raw, dict) and "voices" in raw:
+            raw["voices"] = [Voice.model_validate(v) for v in raw["voices"]]
+        return raw

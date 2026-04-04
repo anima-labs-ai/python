@@ -1238,3 +1238,94 @@ class QuarantineOutput(BaseModel):
     reason: str | None = None
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Voice / Calls
+# ---------------------------------------------------------------------------
+
+
+class VoiceTier(str, Enum):
+    BASIC = "basic"
+    PREMIUM = "premium"
+
+
+class VoiceGender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    NEUTRAL = "neutral"
+
+
+class VoiceProvider(str, Enum):
+    TELNYX = "telnyx"
+    ELEVENLABS = "elevenlabs"
+    AWS_POLLY = "aws-polly"
+
+
+class CallDirection(str, Enum):
+    INBOUND = "INBOUND"
+    OUTBOUND = "OUTBOUND"
+
+
+class Voice(BaseModel):
+    id: str
+    name: str
+    provider: VoiceProvider
+    tier: VoiceTier
+    gender: VoiceGender | None = None
+    language: str
+    accent: str | None = None
+    style: str | None = None
+    age_range: str | None = Field(None, alias="ageRange")
+    description: str | None = None
+    preview_url: str | None = Field(None, alias="previewUrl")
+
+    model_config = {"populate_by_name": True}
+
+
+class CallOutput(BaseModel):
+    id: str
+    agent_id: str = Field(alias="agentId")
+    phone_identity_id: str = Field(alias="phoneIdentityId")
+    direction: CallDirection
+    tier: VoiceTier
+    state: str
+    from_number: str = Field(alias="from")
+    to: str
+    started_at: str = Field(alias="startedAt")
+    answered_at: str | None = Field(None, alias="answeredAt")
+    ended_at: str | None = Field(None, alias="endedAt")
+    end_reason: str | None = Field(None, alias="endReason")
+    duration_seconds: float | None = Field(None, alias="durationSeconds")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class CreateCallOutput(BaseModel):
+    call_id: str = Field(alias="callId")
+    state: str
+    from_number: str = Field(alias="from")
+    to: str
+    tier: str
+    direction: str
+
+    model_config = {"populate_by_name": True}
+
+
+class TranscriptSegment(BaseModel):
+    speaker: str
+    text: str
+    start_time: float = Field(alias="startTime")
+    end_time: float = Field(alias="endTime")
+    confidence: float
+    is_final: bool = Field(alias="isFinal")
+
+    model_config = {"populate_by_name": True}
+
+
+class CallTranscript(BaseModel):
+    call_id: str = Field(alias="callId")
+    segments: list[TranscriptSegment]
+
+    model_config = {"populate_by_name": True}
