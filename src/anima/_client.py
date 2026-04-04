@@ -64,9 +64,7 @@ class Anima:
     ) -> None:
         resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
         if not resolved_key:
-            raise ValueError(
-                "Missing API key. Pass `api_key` or set ANIMA_API_KEY."
-            )
+            raise ValueError("Missing API key. Pass `api_key` or set ANIMA_API_KEY.")
         resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
 
         self._http = HTTPClient(
@@ -168,9 +166,7 @@ class AsyncAnima:
     ) -> None:
         resolved_key = api_key or os.environ.get("ANIMA_API_KEY")
         if not resolved_key:
-            raise ValueError(
-                "Missing API key. Pass `api_key` or set ANIMA_API_KEY."
-            )
+            raise ValueError("Missing API key. Pass `api_key` or set ANIMA_API_KEY.")
         resolved_url = base_url or os.environ.get("ANIMA_API_URL") or DEFAULT_BASE_URL
 
         self._http = AsyncHTTPClient(
