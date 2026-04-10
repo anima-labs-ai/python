@@ -532,6 +532,32 @@ class VaultStatusOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class VaultShare(BaseModel):
+    id: str
+    credential_id: str = Field(alias="credentialId")
+    source_agent_id: str = Field(alias="sourceAgentId")
+    target_agent_id: str = Field(alias="targetAgentId")
+    permission: str  # "READ" | "USE" | "MANAGE"
+    expires_at: str | None = Field(None, alias="expiresAt")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultTokenOutput(BaseModel):
+    token: str
+    credential_id: str = Field(alias="credentialId")
+    scope: str  # "autofill" | "proxy" | "export"
+    expires_at: str = Field(alias="expiresAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultRevokeTokensResult(BaseModel):
+    success: bool
+    revoked: int
+
+
 # ---------------------------------------------------------------------------
 # Webhooks
 # ---------------------------------------------------------------------------

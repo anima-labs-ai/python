@@ -184,3 +184,47 @@ APPROVAL_LIST_RAW: dict[str, Any] = {
     "items": [APPROVAL_RAW],
     "cursor": None,
 }
+
+VAULT_CREDENTIAL_RAW: dict[str, Any] = {
+    "id": "cred_001",
+    "type": "login",
+    "name": "GitHub",
+    "notes": None,
+    "login": {
+        "username": "octocat",
+        "password": "secret123",
+        "uris": [{"uri": "https://github.com"}],
+    },
+    "card": None,
+    "identity": None,
+    "fields": None,
+    "favorite": False,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z",
+}
+
+VAULT_SHARE_RAW: dict[str, Any] = {
+    "id": "share_001",
+    "credentialId": "cred_001",
+    "sourceAgentId": "agent_001",
+    "targetAgentId": "agent_002",
+    "permission": "READ",
+    "expiresAt": None,
+    "createdAt": "2025-01-01T00:00:00Z",
+}
+
+VAULT_SHARE_LIST_RAW: dict[str, Any] = {
+    "items": [VAULT_SHARE_RAW],
+}
+
+VAULT_TOKEN_RAW: dict[str, Any] = {
+    "token": "vtk_abc123def456",
+    "credentialId": "cred_001",
+    "scope": "autofill",
+    "expiresAt": "2025-01-01T00:01:00Z",
+}
+
+VAULT_REVOKE_TOKENS_RAW: dict[str, Any] = {
+    "success": True,
+    "revoked": 3,
+}
