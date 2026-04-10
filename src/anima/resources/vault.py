@@ -17,11 +17,11 @@ from .._types import (
 class VaultOAuthResource:
     """OAuth sub-resource for managing service connections."""
 
-    def __init__(self, client: "HTTPClient") -> None:
+    def __init__(self, client: HTTPClient) -> None:
         self._client = client
 
     def list_apps(
-        self, *, category: str | None = None, options: "RequestOptions | None" = None
+        self, *, category: str | None = None, options: RequestOptions | None = None
     ) -> list[dict[str, Any]]:
         query: dict[str, str] = {}
         if category is not None:
@@ -37,7 +37,7 @@ class VaultOAuthResource:
         user_id: str | None = None,
         scopes: list[str] | None = None,
         callback_url: str | None = None,
-        options: "RequestOptions | None" = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"appSlug": app_slug}
         if agent_id is not None:
@@ -51,7 +51,7 @@ class VaultOAuthResource:
         return self._client.request("POST", "/vault/oauth/link", body, options=options)
 
     def get_link_status(
-        self, token: str, *, options: "RequestOptions | None" = None
+        self, token: str, *, options: RequestOptions | None = None
     ) -> dict[str, Any]:
         return self._client.request("GET", f"/vault/oauth/link/{token}", options=options)
 
@@ -62,7 +62,7 @@ class VaultOAuthResource:
         user_id: str | None = None,
         app_slug: str | None = None,
         status: str | None = None,
-        options: "RequestOptions | None" = None,
+        options: RequestOptions | None = None,
     ) -> list[dict[str, Any]]:
         query: dict[str, str] = {}
         if agent_id is not None:
@@ -73,31 +73,44 @@ class VaultOAuthResource:
             query["appSlug"] = app_slug
         if status is not None:
             query["status"] = status
-        raw = self._client.request("GET", "/vault/oauth/accounts", query=query or None, options=options)
+        raw = self._client.request(
+            "GET", "/vault/oauth/accounts", query=query or None, options=options
+        )
         return raw["items"]
 
     def disconnect(
-        self, account_id: str, *, agent_id: str | None = None, options: "RequestOptions | None" = None
+        self,
+        account_id: str,
+        *,
+        agent_id: str | None = None,
+        options: RequestOptions | None = None,
     ) -> None:
         query: dict[str, str] = {}
         if agent_id is not None:
             query["agentId"] = agent_id
-        self._client.request("DELETE", f"/vault/oauth/accounts/{account_id}", query=query or None, options=options)
+        self._client.request(
+            "DELETE",
+            f"/vault/oauth/accounts/{account_id}",
+            query=query or None,
+            options=options,
+        )
 
 
 class AsyncVaultOAuthResource:
     """Async OAuth sub-resource for managing service connections."""
 
-    def __init__(self, client: "AsyncHTTPClient") -> None:
+    def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
 
     async def list_apps(
-        self, *, category: str | None = None, options: "RequestOptions | None" = None
+        self, *, category: str | None = None, options: RequestOptions | None = None
     ) -> list[dict[str, Any]]:
         query: dict[str, str] = {}
         if category is not None:
             query["category"] = category
-        raw = await self._client.request("GET", "/vault/oauth/apps", query=query or None, options=options)
+        raw = await self._client.request(
+            "GET", "/vault/oauth/apps", query=query or None, options=options
+        )
         return raw["items"]
 
     async def create_link(
@@ -108,7 +121,7 @@ class AsyncVaultOAuthResource:
         user_id: str | None = None,
         scopes: list[str] | None = None,
         callback_url: str | None = None,
-        options: "RequestOptions | None" = None,
+        options: RequestOptions | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"appSlug": app_slug}
         if agent_id is not None:
@@ -122,7 +135,7 @@ class AsyncVaultOAuthResource:
         return await self._client.request("POST", "/vault/oauth/link", body, options=options)
 
     async def get_link_status(
-        self, token: str, *, options: "RequestOptions | None" = None
+        self, token: str, *, options: RequestOptions | None = None
     ) -> dict[str, Any]:
         return await self._client.request("GET", f"/vault/oauth/link/{token}", options=options)
 
@@ -133,7 +146,7 @@ class AsyncVaultOAuthResource:
         user_id: str | None = None,
         app_slug: str | None = None,
         status: str | None = None,
-        options: "RequestOptions | None" = None,
+        options: RequestOptions | None = None,
     ) -> list[dict[str, Any]]:
         query: dict[str, str] = {}
         if agent_id is not None:
@@ -144,16 +157,27 @@ class AsyncVaultOAuthResource:
             query["appSlug"] = app_slug
         if status is not None:
             query["status"] = status
-        raw = await self._client.request("GET", "/vault/oauth/accounts", query=query or None, options=options)
+        raw = await self._client.request(
+            "GET", "/vault/oauth/accounts", query=query or None, options=options
+        )
         return raw["items"]
 
     async def disconnect(
-        self, account_id: str, *, agent_id: str | None = None, options: "RequestOptions | None" = None
+        self,
+        account_id: str,
+        *,
+        agent_id: str | None = None,
+        options: RequestOptions | None = None,
     ) -> None:
         query: dict[str, str] = {}
         if agent_id is not None:
             query["agentId"] = agent_id
-        await self._client.request("DELETE", f"/vault/oauth/accounts/{account_id}", query=query or None, options=options)
+        await self._client.request(
+            "DELETE",
+            f"/vault/oauth/accounts/{account_id}",
+            query=query or None,
+            options=options,
+        )
 
 
 class VaultResource:
