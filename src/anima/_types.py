@@ -659,7 +659,7 @@ class Card(BaseModel):
     id: str
     agent_id: str = Field(alias="agentId")
     org_id: str = Field(alias="orgId")
-    stripe_card_id: str = Field(alias="stripeCardId")
+    provider_card_id: str = Field(alias="providerCardId")
     card_type: CardType = Field(alias="cardType")
     status: CardStatus
     last4: str

@@ -102,7 +102,7 @@ CARD_RAW: dict[str, Any] = {
     "id": "card_001",
     "agentId": "agent_001",
     "orgId": "org_001",
-    "stripeCardId": "ic_test",
+    "providerCardId": "ic_test",
     "cardType": "VIRTUAL",
     "status": "ACTIVE",
     "last4": "4242",
