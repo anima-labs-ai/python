@@ -40,6 +40,7 @@ Documentation = "https://docs.useanima.sh"
 Repository = "https://github.com/anima-labs-ai/python"
 Issues = "https://github.com/anima-labs-ai/python/issues"
 Changelog = "https://github.com/anima-labs-ai/python/releases"
+Discord = "https://discord.gg/pY3GK59Z9E"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/anima"]

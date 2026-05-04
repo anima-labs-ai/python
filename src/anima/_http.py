@@ -305,7 +305,7 @@ class HTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}/api{normalized}"
+        return f"{self._base_url}{normalized}"
 
 
 class AsyncHTTPClient:
@@ -454,4 +454,4 @@ class AsyncHTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}/api{normalized}"
+        return f"{self._base_url}{normalized}"
