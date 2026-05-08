@@ -1,6 +1,5 @@
 from .a2a import A2AResource, AsyncA2AResource
 from .agents import AgentsResource, AsyncAgentsResource
-from .cards import AsyncCardsResource, CardsResource
 from .domains import AsyncDomainsResource, DomainsResource
 from .emails import AsyncEmailsResource, EmailsResource
 from .events import AsyncEventsResource, EventsResource
@@ -14,8 +13,6 @@ from .webhooks import AsyncWebhooksResource, WebhooksResource
 __all__ = [
     "AgentsResource",
     "AsyncAgentsResource",
-    "CardsResource",
-    "AsyncCardsResource",
     "DomainsResource",
     "AsyncDomainsResource",
     "EmailsResource",

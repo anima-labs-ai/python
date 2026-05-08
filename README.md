@@ -4,7 +4,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/anima-labs.svg)](https://pypi.org/project/anima-labs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-The official Python SDK for the [Anima API](https://useanima.sh) -- unified agent identity infrastructure for email, phone, cards, and vault.
+The official Python SDK for the [Anima API](https://useanima.sh) -- unified agent identity infrastructure for email, phone, and vault.
 
 ## Installation
 
@@ -99,27 +99,6 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 | `list(*, cursor?, limit?, agent_id?)` | List phone numbers |
 | `release(phone_id)` | Release a phone number |
 | `update_config(phone_id, *, is_primary?, ten_dlc_status?, metadata?)` | Update phone configuration |
-
-### `client.cards`
-
-| Method | Description |
-|--------|-------------|
-| `create(*, agent_id, card_type?, currency?, label?, spend_limit_daily?, spend_limit_monthly?, spend_limit_per_auth?)` | Create a virtual card |
-| `get(card_id)` | Get card details |
-| `list(*, agent_id?, status?, cursor?, limit?)` | List cards |
-| `update(card_id, *, label?, spend_limit_daily?, spend_limit_monthly?, spend_limit_per_auth?)` | Update card settings |
-| `delete(card_id)` | Delete a card |
-| `freeze(card_id)` | Freeze a card |
-| `unfreeze(card_id)` | Unfreeze a card |
-| `create_policy(card_id, *, name, priority, action, ...)` | Create a spending policy |
-| `list_policies(card_id)` | List spending policies |
-| `update_policy(policy_id, *, name?, priority?, action?, ...)` | Update a spending policy |
-| `delete_policy(policy_id)` | Delete a spending policy |
-| `list_transactions(*, card_id?, status?, cursor?, limit?)` | List card transactions |
-| `get_transaction(transaction_id)` | Get a transaction by ID |
-| `kill_switch(*, agent_id?, active)` | Activate or deactivate the kill switch |
-| `list_approvals(*, card_id?, status?, cursor?, limit?)` | List pending approvals |
-| `decide_approval(approval_id, decision)` | Approve or decline a transaction |
 
 ### `client.domains`
 

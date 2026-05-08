@@ -45,7 +45,6 @@ class TestAnimaInit:
         resource_names = [
             "addresses",
             "agents",
-            "cards",
             "domains",
             "emails",
             "events",
@@ -99,7 +98,6 @@ class TestAsyncAnimaInit:
         resource_names = [
             "addresses",
             "agents",
-            "cards",
             "domains",
             "emails",
             "events",

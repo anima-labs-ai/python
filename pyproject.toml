@@ -5,12 +5,12 @@ build-backend = "hatchling.build"
 [project]
 name = "anima-labs"
 version = "0.2.1"
-description = "Anima SDK for Python — unified agent identity infrastructure (email, phone, cards, vault)"
+description = "Anima SDK for Python — unified agent identity infrastructure (email, phone, vault)"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
 authors = [{ name = "Anima Labs", email = "support@useanima.sh" }]
-keywords = ["ai", "agent", "email", "phone", "cards", "vault", "identity", "mcp", "llm", "sdk"]
+keywords = ["ai", "agent", "email", "phone", "vault", "identity", "mcp", "llm", "sdk"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

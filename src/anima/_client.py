@@ -21,7 +21,6 @@ from .resources.agents import AgentsResource, AsyncAgentsResource
 from .resources.anomaly import AnomalyResource, AsyncAnomalyResource
 from .resources.audit import AsyncAuditResource, AuditResource
 from .resources.calls import AsyncCallsResource, CallsResource
-from .resources.cards import AsyncCardsResource, CardsResource
 from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.domains import AsyncDomainsResource, DomainsResource
 from .resources.emails import AsyncEmailsResource, EmailsResource
@@ -76,7 +75,6 @@ class Anima:
 
         self.addresses = AddressesResource(self._http)
         self.agents = AgentsResource(self._http)
-        self.cards = CardsResource(self._http)
         self.domains = DomainsResource(self._http)
         self.emails = EmailsResource(self._http)
         self.events = EventsResource(self._http)
@@ -178,7 +176,6 @@ class AsyncAnima:
 
         self.addresses = AsyncAddressesResource(self._http)
         self.agents = AsyncAgentsResource(self._http)
-        self.cards = AsyncCardsResource(self._http)
         self.domains = AsyncDomainsResource(self._http)
         self.emails = AsyncEmailsResource(self._http)
         self.events = AsyncEventsResource(self._http)

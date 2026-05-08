@@ -114,17 +114,6 @@ class SecuritySeverity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class CardType(str, Enum):
-    VIRTUAL = "VIRTUAL"
-    PHYSICAL = "PHYSICAL"
-
-
-class CardStatus(str, Enum):
-    ACTIVE = "ACTIVE"
-    FROZEN = "FROZEN"
-    CANCELED = "CANCELED"
-
-
 class PolicyAction(str, Enum):
     AUTO_APPROVE = "AUTO_APPROVE"
     REQUIRE_APPROVAL = "REQUIRE_APPROVAL"
@@ -651,106 +640,6 @@ class SecurityEventOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Cards
-# ---------------------------------------------------------------------------
-
-
-class Card(BaseModel):
-    id: str
-    agent_id: str = Field(alias="agentId")
-    org_id: str = Field(alias="orgId")
-    provider_card_id: str = Field(alias="providerCardId")
-    card_type: CardType = Field(alias="cardType")
-    status: CardStatus
-    last4: str
-    brand: str
-    exp_month: int = Field(alias="expMonth")
-    exp_year: int = Field(alias="expYear")
-    currency: str
-    label: str | None = None
-    spend_limit_daily: int | None = Field(None, alias="spendLimitDaily")
-    spend_limit_monthly: int | None = Field(None, alias="spendLimitMonthly")
-    spend_limit_per_auth: int | None = Field(None, alias="spendLimitPerAuth")
-    spent_today: int = Field(alias="spentToday")
-    spent_this_month: int = Field(alias="spentThisMonth")
-    kill_switch_active: bool = Field(alias="killSwitchActive")
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class CardList(BaseModel):
-    items: list[Card]
-    cursor: str | None = None
-
-
-class SpendingPolicy(BaseModel):
-    id: str
-    card_id: str = Field(alias="cardId")
-    org_id: str = Field(alias="orgId")
-    name: str
-    priority: int
-    action: PolicyAction
-    max_amount_cents: int | None = Field(None, alias="maxAmountCents")
-    min_amount_cents: int | None = Field(None, alias="minAmountCents")
-    allowed_categories: list[str] = Field(alias="allowedCategories")
-    blocked_categories: list[str] = Field(alias="blockedCategories")
-    allowed_merchants: list[str] = Field(alias="allowedMerchants")
-    blocked_merchants: list[str] = Field(alias="blockedMerchants")
-    allowed_countries: list[str] = Field(alias="allowedCountries")
-    blocked_countries: list[str] = Field(alias="blockedCountries")
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class CardTransaction(BaseModel):
-    id: str
-    card_id: str = Field(alias="cardId")
-    status: TransactionStatus
-    decision: str | None = None
-    amount_cents: int = Field(alias="amountCents")
-    currency: str
-    merchant_name: str | None = Field(None, alias="merchantName")
-    merchant_category: str | None = Field(None, alias="merchantCategory")
-    merchant_category_code: str | None = Field(None, alias="merchantCategoryCode")
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class TransactionList(BaseModel):
-    items: list[CardTransaction]
-    cursor: str | None = None
-
-
-class KillSwitchResult(BaseModel):
-    affected: int
-    active: bool
-
-
-class CardApproval(BaseModel):
-    id: str
-    org_id: str = Field(alias="orgId")
-    card_id: str = Field(alias="cardId")
-    amount_cents: int = Field(alias="amountCents")
-    currency: str
-    merchant_name: str | None = Field(None, alias="merchantName")
-    status: ApprovalStatus
-    decided_by: str | None = Field(None, alias="decidedBy")
-    expires_at: str = Field(alias="expiresAt")
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class ApprovalList(BaseModel):
-    items: list[CardApproval]
-    cursor: str | None = None
-
-
-# ---------------------------------------------------------------------------
 # Real-time Events (WebSocket)
 # ---------------------------------------------------------------------------
 
@@ -1155,7 +1044,6 @@ class DsarOutput(BaseModel):
 class AnomalyMetric(str, Enum):
     EMAIL_SEND_RATE = "email_send_rate"
     SMS_SEND_RATE = "sms_send_rate"
-    CARD_TXN_COUNT = "card_txn_count"
     VAULT_ACCESS_RATE = "vault_access_rate"
     API_CALL_RATE = "api_call_rate"
     UNIQUE_RECIPIENTS = "unique_recipients"
