@@ -5,10 +5,16 @@ from typing import Any
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     PaginatedResponse,
+    WebhookAuthConfig,
     WebhookDeliveryOutput,
     WebhookOutput,
     WebhookTestOutput,
 )
+
+
+def _serialize_auth_config(auth_config: WebhookAuthConfig) -> dict[str, Any]:
+    """Serialize a webhook auth-config model to its wire dict (camelCase keys)."""
+    return auth_config.model_dump(by_alias=True, exclude_none=True)
 
 
 def _to_list_query(
@@ -49,11 +55,20 @@ class WebhooksResource:
         events: list[str],
         description: str | None = None,
         active: bool = True,
+        auth_config: WebhookAuthConfig | None = None,
+        rate_limit_per_minute: int | None = None,
+        max_attempts: int | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
+        if auth_config is not None:
+            body["authConfig"] = _serialize_auth_config(auth_config)
+        if rate_limit_per_minute is not None:
+            body["rateLimitPerMinute"] = rate_limit_per_minute
+        if max_attempts is not None:
+            body["maxAttempts"] = max_attempts
         return WebhookOutput.model_validate(
             self._client.request("POST", "/webhooks", body, options=options)
         )
@@ -83,6 +98,9 @@ class WebhooksResource:
         events: list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
+        auth_config: WebhookAuthConfig | None = None,
+        rate_limit_per_minute: int | None = None,
+        max_attempts: int | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"id": webhook_id}
@@ -94,6 +112,12 @@ class WebhooksResource:
             body["description"] = description
         if active is not None:
             body["active"] = active
+        if auth_config is not None:
+            body["authConfig"] = _serialize_auth_config(auth_config)
+        if rate_limit_per_minute is not None:
+            body["rateLimitPerMinute"] = rate_limit_per_minute
+        if max_attempts is not None:
+            body["maxAttempts"] = max_attempts
         return WebhookOutput.model_validate(
             self._client.request("PUT", f"/webhooks/{webhook_id}", body, options=options)
         )
@@ -143,11 +167,20 @@ class AsyncWebhooksResource:
         events: list[str],
         description: str | None = None,
         active: bool = True,
+        auth_config: WebhookAuthConfig | None = None,
+        rate_limit_per_minute: int | None = None,
+        max_attempts: int | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"url": url, "events": events, "active": active}
         if description is not None:
             body["description"] = description
+        if auth_config is not None:
+            body["authConfig"] = _serialize_auth_config(auth_config)
+        if rate_limit_per_minute is not None:
+            body["rateLimitPerMinute"] = rate_limit_per_minute
+        if max_attempts is not None:
+            body["maxAttempts"] = max_attempts
         return WebhookOutput.model_validate(
             await self._client.request("POST", "/webhooks", body, options=options)
         )
@@ -177,6 +210,9 @@ class AsyncWebhooksResource:
         events: list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
+        auth_config: WebhookAuthConfig | None = None,
+        rate_limit_per_minute: int | None = None,
+        max_attempts: int | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookOutput:
         body: dict[str, Any] = {"id": webhook_id}
@@ -188,6 +224,12 @@ class AsyncWebhooksResource:
             body["description"] = description
         if active is not None:
             body["active"] = active
+        if auth_config is not None:
+            body["authConfig"] = _serialize_auth_config(auth_config)
+        if rate_limit_per_minute is not None:
+            body["rateLimitPerMinute"] = rate_limit_per_minute
+        if max_attempts is not None:
+            body["maxAttempts"] = max_attempts
         return WebhookOutput.model_validate(
             await self._client.request("PUT", f"/webhooks/{webhook_id}", body, options=options)
         )

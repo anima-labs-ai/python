@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Generic, Literal, TypeVar
+from typing import Any, Generic, Literal, TypeVar, Union
 
 from pydantic import BaseModel, Field
 
@@ -564,6 +564,10 @@ class WebhookOutput(BaseModel):
     disabled_at: str | None = Field(alias="disabledAt", default=None)
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
+    auth_type: Literal["NONE", "BEARER", "BASIC", "CUSTOM_HEADER"] = Field("NONE", alias="authType")
+    auth_header_name: str | None = Field(None, alias="authHeaderName")
+    rate_limit_per_minute: int | None = Field(None, alias="rateLimitPerMinute")
+    max_attempts: int | None = Field(None, alias="maxAttempts")
 
     model_config = {"populate_by_name": True}
 
@@ -601,6 +605,62 @@ class WebhookEvent(BaseModel):
     data: dict[str, Any]
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Webhook auth config (input)
+#
+# Auth the platform presents to your webhook endpoint on each delivery, IN
+# ADDITION to the always-on X-Anima-Signature HMAC. Construct one of the
+# variants below and pass it as `auth_config` to webhooks.create/update. The
+# credential is write-only — it is never returned on reads.
+# ---------------------------------------------------------------------------
+
+
+class WebhookAuthNone(BaseModel):
+    """No customer auth header (the HMAC signature is still sent)."""
+
+    type: Literal["none"] = "none"
+
+    model_config = {"populate_by_name": True}
+
+
+class WebhookAuthBearer(BaseModel):
+    """Bearer token, sent as ``Authorization: Bearer <token>``."""
+
+    type: Literal["bearer"] = "bearer"
+    token: str
+
+    model_config = {"populate_by_name": True}
+
+
+class WebhookAuthBasic(BaseModel):
+    """HTTP basic auth, sent as ``Authorization: Basic <base64(user:pass)>``."""
+
+    type: Literal["basic"] = "basic"
+    username: str
+    password: str
+
+    model_config = {"populate_by_name": True}
+
+
+class WebhookAuthCustomHeader(BaseModel):
+    """Custom header, sent as ``<header_name>: <value>``."""
+
+    type: Literal["custom_header"] = "custom_header"
+    header_name: str = Field(alias="headerName")
+    value: str
+
+    model_config = {"populate_by_name": True}
+
+
+WebhookAuthConfig = Union[
+    WebhookAuthNone,
+    WebhookAuthBearer,
+    WebhookAuthBasic,
+    WebhookAuthCustomHeader,
+]
+"""Auth the platform presents to your endpoint (in addition to the HMAC signature)."""
 
 
 # ---------------------------------------------------------------------------

@@ -153,13 +153,35 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 
 | Method | Description |
 |--------|-------------|
-| `create(*, url, events, description?, active?)` | Register a webhook endpoint |
+| `create(*, url, events, description?, active?, auth_config?, rate_limit_per_minute?, max_attempts?)` | Register a webhook endpoint |
 | `get(webhook_id)` | Get webhook details |
 | `list(*, cursor?, limit?)` | List webhooks |
-| `update(webhook_id, *, url?, events?, description?, active?)` | Update a webhook |
+| `update(webhook_id, *, url?, events?, description?, active?, auth_config?, rate_limit_per_minute?, max_attempts?)` | Update a webhook |
 | `delete(webhook_id)` | Delete a webhook |
 | `test(webhook_id, *, event?)` | Send a test event |
 | `list_deliveries(webhook_id, *, cursor?, limit?)` | List delivery attempts |
+
+Configure the auth Anima presents to your endpoint on each delivery (in addition
+to the always-on `X-Anima-Signature` HMAC) plus delivery throttling:
+
+```python
+from anima import WebhookAuthBearer
+
+webhook = client.webhooks.create(
+    url="https://example.com/anima/webhook",
+    events=["message.received"],
+    # Also: WebhookAuthBasic(username=, password=),
+    #       WebhookAuthCustomHeader(header_name=, value=), WebhookAuthNone().
+    auth_config=WebhookAuthBearer(token="your-endpoint-token"),
+    rate_limit_per_minute=120,  # omit for unlimited
+    max_attempts=5,             # 1-10, default 3
+)
+print(webhook.id, webhook.auth_type)  # -> "wh_..." "BEARER"
+```
+
+The credential you set (token / password / header value) is **write-only** — it
+is never returned by `get` or `list`. To remove auth on update, pass
+`WebhookAuthNone()`.
 
 ## Webhook verification
 
