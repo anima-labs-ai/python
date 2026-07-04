@@ -26,6 +26,11 @@ from ._logger import logger
 T = TypeVar("T")
 
 DEFAULT_BASE_URL = "https://api.useanima.sh"
+# The Anima API serves every route under /v1. The version prefix lives in
+# exactly one place — here — so resource methods pass BARE paths (e.g.
+# "/agents"), mirroring the server, which applies the prefix once at mount time
+# and keeps contract paths bare. Resource modules must NOT hardcode "/v1".
+API_VERSION_PREFIX = "/v1"
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_RETRIES = 3
 BASE_RETRY_DELAY = 0.5  # seconds
@@ -305,7 +310,7 @@ class HTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}{normalized}"
+        return f"{self._base_url}{API_VERSION_PREFIX}{normalized}"
 
 
 class AsyncHTTPClient:
@@ -454,4 +459,4 @@ class AsyncHTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}{normalized}"
+        return f"{self._base_url}{API_VERSION_PREFIX}{normalized}"
