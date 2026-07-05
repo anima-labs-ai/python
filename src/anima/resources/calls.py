@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, cast
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import CallOutput, CallTranscript, CreateCallOutput
@@ -61,7 +61,7 @@ class CallsResource:
         )
         if isinstance(raw, dict) and "calls" in raw:
             raw["calls"] = [CallOutput.model_validate(c) for c in raw["calls"]]
-        return raw
+        return cast(dict[str, Any], raw)
 
     def get(self, call_id: str, *, options: RequestOptions | None = None) -> CallOutput:
         """Get a specific call by ID."""
@@ -147,7 +147,7 @@ class AsyncCallsResource:
         )
         if isinstance(raw, dict) and "calls" in raw:
             raw["calls"] = [CallOutput.model_validate(c) for c in raw["calls"]]
-        return raw
+        return cast(dict[str, Any], raw)
 
     async def get(self, call_id: str, *, options: RequestOptions | None = None) -> CallOutput:
         """Get a specific call by ID."""

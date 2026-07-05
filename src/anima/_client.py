@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from types import TracebackType
+from typing import TYPE_CHECKING
 
 from ._http import (
     DEFAULT_BASE_URL,
@@ -36,6 +37,9 @@ from .resources.vault import AsyncVaultResource, VaultResource
 from .resources.voices import AsyncVoicesResource, VoicesResource
 from .resources.wallet import AsyncWalletResource, WalletResource
 from .resources.webhooks import AsyncWebhooksResource, WebhooksResource
+
+if TYPE_CHECKING:
+    from ._types import WebhookEvent
 
 
 class Anima:
@@ -134,7 +138,7 @@ class Anima:
         signature_header: str,
         secret: str,
         tolerance_seconds: int = 300,
-    ) -> WebhookEvent:  # noqa: F821
+    ) -> WebhookEvent:
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
         return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)
 
@@ -235,6 +239,6 @@ class AsyncAnima:
         signature_header: str,
         secret: str,
         tolerance_seconds: int = 300,
-    ) -> WebhookEvent:  # noqa: F821
+    ) -> WebhookEvent:
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
         return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)

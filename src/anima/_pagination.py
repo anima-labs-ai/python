@@ -16,7 +16,7 @@ Single-page access (backwards compatible):
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Generator, Iterator
 from typing import Any, Callable, Generic, TypeVar
 
 from ._types import CursorPagination, PaginatedResponse
@@ -94,7 +94,7 @@ class AsyncPageIterator(Generic[T]):
             raise RuntimeError("Must await the first page before accessing .pagination")
         return self._first_page.pagination
 
-    def __await__(self):
+    def __await__(self) -> Generator[Any, None, PaginatedResponse[T]]:
         """Allow `page = await anima.agents.list()` for single-page access."""
         return self._ensure_first_page().__await__()
 
