@@ -26,12 +26,31 @@ from ._logger import logger
 T = TypeVar("T")
 
 DEFAULT_BASE_URL = "https://api.useanima.sh"
+# The Anima API serves every route under /v1. The version prefix lives in
+# exactly one place — here — so resource methods pass BARE paths (e.g.
+# "/agents"), mirroring the server, which applies the prefix once at mount time
+# and keeps contract paths bare. Resource modules must NOT hardcode "/v1".
+API_VERSION_PREFIX = "/v1"
 DEFAULT_TIMEOUT = 30.0
 DEFAULT_MAX_RETRIES = 3
 BASE_RETRY_DELAY = 0.5  # seconds
 MAX_RETRY_DELAY = 30.0  # seconds
 
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def _normalize_base_url(base_url: str) -> str:
+    """Reduce a caller-supplied base URL to a versionless origin.
+
+    Strips trailing slashes and a redundant trailing ``/v1`` — e.g. a caller who
+    pasted the API banner's ``https://api.useanima.sh/v1``. The SDK owns the
+    version prefix (:data:`API_VERSION_PREFIX`); leaving ``/v1`` on the base would
+    double-prefix to ``/v1/v1`` and 404.
+    """
+    normalized = base_url.rstrip("/")
+    if normalized.endswith(API_VERSION_PREFIX):
+        normalized = normalized[: -len(API_VERSION_PREFIX)]
+    return normalized
 
 
 @dataclass
@@ -170,7 +189,7 @@ class HTTPClient:
         max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> None:
         self._api_key = api_key
-        self._base_url = base_url.rstrip("/")
+        self._base_url = _normalize_base_url(base_url)
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.Client(timeout=timeout)
@@ -305,7 +324,7 @@ class HTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}{normalized}"
+        return f"{self._base_url}{API_VERSION_PREFIX}{normalized}"
 
 
 class AsyncHTTPClient:
@@ -319,7 +338,7 @@ class AsyncHTTPClient:
         max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> None:
         self._api_key = api_key
-        self._base_url = base_url.rstrip("/")
+        self._base_url = _normalize_base_url(base_url)
         self._timeout = timeout
         self._max_retries = max_retries
         self._client = httpx.AsyncClient(timeout=timeout)
@@ -454,4 +473,4 @@ class AsyncHTTPClient:
 
     def _build_url(self, path: str) -> str:
         normalized = path if path.startswith("/") else f"/{path}"
-        return f"{self._base_url}{normalized}"
+        return f"{self._base_url}{API_VERSION_PREFIX}{normalized}"
