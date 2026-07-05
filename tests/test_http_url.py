@@ -25,3 +25,11 @@ class TestBuildUrlVersionPrefix:
     def test_trailing_slash_base_has_no_double_slash(self) -> None:
         with Anima(api_key="sk-test", base_url="https://api.example.com/") as client:
             assert client._http._build_url("/agents") == "https://api.example.com/v1/agents"
+
+    def test_base_url_already_versioned_is_not_double_prefixed(self) -> None:
+        # The GET / banner advertises base_url "https://api.useanima.sh/v1"; a
+        # caller pasting that must not produce "/v1/v1/...".
+        with Anima(api_key="sk-test", base_url="https://api.example.com/v1") as client:
+            assert client._http._build_url("/agents") == "https://api.example.com/v1/agents"
+        with Anima(api_key="sk-test", base_url="https://api.example.com/v1/") as client:
+            assert client._http._build_url("/agents") == "https://api.example.com/v1/agents"
