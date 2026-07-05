@@ -135,7 +135,7 @@ class EventStream:
             return
 
         try:
-            import websocket  # type: ignore[import-untyped]
+            import websocket
         except ImportError as exc:
             raise ImportError(
                 "The 'websocket-client' package is required for event streaming. "
@@ -165,9 +165,9 @@ class EventStream:
             channels = list(self._subscribed_channels)
         if channels:
             self._send_subscribe(channels)
-        for cb in self._connected_callbacks:
+        for connected_cb in self._connected_callbacks:
             try:
-                cb()
+                connected_cb()
             except Exception:
                 logger.exception("Error in connected callback")
 
@@ -188,30 +188,30 @@ class EventStream:
                 data=msg.get("data", {}),
             )
             self._last_event_id = event.id
-            for cb in self._event_callbacks:
+            for event_cb in self._event_callbacks:
                 try:
-                    cb(event)
+                    event_cb(event)
                 except Exception:
                     logger.exception("Error in event callback")
         elif msg_type == "error":
             err = Exception(f"[{msg.get('code')}] {msg.get('message')}")
-            for cb in self._error_callbacks:
+            for error_cb in self._error_callbacks:
                 try:
-                    cb(err)
+                    error_cb(err)
                 except Exception:
                     logger.exception("Error in error callback")
 
     def _on_ws_error(self, ws: Any, error: Exception) -> None:
-        for cb in self._error_callbacks:
+        for error_cb in self._error_callbacks:
             try:
-                cb(error)
+                error_cb(error)
             except Exception:
                 logger.exception("Error in error callback")
 
     def _on_close(self, ws: Any, close_status_code: int | None, close_msg: str | None) -> None:
-        for cb in self._disconnected_callbacks:
+        for disconnected_cb in self._disconnected_callbacks:
             try:
-                cb()
+                disconnected_cb()
             except Exception:
                 logger.exception("Error in disconnected callback")
         self._schedule_reconnect()
@@ -350,7 +350,7 @@ class AsyncEventStream:
             return
 
         try:
-            import websockets  # type: ignore[import-untyped]
+            import websockets
         except ImportError as exc:
             raise ImportError(
                 "The 'websockets' package is required for async event streaming. "
@@ -366,9 +366,9 @@ class AsyncEventStream:
             if channels:
                 await self._send_subscribe(channels)
 
-            for cb in self._connected_callbacks:
+            for connected_cb in self._connected_callbacks:
                 try:
-                    cb()
+                    connected_cb()
                 except Exception:
                     logger.exception("Error in connected callback")
 
@@ -377,9 +377,9 @@ class AsyncEventStream:
             self._ping_task = asyncio.ensure_future(self._ping_loop())
 
         except Exception as exc:
-            for cb in self._error_callbacks:
+            for error_cb in self._error_callbacks:
                 try:
-                    cb(exc)
+                    error_cb(exc)
                 except Exception:
                     logger.exception("Error in error callback")
             await self._schedule_reconnect()
@@ -403,16 +403,16 @@ class AsyncEventStream:
                         data=msg.get("data", {}),
                     )
                     self._last_event_id = event.id
-                    for cb in self._event_callbacks:
+                    for event_cb in self._event_callbacks:
                         try:
-                            cb(event)
+                            event_cb(event)
                         except Exception:
                             logger.exception("Error in event callback")
                 elif msg_type == "error":
                     err = Exception(f"[{msg.get('code')}] {msg.get('message')}")
-                    for cb in self._error_callbacks:
+                    for error_cb in self._error_callbacks:
                         try:
-                            cb(err)
+                            error_cb(err)
                         except Exception:
                             logger.exception("Error in error callback")
         except asyncio.CancelledError:
@@ -421,9 +421,9 @@ class AsyncEventStream:
             pass
 
         # Connection dropped
-        for cb in self._disconnected_callbacks:
+        for disconnected_cb in self._disconnected_callbacks:
             try:
-                cb()
+                disconnected_cb()
             except Exception:
                 logger.exception("Error in disconnected callback")
         await self._schedule_reconnect()

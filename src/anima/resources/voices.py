@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import Voice
@@ -43,7 +43,7 @@ class VoicesResource:
         )
         if isinstance(raw, dict) and "voices" in raw:
             raw["voices"] = [Voice.model_validate(v) for v in raw["voices"]]
-        return raw
+        return cast(dict[str, Any], raw)
 
 
 class AsyncVoicesResource:
@@ -67,4 +67,4 @@ class AsyncVoicesResource:
         )
         if isinstance(raw, dict) and "voices" in raw:
             raw["voices"] = [Voice.model_validate(v) for v in raw["voices"]]
-        return raw
+        return cast(dict[str, Any], raw)

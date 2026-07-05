@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import PhoneIdentityOutput, PhoneProvisionOutput
@@ -54,16 +54,19 @@ class PhonesResource:
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        return self._client.request(
-            "GET",
-            "/phone/search",
-            query=_to_search_query(
-                country_code=country_code,
-                area_code=area_code,
-                capabilities=capabilities,
-                limit=limit,
+        return cast(
+            dict[str, Any],
+            self._client.request(
+                "GET",
+                "/phone/search",
+                query=_to_search_query(
+                    country_code=country_code,
+                    area_code=area_code,
+                    capabilities=capabilities,
+                    limit=limit,
+                ),
+                options=options,
             ),
-            options=options,
         )
 
     def provision(
@@ -104,11 +107,14 @@ class PhonesResource:
         phone_number: str,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        return self._client.request(
-            "POST",
-            "/phone/release",
-            {"agentId": agent_id, "phoneNumber": phone_number},
-            options=options,
+        return cast(
+            dict[str, Any],
+            self._client.request(
+                "POST",
+                "/phone/release",
+                {"agentId": agent_id, "phoneNumber": phone_number},
+                options=options,
+            ),
         )
 
 
@@ -125,16 +131,19 @@ class AsyncPhonesResource:
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        return await self._client.request(
-            "GET",
-            "/phone/search",
-            query=_to_search_query(
-                country_code=country_code,
-                area_code=area_code,
-                capabilities=capabilities,
-                limit=limit,
+        return cast(
+            dict[str, Any],
+            await self._client.request(
+                "GET",
+                "/phone/search",
+                query=_to_search_query(
+                    country_code=country_code,
+                    area_code=area_code,
+                    capabilities=capabilities,
+                    limit=limit,
+                ),
+                options=options,
             ),
-            options=options,
         )
 
     async def provision(
@@ -175,9 +184,12 @@ class AsyncPhonesResource:
         phone_number: str,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        return await self._client.request(
-            "POST",
-            "/phone/release",
-            {"agentId": agent_id, "phoneNumber": phone_number},
-            options=options,
+        return cast(
+            dict[str, Any],
+            await self._client.request(
+                "POST",
+                "/phone/release",
+                {"agentId": agent_id, "phoneNumber": phone_number},
+                options=options,
+            ),
         )

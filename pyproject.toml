@@ -56,7 +56,15 @@ line-length = 100
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+plugins = ["pydantic.mypy"]
+
+# starlette is an optional integration dependency (webhook middleware); it is
+# imported lazily inside functions and is not a declared runtime dependency, so
+# mypy cannot resolve its stubs in the default install.
+[[tool.mypy.overrides]]
+module = ["starlette.*"]
+ignore_missing_imports = true

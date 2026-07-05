@@ -33,7 +33,6 @@ jobs:
 
       - name: Type check with mypy
         run: mypy src/
-        continue-on-error: true
 
       - name: Run tests
         run: pytest

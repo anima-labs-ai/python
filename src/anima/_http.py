@@ -103,7 +103,9 @@ def _should_retry(status_code: int) -> bool:
 
 def _jittered_delay(attempt: int) -> float:
     """Jittered exponential backoff: random(0, BASE * 2^attempt), capped at MAX."""
-    exponential = BASE_RETRY_DELAY * (2**attempt)
+    # Annotate as float: `2**attempt` is typed Any (int.__pow__ allows negative
+    # exponents → float), which would otherwise make the return value Any.
+    exponential: float = BASE_RETRY_DELAY * (2**attempt)
     return min(random.random() * exponential, MAX_RETRY_DELAY)
 
 
@@ -233,8 +235,8 @@ class HTTPClient:
         for attempt in range(max_retries + 1):
             if attempt == 0:
                 redacted = {**headers, "Authorization": "Bearer [REDACTED]"}
-                for hook in self._request_hooks:
-                    hook(RequestEvent(method=method, path=path, headers=redacted))
+                for request_hook in self._request_hooks:
+                    request_hook(RequestEvent(method=method, path=path, headers=redacted))
 
             try:
                 response = self._client.request(
@@ -246,8 +248,8 @@ class HTTPClient:
                 )
 
                 duration_ms = (time.monotonic() - start) * 1000
-                for hook in self._response_hooks:
-                    hook(
+                for response_hook in self._response_hooks:
+                    response_hook(
                         ResponseEvent(
                             method=method,
                             path=path,
@@ -382,8 +384,8 @@ class AsyncHTTPClient:
         for attempt in range(max_retries + 1):
             if attempt == 0:
                 redacted = {**headers, "Authorization": "Bearer [REDACTED]"}
-                for hook in self._request_hooks:
-                    hook(RequestEvent(method=method, path=path, headers=redacted))
+                for request_hook in self._request_hooks:
+                    request_hook(RequestEvent(method=method, path=path, headers=redacted))
 
             try:
                 response = await self._client.request(
@@ -395,8 +397,8 @@ class AsyncHTTPClient:
                 )
 
                 duration_ms = (time.monotonic() - start) * 1000
-                for hook in self._response_hooks:
-                    hook(
+                for response_hook in self._response_hooks:
+                    response_hook(
                         ResponseEvent(
                             method=method,
                             path=path,

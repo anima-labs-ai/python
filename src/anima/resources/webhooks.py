@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+# `list` is shadowed by the `WebhooksResource.list` / `AsyncWebhooksResource.list`
+# methods for annotations that appear after those methods in the class body, so
+# those sites qualify the builtin explicitly as `builtins.list`.
+import builtins
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
@@ -95,7 +99,7 @@ class WebhooksResource:
         webhook_id: str,
         *,
         url: str | None = None,
-        events: list[str] | None = None,
+        events: builtins.list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
         auth_config: WebhookAuthConfig | None = None,
@@ -207,7 +211,7 @@ class AsyncWebhooksResource:
         webhook_id: str,
         *,
         url: str | None = None,
-        events: list[str] | None = None,
+        events: builtins.list[str] | None = None,
         description: str | None = None,
         active: bool | None = None,
         auth_config: WebhookAuthConfig | None = None,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
@@ -27,7 +27,7 @@ class VaultOAuthResource:
         if category is not None:
             query["category"] = category
         raw = self._client.request("GET", "/vault/oauth/apps", query=query or None, options=options)
-        return raw["items"]
+        return cast(list[dict[str, Any]], raw["items"])
 
     def create_link(
         self,
@@ -48,12 +48,18 @@ class VaultOAuthResource:
             body["scopes"] = scopes
         if callback_url is not None:
             body["callbackUrl"] = callback_url
-        return self._client.request("POST", "/vault/oauth/link", body, options=options)
+        return cast(
+            dict[str, Any],
+            self._client.request("POST", "/vault/oauth/link", body, options=options),
+        )
 
     def get_link_status(
         self, token: str, *, options: RequestOptions | None = None
     ) -> dict[str, Any]:
-        return self._client.request("GET", f"/vault/oauth/link/{token}", options=options)
+        return cast(
+            dict[str, Any],
+            self._client.request("GET", f"/vault/oauth/link/{token}", options=options),
+        )
 
     def list_accounts(
         self,
@@ -76,7 +82,7 @@ class VaultOAuthResource:
         raw = self._client.request(
             "GET", "/vault/oauth/accounts", query=query or None, options=options
         )
-        return raw["items"]
+        return cast(list[dict[str, Any]], raw["items"])
 
     def disconnect(
         self,
@@ -111,7 +117,7 @@ class AsyncVaultOAuthResource:
         raw = await self._client.request(
             "GET", "/vault/oauth/apps", query=query or None, options=options
         )
-        return raw["items"]
+        return cast(list[dict[str, Any]], raw["items"])
 
     async def create_link(
         self,
@@ -132,12 +138,18 @@ class AsyncVaultOAuthResource:
             body["scopes"] = scopes
         if callback_url is not None:
             body["callbackUrl"] = callback_url
-        return await self._client.request("POST", "/vault/oauth/link", body, options=options)
+        return cast(
+            dict[str, Any],
+            await self._client.request("POST", "/vault/oauth/link", body, options=options),
+        )
 
     async def get_link_status(
         self, token: str, *, options: RequestOptions | None = None
     ) -> dict[str, Any]:
-        return await self._client.request("GET", f"/vault/oauth/link/{token}", options=options)
+        return cast(
+            dict[str, Any],
+            await self._client.request("GET", f"/vault/oauth/link/{token}", options=options),
+        )
 
     async def list_accounts(
         self,
@@ -160,7 +172,7 @@ class AsyncVaultOAuthResource:
         raw = await self._client.request(
             "GET", "/vault/oauth/accounts", query=query or None, options=options
         )
-        return raw["items"]
+        return cast(list[dict[str, Any]], raw["items"])
 
     async def disconnect(
         self,
@@ -329,7 +341,7 @@ class VaultResource:
         raw = self._client.request(
             "POST", "/vault/generate-password", body or None, options=options
         )
-        return raw["password"]
+        return cast(str, raw["password"])
 
     def get_totp(
         self, credential_id: str, *, options: RequestOptions | None = None
@@ -594,7 +606,7 @@ class AsyncVaultResource:
         raw = await self._client.request(
             "POST", "/vault/generate-password", body or None, options=options
         )
-        return raw["password"]
+        return cast(str, raw["password"])
 
     async def get_totp(
         self, credential_id: str, *, options: RequestOptions | None = None
