@@ -85,9 +85,7 @@ class AuditResource:
         if resource_type is not None:
             payload["resourceType"] = resource_type
         return AuditLogExportOutput.model_validate(
-            self._client.request(
-                "POST", f"/orgs/{org_id}/audit/export", payload, options=options
-            )
+            self._client.request("POST", f"/orgs/{org_id}/audit/export", payload, options=options)
         )
 
 

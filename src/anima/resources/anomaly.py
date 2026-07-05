@@ -120,9 +120,7 @@ class AnomalyResource:
         if enabled is not None:
             payload["enabled"] = enabled
         return AnomalyRuleOutput.model_validate(
-            self._client.request(
-                "POST", f"/orgs/{org_id}/anomaly/rules", payload, options=options
-            )
+            self._client.request("POST", f"/orgs/{org_id}/anomaly/rules", payload, options=options)
         )
 
     def update_rule(
@@ -160,9 +158,7 @@ class AnomalyResource:
     def delete_rule(
         self, *, org_id: str, rule_id: str, options: RequestOptions | None = None
     ) -> None:
-        self._client.request(
-            "DELETE", f"/orgs/{org_id}/anomaly/rules/{rule_id}", options=options
-        )
+        self._client.request("DELETE", f"/orgs/{org_id}/anomaly/rules/{rule_id}", options=options)
 
     def get_baseline(
         self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
