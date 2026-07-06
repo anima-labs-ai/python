@@ -242,8 +242,18 @@ class VaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
+        generate_password: dict[str, Any] | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
+        """Create a credential.
+
+        Pass ``generate_password`` (e.g. ``{}`` or ``{"length": 32}``) to have
+        the vault generate the login password server-side: it is stored with
+        the credential and never returned — the response carries only the
+        masked credential ref. Login type only; mutually exclusive with
+        ``login["password"]``. Server defaults: 24 chars, all character
+        classes (``uppercase``/``lowercase``/``number``/``special``).
+        """
         body: dict[str, Any] = {
             "agentId": agent_id,
             "type": type,
@@ -260,6 +270,8 @@ class VaultResource:
             body["identity"] = identity
         if fields is not None:
             body["fields"] = fields
+        if generate_password is not None:
+            body["generatePassword"] = generate_password
         return VaultCredential.model_validate(
             self._client.request("POST", "/vault/credentials", body, options=options)
         )
@@ -507,8 +519,18 @@ class AsyncVaultResource:
         identity: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
+        generate_password: dict[str, Any] | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
+        """Create a credential.
+
+        Pass ``generate_password`` (e.g. ``{}`` or ``{"length": 32}``) to have
+        the vault generate the login password server-side: it is stored with
+        the credential and never returned — the response carries only the
+        masked credential ref. Login type only; mutually exclusive with
+        ``login["password"]``. Server defaults: 24 chars, all character
+        classes (``uppercase``/``lowercase``/``number``/``special``).
+        """
         body: dict[str, Any] = {
             "agentId": agent_id,
             "type": type,
@@ -525,6 +547,8 @@ class AsyncVaultResource:
             body["identity"] = identity
         if fields is not None:
             body["fields"] = fields
+        if generate_password is not None:
+            body["generatePassword"] = generate_password
         return VaultCredential.model_validate(
             await self._client.request("POST", "/vault/credentials", body, options=options)
         )

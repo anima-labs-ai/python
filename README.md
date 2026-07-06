@@ -122,7 +122,7 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 | `deprovision(*, agent_id)` | Deprovision an agent's vault |
 | `list_credentials(*, agent_id, type?)` | List stored credentials |
 | `get_credential(credential_id)` | Get a credential by ID |
-| `create_credential(*, agent_id, type, name, notes?, login?, card?, identity?, fields?, favorite?)` | Store a new credential |
+| `create_credential(*, agent_id, type, name, notes?, login?, card?, identity?, fields?, favorite?, generate_password?)` | Store a new credential. `generate_password={...}` has the vault mint the login password server-side — stored, never returned (masked ref only) |
 | `update_credential(credential_id, *, name?, notes?, login?, card?, identity?, fields?, favorite?)` | Update a credential |
 | `delete_credential(credential_id)` | Delete a credential |
 | `search(*, agent_id, search, type?)` | Search credentials |
