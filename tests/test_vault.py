@@ -194,3 +194,48 @@ class TestRevokeTokens:
 
         call_body = mock_http.request.call_args[0][2]
         assert call_body["agentId"] == "agent_001"
+
+
+# ---------------------------------------------------------------------------
+# Server-side password generation
+# ---------------------------------------------------------------------------
+
+
+class TestCreateCredentialGeneratePassword:
+    def test_generate_password_sends_options_and_no_password(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        result = resource.create_credential(
+            agent_id="agent_001",
+            type="login",
+            name="Acme Portal",
+            login={"username": "bot@acme.io"},
+            generate_password={"length": 32, "special": False},
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credentials",
+            {
+                "agentId": "agent_001",
+                "type": "login",
+                "name": "Acme Portal",
+                "favorite": False,
+                "login": {"username": "bot@acme.io"},
+                "generatePassword": {"length": 32, "special": False},
+            },
+            options=None,
+        )
+        assert isinstance(result, VaultCredential)
+
+    def test_no_generate_password_omits_field(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        resource.create_credential(
+            agent_id="agent_001",
+            type="login",
+            name="Plain",
+            login={"username": "u", "password": "p"},
+        )
+        body = mock_http.request.call_args[0][2]
+        assert "generatePassword" not in body
