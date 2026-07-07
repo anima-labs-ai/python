@@ -26,6 +26,7 @@ from .resources.compliance import AsyncComplianceResource, ComplianceResource
 from .resources.domains import AsyncDomainsResource, DomainsResource
 from .resources.emails import AsyncEmailsResource, EmailsResource
 from .resources.events import AsyncEventsResource, EventsResource
+from .resources.extension import AsyncExtensionResource, ExtensionResource
 from .resources.identity import AsyncIdentityResource, IdentityResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.organizations import AsyncOrganizationsResource, OrganizationsResource
@@ -98,6 +99,7 @@ class Anima:
         self.anomaly = AnomalyResource(self._http)
         self.voices = VoicesResource(self._http)
         self.calls = CallsResource(self._http, api_key=resolved_key, base_url=resolved_url)
+        self.extension = ExtensionResource(self._http)
 
     def on_request(self, hook: RequestHook) -> None:
         """Register a hook called before each HTTP request."""
@@ -199,6 +201,7 @@ class AsyncAnima:
         self.anomaly = AsyncAnomalyResource(self._http)
         self.voices = AsyncVoicesResource(self._http)
         self.calls = AsyncCallsResource(self._http, api_key=resolved_key, base_url=resolved_url)
+        self.extension = AsyncExtensionResource(self._http)
 
     def on_request(self, hook: RequestHook) -> None:
         """Register a hook called before each HTTP request."""
