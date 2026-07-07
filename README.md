@@ -131,6 +131,17 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 | `status(agent_id)` | Get vault status |
 | `sync(agent_id)` | Force vault sync |
 
+### `client.extension`
+
+| Method | Description |
+|--------|-------------|
+| `connect(*, agent_id?, ttl?)` | Mint a one-time connect handoff for a headless browser-extension worker. With a master key pass `agent_id`; with an agent key omit it. `ttl` is `"15m"`, `"1h"`, or `"session"`. Returns a `connect_url` (no secret). |
+
+```python
+handoff = client.extension.connect(agent_id="agent_123", ttl="15m")
+print(handoff.connect_url)  # open in the extension worker to complete the handshake
+```
+
 ### `client.security`
 
 | Method | Description |

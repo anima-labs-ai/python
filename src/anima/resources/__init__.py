@@ -3,6 +3,7 @@ from .agents import AgentsResource, AsyncAgentsResource
 from .domains import AsyncDomainsResource, DomainsResource
 from .emails import AsyncEmailsResource, EmailsResource
 from .events import AsyncEventsResource, EventsResource
+from .extension import AsyncExtensionResource, ExtensionResource
 from .messages import AsyncMessagesResource, MessagesResource
 from .organizations import AsyncOrganizationsResource, OrganizationsResource
 from .phones import AsyncPhonesResource, PhonesResource
@@ -19,6 +20,8 @@ __all__ = [
     "AsyncEmailsResource",
     "EventsResource",
     "AsyncEventsResource",
+    "ExtensionResource",
+    "AsyncExtensionResource",
     "MessagesResource",
     "AsyncMessagesResource",
     "OrganizationsResource",

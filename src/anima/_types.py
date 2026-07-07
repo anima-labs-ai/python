@@ -1303,3 +1303,18 @@ class CallTranscript(BaseModel):
     segments: list[TranscriptSegment]
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Extension (headless connect)
+# ---------------------------------------------------------------------------
+
+
+class ConnectExtensionResult(BaseModel):
+    agent_id: str = Field(alias="agentId")
+    connect_url: str = Field(alias="connectUrl")
+    expires_at: str | None = Field(None, alias="expiresAt")
+    exchange_expires_at: str = Field(alias="exchangeExpiresAt")
+    policy: str
+
+    model_config = {"populate_by_name": True}

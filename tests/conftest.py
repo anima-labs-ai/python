@@ -141,3 +141,11 @@ VAULT_REVOKE_TOKENS_RAW: dict[str, Any] = {
     "success": True,
     "revoked": 3,
 }
+
+EXTENSION_CONNECT_RAW: dict[str, Any] = {
+    "agentId": "agent_001",
+    "connectUrl": "https://useanima.sh/extension/connect#exch_abc123",
+    "expiresAt": "2025-01-01T01:00:00Z",
+    "exchangeExpiresAt": "2025-01-01T00:05:00Z",
+    "policy": "pre_approved",
+}

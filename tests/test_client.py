@@ -62,6 +62,7 @@ class TestAnimaInit:
             "audit",
             "compliance",
             "anomaly",
+            "extension",
         ]
         for name in resource_names:
             assert hasattr(client, name), f"Missing resource: {name}"
@@ -115,6 +116,7 @@ class TestAsyncAnimaInit:
             "audit",
             "compliance",
             "anomaly",
+            "extension",
         ]
         for name in resource_names:
             assert hasattr(client, name), f"Missing resource: {name}"
