@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from anima._types import VaultCredential, VaultRevokeTokensResult, VaultShare, VaultTokenOutput
+from anima._types import VaultRevokeTokensResult, VaultShare, VaultTokenOutput
 from anima.resources.vault import VaultResource
 
 from .conftest import (
-    VAULT_CREDENTIAL_RAW,
     VAULT_REVOKE_TOKENS_RAW,
     VAULT_SHARE_LIST_RAW,
     VAULT_SHARE_RAW,
@@ -153,22 +152,40 @@ class TestCreateToken:
         assert call_body["scope"] == "proxy"
 
 
-class TestExchangeToken:
-    def test_exchange_token(self, mock_http: MagicMock) -> None:
-        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+class TestUseCredential:
+    def test_use_credential_brokers_via_use_endpoint(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "status": 200,
+            "headers": {},
+            "body": "{}",
+            "truncated": False,
+        }
         resource = VaultResource(mock_http)
-        result = resource.exchange_token("vtk_abc123def456")
+        result = resource.use_credential(
+            "cred_001",
+            method="GET",
+            url="https://api.example.com/v1/thing",
+            headers={"X-Keep": "1"},
+        )
 
         mock_http.request.assert_called_once_with(
             "POST",
-            "/vault/token/exchange",
-            {"token": "vtk_abc123def456"},
+            "/vault/credentials/cred_001/use",
+            {
+                "method": "GET",
+                "url": "https://api.example.com/v1/thing",
+                "headers": {"X-Keep": "1"},
+            },
             options=None,
         )
-        assert isinstance(result, VaultCredential)
-        assert result.id == "cred_001"
-        assert result.login is not None
-        assert result.login.username == "octocat"
+        assert result["status"] == 200
+
+    def test_no_plaintext_reveal_method(self) -> None:
+        # exchange_token returned plaintext and is deliberately removed; the SDK
+        # exposes no plaintext-reveal path (use, never see).
+        assert not hasattr(VaultResource, "exchange_token")
+        assert hasattr(VaultResource, "use_credential")
+        assert hasattr(VaultResource, "get_credential")
 
 
 class TestRevokeTokens:

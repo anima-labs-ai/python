@@ -441,11 +441,38 @@ class VaultResource:
             self._client.request("POST", "/vault/token", body, options=options)
         )
 
-    def exchange_token(
-        self, token: str, *, options: RequestOptions | None = None
-    ) -> VaultCredential:
-        return VaultCredential.model_validate(
-            self._client.request("POST", "/vault/token/exchange", {"token": token}, options=options)
+    # NOTE: there is deliberately no exchange_token here. Exchanging a vault
+    # token returns the plaintext credential, and the SDK exposes no
+    # plaintext-reveal path — an agent must be able to USE a secret, never SEE
+    # it. Use use_credential (the server-side broker) below; browser/CLI
+    # injection exchanges tokens against the API directly, not via this SDK.
+
+    def use_credential(
+        self,
+        id: str,
+        *,
+        method: str,
+        url: str,
+        agent_id: str | None = None,
+        headers: dict[str, str] | None = None,
+        body: str | None = None,
+        options: RequestOptions | None = None,
+    ) -> dict[str, Any]:
+        """Make an outbound HTTPS call with the credential attached server-side.
+
+        Returns the upstream response (status/headers/body); the plaintext
+        secret is never returned. Works for brokered credentials.
+        """
+        payload: dict[str, Any] = {"method": method, "url": url}
+        if agent_id is not None:
+            payload["agentId"] = agent_id
+        if headers is not None:
+            payload["headers"] = headers
+        if body is not None:
+            payload["body"] = body
+        return cast(
+            "dict[str, Any]",
+            self._client.request("POST", f"/vault/credentials/{id}/use", payload, options=options),
         )
 
     def revoke_tokens(
@@ -720,13 +747,36 @@ class AsyncVaultResource:
             await self._client.request("POST", "/vault/token", body, options=options)
         )
 
-    async def exchange_token(
-        self, token: str, *, options: RequestOptions | None = None
-    ) -> VaultCredential:
-        return VaultCredential.model_validate(
+    # No exchange_token: see the sync client above — the SDK exposes no
+    # plaintext-reveal path.
+
+    async def use_credential(
+        self,
+        id: str,
+        *,
+        method: str,
+        url: str,
+        agent_id: str | None = None,
+        headers: dict[str, str] | None = None,
+        body: str | None = None,
+        options: RequestOptions | None = None,
+    ) -> dict[str, Any]:
+        """Make an outbound HTTPS call with the credential attached server-side.
+
+        Returns the upstream response; the plaintext secret is never returned.
+        """
+        payload: dict[str, Any] = {"method": method, "url": url}
+        if agent_id is not None:
+            payload["agentId"] = agent_id
+        if headers is not None:
+            payload["headers"] = headers
+        if body is not None:
+            payload["body"] = body
+        return cast(
+            "dict[str, Any]",
             await self._client.request(
-                "POST", "/vault/token/exchange", {"token": token}, options=options
-            )
+                "POST", f"/vault/credentials/{id}/use", payload, options=options
+            ),
         )
 
     async def revoke_tokens(
