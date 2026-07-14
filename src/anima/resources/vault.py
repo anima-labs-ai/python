@@ -441,11 +441,19 @@ class VaultResource:
             self._client.request("POST", "/vault/token", body, options=options)
         )
 
-    # NOTE: there is deliberately no exchange_token here. Exchanging a vault
-    # token returns the plaintext credential, and the SDK exposes no
-    # plaintext-reveal path — an agent must be able to USE a secret, never SEE
-    # it. Use use_credential (the server-side broker) below; browser/CLI
-    # injection exchanges tokens against the API directly, not via this SDK.
+    def exchange_token_for_injection(
+        self, token: str, *, options: RequestOptions | None = None
+    ) -> VaultCredential:
+        """Exchange a vault token for the PLAINTEXT credential, to inject into a
+        trusted client process (CLI/extension) — never to read into an LLM.
+
+        The API gates this to injector credentials (a master key or a key with
+        the ``vault:inject`` scope); a plain agent key gets 403. To *use* a
+        secret without seeing it, call ``use_credential`` (the broker).
+        """
+        return VaultCredential.model_validate(
+            self._client.request("POST", "/vault/token/exchange", {"token": token}, options=options)
+        )
 
     def use_credential(
         self,
@@ -747,8 +755,21 @@ class AsyncVaultResource:
             await self._client.request("POST", "/vault/token", body, options=options)
         )
 
-    # No exchange_token: see the sync client above — the SDK exposes no
-    # plaintext-reveal path.
+    async def exchange_token_for_injection(
+        self, token: str, *, options: RequestOptions | None = None
+    ) -> VaultCredential:
+        """Exchange a vault token for the PLAINTEXT credential, to inject into a
+        trusted client process (CLI/extension) — never to read into an LLM.
+
+        Gated to injector credentials (master key or a key with ``vault:inject``);
+        a plain agent key gets 403. Use ``use_credential`` (the broker) to use a
+        secret without seeing it.
+        """
+        return VaultCredential.model_validate(
+            await self._client.request(
+                "POST", "/vault/token/exchange", {"token": token}, options=options
+            )
+        )
 
     async def use_credential(
         self,

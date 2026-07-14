@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from anima._types import VaultRevokeTokensResult, VaultShare, VaultTokenOutput
+from anima._types import VaultCredential, VaultRevokeTokensResult, VaultShare, VaultTokenOutput
 from anima.resources.vault import VaultResource
 
 from .conftest import (
+    VAULT_CREDENTIAL_RAW,
     VAULT_REVOKE_TOKENS_RAW,
     VAULT_SHARE_LIST_RAW,
     VAULT_SHARE_RAW,
@@ -180,12 +181,23 @@ class TestUseCredential:
         )
         assert result["status"] == 200
 
-    def test_no_plaintext_reveal_method(self) -> None:
-        # exchange_token returned plaintext and is deliberately removed; the SDK
-        # exposes no plaintext-reveal path (use, never see).
+    def test_agent_use_path_is_broker(self) -> None:
+        # The old UNGATED exchange_token is gone; an agent uses secrets via the
+        # broker (use_credential), and get_credential sends no reveal flag.
         assert not hasattr(VaultResource, "exchange_token")
         assert hasattr(VaultResource, "use_credential")
         assert hasattr(VaultResource, "get_credential")
+
+    def test_exchange_token_for_injection_posts_to_exchange(self, mock_http: MagicMock) -> None:
+        # Returns plaintext; the API gates it to injector credentials (master /
+        # vault:inject), so a plain agent key gets 403 server-side.
+        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        result = resource.exchange_token_for_injection("vtk_abc")
+        mock_http.request.assert_called_once_with(
+            "POST", "/vault/token/exchange", {"token": "vtk_abc"}, options=None
+        )
+        assert isinstance(result, VaultCredential)
 
 
 class TestRevokeTokens:
