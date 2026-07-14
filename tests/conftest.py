@@ -149,3 +149,17 @@ EXTENSION_CONNECT_RAW: dict[str, Any] = {
     "exchangeExpiresAt": "2025-01-01T00:05:00Z",
     "policy": "pre_approved",
 }
+
+A2A_TASK_RAW: dict[str, Any] = {
+    "id": "task_001",
+    "agentId": "agent_001",
+    "type": "ping",
+    "status": "SUBMITTED",
+    "input": {},
+    "output": None,
+    "artifacts": [],
+    "fromDid": None,
+    "error": None,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z",
+}

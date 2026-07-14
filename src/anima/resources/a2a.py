@@ -88,6 +88,22 @@ class A2AResource:
             )
         )
 
+    def dispatch(
+        self,
+        from_agent_id: str,
+        *,
+        to_did: str,
+        type: str,
+        input: dict[str, Any],
+        options: RequestOptions | None = None,
+    ) -> A2ATaskOutput:
+        body = {"fromAgentId": from_agent_id, "toDid": to_did, "type": type, "input": input}
+        return A2ATaskOutput.model_validate(
+            self._client.request(
+                "POST", f"/agents/{from_agent_id}/a2a/dispatch", body, options=options
+            )
+        )
+
 
 class AsyncA2AResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
@@ -155,5 +171,21 @@ class AsyncA2AResource:
         return A2ATaskOutput.model_validate(
             await self._client.request(
                 "POST", f"/agents/{agent_id}/a2a/tasks/{task_id}/cancel", options=options
+            )
+        )
+
+    async def dispatch(
+        self,
+        from_agent_id: str,
+        *,
+        to_did: str,
+        type: str,
+        input: dict[str, Any],
+        options: RequestOptions | None = None,
+    ) -> A2ATaskOutput:
+        body = {"fromAgentId": from_agent_id, "toDid": to_did, "type": type, "input": input}
+        return A2ATaskOutput.model_validate(
+            await self._client.request(
+                "POST", f"/agents/{from_agent_id}/a2a/dispatch", body, options=options
             )
         )
