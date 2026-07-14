@@ -682,7 +682,7 @@ class VaultResource:
         if body is not None:
             payload["body"] = body
         return cast(
-            "dict[str, Any]",
+            dict[str, Any],
             self._client.request("POST", f"/vault/credentials/{id}/use", payload, options=options),
         )
 
@@ -1151,7 +1151,7 @@ class AsyncVaultResource:
         if body is not None:
             payload["body"] = body
         return cast(
-            "dict[str, Any]",
+            dict[str, Any],
             await self._client.request(
                 "POST", f"/vault/credentials/{id}/use", payload, options=options
             ),

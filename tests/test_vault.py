@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
+from anima._http import AsyncHTTPClient
 from anima._types import (
     CredentialRequestStatus,
     RevealPolicy,
@@ -17,7 +20,7 @@ from anima._types import (
     VaultShare,
     VaultTokenOutput,
 )
-from anima.resources.vault import VaultResource
+from anima.resources.vault import AsyncVaultResource, VaultResource
 
 from .conftest import (
     VAULT_API_KEY_CREDENTIAL_RAW,
@@ -202,6 +205,38 @@ class TestUseCredential:
         assert not hasattr(VaultResource, "exchange_token")
         assert hasattr(VaultResource, "use_credential")
         assert hasattr(VaultResource, "get_credential")
+
+    @pytest.mark.asyncio
+    async def test_async_use_credential_brokers_via_use_endpoint(self) -> None:
+        # Guard the async mirror of the security-critical broker path against
+        # sync/async drift: it must POST to /use and return the upstream
+        # response, never the secret.
+        mock_http = AsyncMock(spec=AsyncHTTPClient)
+        mock_http.request.return_value = {
+            "status": 200,
+            "headers": {},
+            "body": "{}",
+            "truncated": False,
+        }
+        resource = AsyncVaultResource(mock_http)
+        result = await resource.use_credential(
+            "cred_001",
+            method="GET",
+            url="https://api.example.com/v1/thing",
+            headers={"X-Keep": "1"},
+        )
+
+        mock_http.request.assert_awaited_once_with(
+            "POST",
+            "/vault/credentials/cred_001/use",
+            {
+                "method": "GET",
+                "url": "https://api.example.com/v1/thing",
+                "headers": {"X-Keep": "1"},
+            },
+            options=None,
+        )
+        assert result["status"] == 200
 
     def test_exchange_token_for_injection_posts_to_exchange(self, mock_http: MagicMock) -> None:
         # Returns plaintext; the API gates it to injector credentials (master /
