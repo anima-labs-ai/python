@@ -471,6 +471,28 @@ class VaultIdentityOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class VaultIdentityListItem(VaultIdentityOutput):
+    agent_name: str = Field(alias="agentName")
+    agent_slug: str = Field(alias="agentSlug")
+
+
+class VaultAuditLogEntry(BaseModel):
+    """Credential audit entry — never contains secret material."""
+
+    id: str
+    credential_id: str = Field(alias="credentialId")
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
+    # e.g. access, store, delete, share, broker_use, broker_use_denied
+    action: str
+    actor: str
+    ip_address: str | None = Field(None, alias="ipAddress")
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
 class VaultLoginUri(BaseModel):
     uri: str
     match: str | None = None

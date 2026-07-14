@@ -7,10 +7,12 @@ from unittest.mock import MagicMock
 from anima._types import (
     CredentialRequestStatus,
     RevealPolicy,
+    VaultAuditLogEntry,
     VaultCredential,
     VaultCredentialRequest,
     VaultCredentialRequestCancelResult,
     VaultCredentialRequestStatusOutput,
+    VaultIdentityListItem,
     VaultRevokeTokensResult,
     VaultShare,
     VaultTokenOutput,
@@ -395,3 +397,68 @@ class TestCreateCredentialGeneratePassword:
         )
         body = mock_http.request.call_args[0][2]
         assert "generatePassword" not in body
+
+
+class TestIdentitiesAndAudit:
+    def test_list_identities_paginates(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "items": [
+                {
+                    "id": "vi_1",
+                    "agentId": "agent_001",
+                    "orgId": "org_001",
+                    "status": "ACTIVE",
+                    "credentialCount": 3,
+                    "lastSyncAt": None,
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "agentName": "Billing Agent",
+                    "agentSlug": "billing",
+                }
+            ],
+            "pagination": {"nextCursor": None, "hasMore": False},
+        }
+        resource = VaultResource(mock_http)
+        page = resource.list_identities(status="ACTIVE", limit=10)
+        items = page.items
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/identities",
+            query={"limit": "10", "status": "ACTIVE"},
+            options=None,
+        )
+        assert len(items) == 1
+        assert isinstance(items[0], VaultIdentityListItem)
+        assert items[0].agent_slug == "billing"
+
+    def test_audit_queries_broker_actions_without_secrets(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "items": [
+                {
+                    "id": "audit_1",
+                    "credentialId": "cred_001",
+                    "agentId": "agent_001",
+                    "orgId": "org_001",
+                    "action": "broker_use",
+                    "actor": "org_001",
+                    "metadata": {"method": "GET", "host": "api.stripe.com", "status": 200},
+                    "createdAt": "2025-01-01T00:00:00Z",
+                }
+            ],
+            "pagination": {"nextCursor": None, "hasMore": False},
+        }
+        resource = VaultResource(mock_http)
+        page = resource.audit(credential_id="cred_001", action="broker_use")
+        entries = page.items
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/audit",
+            query={"credentialId": "cred_001", "action": "broker_use"},
+            options=None,
+        )
+        assert len(entries) == 1
+        assert isinstance(entries[0], VaultAuditLogEntry)
+        assert entries[0].action == "broker_use"
+        assert entries[0].metadata is not None
+        assert entries[0].metadata["host"] == "api.stripe.com"
