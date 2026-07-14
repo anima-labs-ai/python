@@ -163,3 +163,39 @@ A2A_TASK_RAW: dict[str, Any] = {
     "createdAt": "2025-01-01T00:00:00Z",
     "updatedAt": "2025-01-01T00:00:00Z",
 }
+VAULT_API_KEY_CREDENTIAL_RAW: dict[str, Any] = {
+    "id": "cred_ak1",
+    "type": "api_key",
+    "name": "Stripe key",
+    "notes": None,
+    "login": None,
+    "card": None,
+    "identity": None,
+    "apiKey": {
+        "provider": "stripe",
+        "key": "sk_****1234",
+        "allowedHosts": ["api.stripe.com"],
+        "authHeader": "Authorization",
+        "authScheme": "Bearer ",
+    },
+    "fields": None,
+    "favorite": False,
+    "revealPolicy": "brokered",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z",
+}
+
+VAULT_CREDENTIAL_REQUEST_RAW: dict[str, Any] = {
+    "requestId": "req_001",
+    "fillUrl": "https://console.useanima.sh/vault/fill/tok_abc",
+    "status": "PENDING",
+    "expiresAt": "2025-01-01T00:15:00Z",
+    "emailSent": True,
+    "credentialId": None,
+}
+
+VAULT_CREDENTIAL_REQUEST_STATUS_RAW: dict[str, Any] = {
+    "status": "FULFILLED",
+    "credentialId": "cred_001",
+    "maskedPreview": "****1234",
+}

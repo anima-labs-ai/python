@@ -4,11 +4,24 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from anima._types import VaultCredential, VaultRevokeTokensResult, VaultShare, VaultTokenOutput
+from anima._types import (
+    CredentialRequestStatus,
+    RevealPolicy,
+    VaultCredential,
+    VaultCredentialRequest,
+    VaultCredentialRequestCancelResult,
+    VaultCredentialRequestStatusOutput,
+    VaultRevokeTokensResult,
+    VaultShare,
+    VaultTokenOutput,
+)
 from anima.resources.vault import VaultResource
 
 from .conftest import (
+    VAULT_API_KEY_CREDENTIAL_RAW,
     VAULT_CREDENTIAL_RAW,
+    VAULT_CREDENTIAL_REQUEST_RAW,
+    VAULT_CREDENTIAL_REQUEST_STATUS_RAW,
     VAULT_REVOKE_TOKENS_RAW,
     VAULT_SHARE_LIST_RAW,
     VAULT_SHARE_RAW,
@@ -198,6 +211,120 @@ class TestUseCredential:
             "POST", "/vault/token/exchange", {"token": "vtk_abc"}, options=None
         )
         assert isinstance(result, VaultCredential)
+
+
+class TestApiKeyCredentials:
+    def test_create_credential_carries_broker_config(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_API_KEY_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        result = resource.create_credential(
+            agent_id="agent_001",
+            type="api_key",
+            name="Stripe key",
+            api_key={
+                "provider": "stripe",
+                "key": "sk_live_x",
+                "allowedHosts": ["api.stripe.com"],
+                "authScheme": "Bearer ",
+            },
+            reveal_policy="brokered",
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credentials",
+            {
+                "agentId": "agent_001",
+                "type": "api_key",
+                "name": "Stripe key",
+                "favorite": False,
+                "apiKey": {
+                    "provider": "stripe",
+                    "key": "sk_live_x",
+                    "allowedHosts": ["api.stripe.com"],
+                    "authScheme": "Bearer ",
+                },
+                "revealPolicy": "brokered",
+            },
+            options=None,
+        )
+        assert isinstance(result, VaultCredential)
+        assert result.api_key is not None
+        assert result.api_key.allowed_hosts == ["api.stripe.com"]
+        assert result.reveal_policy is RevealPolicy.BROKERED
+
+    def test_update_credential_carries_api_key_and_policy(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_API_KEY_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        resource.update_credential(
+            "cred_ak1",
+            api_key={"provider": "stripe", "key": "sk_live_y"},
+            reveal_policy="brokered",
+        )
+
+        call_body = mock_http.request.call_args[0][2]
+        assert call_body["apiKey"] == {"provider": "stripe", "key": "sk_live_y"}
+        assert call_body["revealPolicy"] == "brokered"
+
+
+class TestCredentialRequests:
+    def test_credential_request_create(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_REQUEST_RAW
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_create(
+            type="api_key",
+            name="Prod Stripe key",
+            reason="Deploy needs to verify billing",
+            ttl_seconds=600,
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credential-requests",
+            {
+                "type": "api_key",
+                "name": "Prod Stripe key",
+                "reason": "Deploy needs to verify billing",
+                "ttlSeconds": 600,
+            },
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequest)
+        assert result.request_id == "req_001"
+        assert result.status is CredentialRequestStatus.PENDING
+        assert result.fill_url.startswith("https://")
+
+    def test_credential_request_status_returns_masked_preview_only(
+        self, mock_http: MagicMock
+    ) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_REQUEST_STATUS_RAW
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_status("req_001")
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/credential-requests/req_001",
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequestStatusOutput)
+        assert result.status is CredentialRequestStatus.FULFILLED
+        assert result.credential_id == "cred_001"
+        # Only a masked preview comes back — never the plaintext.
+        assert result.masked_preview == "****1234"
+
+    def test_credential_request_cancel(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {"status": "CANCELLED"}
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_cancel("req_001")
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credential-requests/req_001/cancel",
+            None,
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequestCancelResult)
+        assert result.status is CredentialRequestStatus.CANCELLED
 
 
 class TestRevokeTokens:

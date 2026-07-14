@@ -5,6 +5,9 @@ from typing import Any, cast
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import (
     VaultCredential,
+    VaultCredentialRequest,
+    VaultCredentialRequestCancelResult,
+    VaultCredentialRequestStatusOutput,
     VaultIdentityOutput,
     VaultRevokeTokensResult,
     VaultShare,
@@ -240,9 +243,13 @@ class VaultResource:
         login: dict[str, Any] | None = None,
         card: dict[str, Any] | None = None,
         identity: dict[str, Any] | None = None,
+        oauth_token: dict[str, Any] | None = None,
+        api_key: dict[str, Any] | None = None,
+        certificate: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
         generate_password: dict[str, Any] | None = None,
+        reveal_policy: str | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
         """Create a credential.
@@ -268,10 +275,20 @@ class VaultResource:
             body["card"] = card
         if identity is not None:
             body["identity"] = identity
+        if oauth_token is not None:
+            body["oauthToken"] = oauth_token
+        if api_key is not None:
+            # For broker use, include allowedHosts (fail-closed) and optionally
+            # authHeader/authScheme — see use_credential.
+            body["apiKey"] = api_key
+        if certificate is not None:
+            body["certificate"] = certificate
         if fields is not None:
             body["fields"] = fields
         if generate_password is not None:
             body["generatePassword"] = generate_password
+        if reveal_policy is not None:
+            body["revealPolicy"] = reveal_policy
         return VaultCredential.model_validate(
             self._client.request("POST", "/vault/credentials", body, options=options)
         )
@@ -285,8 +302,12 @@ class VaultResource:
         login: dict[str, Any] | None = None,
         card: dict[str, Any] | None = None,
         identity: dict[str, Any] | None = None,
+        oauth_token: dict[str, Any] | None = None,
+        api_key: dict[str, Any] | None = None,
+        certificate: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool | None = None,
+        reveal_policy: str | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {}
@@ -300,10 +321,21 @@ class VaultResource:
             body["card"] = card
         if identity is not None:
             body["identity"] = identity
+        if oauth_token is not None:
+            body["oauthToken"] = oauth_token
+        if api_key is not None:
+            # Changing apiKey.allowedHosts requires a master key.
+            body["apiKey"] = api_key
+        if certificate is not None:
+            body["certificate"] = certificate
         if fields is not None:
             body["fields"] = fields
         if favorite is not None:
             body["favorite"] = favorite
+        if reveal_policy is not None:
+            # Upgrading standard -> brokered needs UPDATE access; downgrading
+            # brokered -> standard is master-key-only and audited.
+            body["revealPolicy"] = reveal_policy
         return VaultCredential.model_validate(
             self._client.request(
                 "PUT", f"/vault/credentials/{credential_id}", body, options=options
@@ -371,6 +403,52 @@ class VaultResource:
 
     def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
         self._client.request("POST", "/vault/sync", {"agentId": agent_id}, options=options)
+
+    # --- Credential requests (human-in-the-loop) ---
+
+    def credential_request_create(
+        self,
+        *,
+        type: str,
+        name: str,
+        reason: str,
+        agent_id: str | None = None,
+        ttl_seconds: int | None = None,
+        notify_owner: bool | None = None,
+        options: RequestOptions | None = None,
+    ) -> VaultCredentialRequest:
+        """Ask a human for a credential the agent must never see.
+
+        Returns a token-gated fill URL the owner completes out-of-band; poll
+        ``credential_request_status`` until FULFILLED, then use the credential
+        by reference (``use_credential``) — the plaintext is never returned.
+        """
+        body: dict[str, Any] = {"type": type, "name": name, "reason": reason}
+        if agent_id is not None:
+            body["agentId"] = agent_id
+        if ttl_seconds is not None:
+            body["ttlSeconds"] = ttl_seconds
+        if notify_owner is not None:
+            body["notifyOwner"] = notify_owner
+        return VaultCredentialRequest.model_validate(
+            self._client.request("POST", "/vault/credential-requests", body, options=options)
+        )
+
+    def credential_request_status(
+        self, request_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredentialRequestStatusOutput:
+        return VaultCredentialRequestStatusOutput.model_validate(
+            self._client.request("GET", f"/vault/credential-requests/{request_id}", options=options)
+        )
+
+    def credential_request_cancel(
+        self, request_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredentialRequestCancelResult:
+        return VaultCredentialRequestCancelResult.model_validate(
+            self._client.request(
+                "POST", f"/vault/credential-requests/{request_id}/cancel", None, options=options
+            )
+        )
 
     # --- Sharing ---
 
@@ -552,9 +630,13 @@ class AsyncVaultResource:
         login: dict[str, Any] | None = None,
         card: dict[str, Any] | None = None,
         identity: dict[str, Any] | None = None,
+        oauth_token: dict[str, Any] | None = None,
+        api_key: dict[str, Any] | None = None,
+        certificate: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool = False,
         generate_password: dict[str, Any] | None = None,
+        reveal_policy: str | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
         """Create a credential.
@@ -580,10 +662,20 @@ class AsyncVaultResource:
             body["card"] = card
         if identity is not None:
             body["identity"] = identity
+        if oauth_token is not None:
+            body["oauthToken"] = oauth_token
+        if api_key is not None:
+            # For broker use, include allowedHosts (fail-closed) and optionally
+            # authHeader/authScheme — see use_credential.
+            body["apiKey"] = api_key
+        if certificate is not None:
+            body["certificate"] = certificate
         if fields is not None:
             body["fields"] = fields
         if generate_password is not None:
             body["generatePassword"] = generate_password
+        if reveal_policy is not None:
+            body["revealPolicy"] = reveal_policy
         return VaultCredential.model_validate(
             await self._client.request("POST", "/vault/credentials", body, options=options)
         )
@@ -597,8 +689,12 @@ class AsyncVaultResource:
         login: dict[str, Any] | None = None,
         card: dict[str, Any] | None = None,
         identity: dict[str, Any] | None = None,
+        oauth_token: dict[str, Any] | None = None,
+        api_key: dict[str, Any] | None = None,
+        certificate: dict[str, Any] | None = None,
         fields: list[dict[str, Any]] | None = None,
         favorite: bool | None = None,
+        reveal_policy: str | None = None,
         options: RequestOptions | None = None,
     ) -> VaultCredential:
         body: dict[str, Any] = {}
@@ -612,10 +708,21 @@ class AsyncVaultResource:
             body["card"] = card
         if identity is not None:
             body["identity"] = identity
+        if oauth_token is not None:
+            body["oauthToken"] = oauth_token
+        if api_key is not None:
+            # Changing apiKey.allowedHosts requires a master key.
+            body["apiKey"] = api_key
+        if certificate is not None:
+            body["certificate"] = certificate
         if fields is not None:
             body["fields"] = fields
         if favorite is not None:
             body["favorite"] = favorite
+        if reveal_policy is not None:
+            # Upgrading standard -> brokered needs UPDATE access; downgrading
+            # brokered -> standard is master-key-only and audited.
+            body["revealPolicy"] = reveal_policy
         return VaultCredential.model_validate(
             await self._client.request(
                 "PUT", f"/vault/credentials/{credential_id}", body, options=options
@@ -685,6 +792,54 @@ class AsyncVaultResource:
 
     async def sync(self, agent_id: str, *, options: RequestOptions | None = None) -> None:
         await self._client.request("POST", "/vault/sync", {"agentId": agent_id}, options=options)
+
+    # --- Credential requests (human-in-the-loop) ---
+
+    async def credential_request_create(
+        self,
+        *,
+        type: str,
+        name: str,
+        reason: str,
+        agent_id: str | None = None,
+        ttl_seconds: int | None = None,
+        notify_owner: bool | None = None,
+        options: RequestOptions | None = None,
+    ) -> VaultCredentialRequest:
+        """Ask a human for a credential the agent must never see.
+
+        Returns a token-gated fill URL the owner completes out-of-band; poll
+        ``credential_request_status`` until FULFILLED, then use the credential
+        by reference (``use_credential``) — the plaintext is never returned.
+        """
+        body: dict[str, Any] = {"type": type, "name": name, "reason": reason}
+        if agent_id is not None:
+            body["agentId"] = agent_id
+        if ttl_seconds is not None:
+            body["ttlSeconds"] = ttl_seconds
+        if notify_owner is not None:
+            body["notifyOwner"] = notify_owner
+        return VaultCredentialRequest.model_validate(
+            await self._client.request("POST", "/vault/credential-requests", body, options=options)
+        )
+
+    async def credential_request_status(
+        self, request_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredentialRequestStatusOutput:
+        return VaultCredentialRequestStatusOutput.model_validate(
+            await self._client.request(
+                "GET", f"/vault/credential-requests/{request_id}", options=options
+            )
+        )
+
+    async def credential_request_cancel(
+        self, request_id: str, *, options: RequestOptions | None = None
+    ) -> VaultCredentialRequestCancelResult:
+        return VaultCredentialRequestCancelResult.model_validate(
+            await self._client.request(
+                "POST", f"/vault/credential-requests/{request_id}/cancel", None, options=options
+            )
+        )
 
     # --- Sharing ---
 
