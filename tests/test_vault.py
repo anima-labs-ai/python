@@ -2,13 +2,31 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
-from anima._types import VaultCredential, VaultRevokeTokensResult, VaultShare, VaultTokenOutput
-from anima.resources.vault import VaultResource
+import pytest
+
+from anima._http import AsyncHTTPClient
+from anima._types import (
+    CredentialRequestStatus,
+    RevealPolicy,
+    VaultAuditLogEntry,
+    VaultCredential,
+    VaultCredentialRequest,
+    VaultCredentialRequestCancelResult,
+    VaultCredentialRequestStatusOutput,
+    VaultIdentityListItem,
+    VaultRevokeTokensResult,
+    VaultShare,
+    VaultTokenOutput,
+)
+from anima.resources.vault import AsyncVaultResource, VaultResource
 
 from .conftest import (
+    VAULT_API_KEY_CREDENTIAL_RAW,
     VAULT_CREDENTIAL_RAW,
+    VAULT_CREDENTIAL_REQUEST_RAW,
+    VAULT_CREDENTIAL_REQUEST_STATUS_RAW,
     VAULT_REVOKE_TOKENS_RAW,
     VAULT_SHARE_LIST_RAW,
     VAULT_SHARE_RAW,
@@ -153,22 +171,197 @@ class TestCreateToken:
         assert call_body["scope"] == "proxy"
 
 
-class TestExchangeToken:
-    def test_exchange_token(self, mock_http: MagicMock) -> None:
-        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+class TestUseCredential:
+    def test_use_credential_brokers_via_use_endpoint(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "status": 200,
+            "headers": {},
+            "body": "{}",
+            "truncated": False,
+        }
         resource = VaultResource(mock_http)
-        result = resource.exchange_token("vtk_abc123def456")
+        result = resource.use_credential(
+            "cred_001",
+            method="GET",
+            url="https://api.example.com/v1/thing",
+            headers={"X-Keep": "1"},
+        )
 
         mock_http.request.assert_called_once_with(
             "POST",
-            "/vault/token/exchange",
-            {"token": "vtk_abc123def456"},
+            "/vault/credentials/cred_001/use",
+            {
+                "method": "GET",
+                "url": "https://api.example.com/v1/thing",
+                "headers": {"X-Keep": "1"},
+            },
+            options=None,
+        )
+        assert result["status"] == 200
+
+    def test_agent_use_path_is_broker(self) -> None:
+        # The old UNGATED exchange_token is gone; an agent uses secrets via the
+        # broker (use_credential), and get_credential sends no reveal flag.
+        assert not hasattr(VaultResource, "exchange_token")
+        assert hasattr(VaultResource, "use_credential")
+        assert hasattr(VaultResource, "get_credential")
+
+    @pytest.mark.asyncio
+    async def test_async_use_credential_brokers_via_use_endpoint(self) -> None:
+        # Guard the async mirror of the security-critical broker path against
+        # sync/async drift: it must POST to /use and return the upstream
+        # response, never the secret.
+        mock_http = AsyncMock(spec=AsyncHTTPClient)
+        mock_http.request.return_value = {
+            "status": 200,
+            "headers": {},
+            "body": "{}",
+            "truncated": False,
+        }
+        resource = AsyncVaultResource(mock_http)
+        result = await resource.use_credential(
+            "cred_001",
+            method="GET",
+            url="https://api.example.com/v1/thing",
+            headers={"X-Keep": "1"},
+        )
+
+        mock_http.request.assert_awaited_once_with(
+            "POST",
+            "/vault/credentials/cred_001/use",
+            {
+                "method": "GET",
+                "url": "https://api.example.com/v1/thing",
+                "headers": {"X-Keep": "1"},
+            },
+            options=None,
+        )
+        assert result["status"] == 200
+
+    def test_exchange_token_for_injection_posts_to_exchange(self, mock_http: MagicMock) -> None:
+        # Returns plaintext; the API gates it to injector credentials (master /
+        # vault:inject), so a plain agent key gets 403 server-side.
+        mock_http.request.return_value = VAULT_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        result = resource.exchange_token_for_injection("vtk_abc")
+        mock_http.request.assert_called_once_with(
+            "POST", "/vault/token/exchange", {"token": "vtk_abc"}, options=None
+        )
+        assert isinstance(result, VaultCredential)
+
+
+class TestApiKeyCredentials:
+    def test_create_credential_carries_broker_config(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_API_KEY_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        result = resource.create_credential(
+            agent_id="agent_001",
+            type="api_key",
+            name="Stripe key",
+            api_key={
+                "provider": "stripe",
+                "key": "sk_live_x",
+                "allowedHosts": ["api.stripe.com"],
+                "authScheme": "Bearer ",
+            },
+            reveal_policy="brokered",
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credentials",
+            {
+                "agentId": "agent_001",
+                "type": "api_key",
+                "name": "Stripe key",
+                "favorite": False,
+                "apiKey": {
+                    "provider": "stripe",
+                    "key": "sk_live_x",
+                    "allowedHosts": ["api.stripe.com"],
+                    "authScheme": "Bearer ",
+                },
+                "revealPolicy": "brokered",
+            },
             options=None,
         )
         assert isinstance(result, VaultCredential)
-        assert result.id == "cred_001"
-        assert result.login is not None
-        assert result.login.username == "octocat"
+        assert result.api_key is not None
+        assert result.api_key.allowed_hosts == ["api.stripe.com"]
+        assert result.reveal_policy is RevealPolicy.BROKERED
+
+    def test_update_credential_carries_api_key_and_policy(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_API_KEY_CREDENTIAL_RAW
+        resource = VaultResource(mock_http)
+        resource.update_credential(
+            "cred_ak1",
+            api_key={"provider": "stripe", "key": "sk_live_y"},
+            reveal_policy="brokered",
+        )
+
+        call_body = mock_http.request.call_args[0][2]
+        assert call_body["apiKey"] == {"provider": "stripe", "key": "sk_live_y"}
+        assert call_body["revealPolicy"] == "brokered"
+
+
+class TestCredentialRequests:
+    def test_credential_request_create(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_REQUEST_RAW
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_create(
+            type="api_key",
+            name="Prod Stripe key",
+            reason="Deploy needs to verify billing",
+            ttl_seconds=600,
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credential-requests",
+            {
+                "type": "api_key",
+                "name": "Prod Stripe key",
+                "reason": "Deploy needs to verify billing",
+                "ttlSeconds": 600,
+            },
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequest)
+        assert result.request_id == "req_001"
+        assert result.status is CredentialRequestStatus.PENDING
+        assert result.fill_url.startswith("https://")
+
+    def test_credential_request_status_returns_masked_preview_only(
+        self, mock_http: MagicMock
+    ) -> None:
+        mock_http.request.return_value = VAULT_CREDENTIAL_REQUEST_STATUS_RAW
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_status("req_001")
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/credential-requests/req_001",
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequestStatusOutput)
+        assert result.status is CredentialRequestStatus.FULFILLED
+        assert result.credential_id == "cred_001"
+        # Only a masked preview comes back — never the plaintext.
+        assert result.masked_preview == "****1234"
+
+    def test_credential_request_cancel(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {"status": "CANCELLED"}
+        resource = VaultResource(mock_http)
+        result = resource.credential_request_cancel("req_001")
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/vault/credential-requests/req_001/cancel",
+            None,
+            options=None,
+        )
+        assert isinstance(result, VaultCredentialRequestCancelResult)
+        assert result.status is CredentialRequestStatus.CANCELLED
 
 
 class TestRevokeTokens:
@@ -239,3 +432,68 @@ class TestCreateCredentialGeneratePassword:
         )
         body = mock_http.request.call_args[0][2]
         assert "generatePassword" not in body
+
+
+class TestIdentitiesAndAudit:
+    def test_list_identities_paginates(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "items": [
+                {
+                    "id": "vi_1",
+                    "agentId": "agent_001",
+                    "orgId": "org_001",
+                    "status": "ACTIVE",
+                    "credentialCount": 3,
+                    "lastSyncAt": None,
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "agentName": "Billing Agent",
+                    "agentSlug": "billing",
+                }
+            ],
+            "pagination": {"nextCursor": None, "hasMore": False},
+        }
+        resource = VaultResource(mock_http)
+        page = resource.list_identities(status="ACTIVE", limit=10)
+        items = page.items
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/identities",
+            query={"limit": "10", "status": "ACTIVE"},
+            options=None,
+        )
+        assert len(items) == 1
+        assert isinstance(items[0], VaultIdentityListItem)
+        assert items[0].agent_slug == "billing"
+
+    def test_audit_queries_broker_actions_without_secrets(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {
+            "items": [
+                {
+                    "id": "audit_1",
+                    "credentialId": "cred_001",
+                    "agentId": "agent_001",
+                    "orgId": "org_001",
+                    "action": "broker_use",
+                    "actor": "org_001",
+                    "metadata": {"method": "GET", "host": "api.stripe.com", "status": 200},
+                    "createdAt": "2025-01-01T00:00:00Z",
+                }
+            ],
+            "pagination": {"nextCursor": None, "hasMore": False},
+        }
+        resource = VaultResource(mock_http)
+        page = resource.audit(credential_id="cred_001", action="broker_use")
+        entries = page.items
+
+        mock_http.request.assert_called_once_with(
+            "GET",
+            "/vault/audit",
+            query={"credentialId": "cred_001", "action": "broker_use"},
+            options=None,
+        )
+        assert len(entries) == 1
+        assert isinstance(entries[0], VaultAuditLogEntry)
+        assert entries[0].action == "broker_use"
+        assert entries[0].metadata is not None
+        assert entries[0].metadata["host"] == "api.stripe.com"

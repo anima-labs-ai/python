@@ -84,6 +84,29 @@ class CredentialType(str, Enum):
     SECURE_NOTE = "secure_note"
     CARD = "card"
     IDENTITY = "identity"
+    OAUTH_TOKEN = "oauth_token"
+    API_KEY = "api_key"
+    CERTIFICATE = "certificate"
+
+
+class RevealPolicy(str, Enum):
+    """Governs a credential's plaintext reveal paths.
+
+    BROKERED refuses reveal and export on every key type — including the org
+    master key — so the secret is only usable through ``use_credential``
+    (recovery = rotation).
+    """
+
+    STANDARD = "standard"
+    BROKERED = "brokered"
+
+
+class CredentialRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    FULFILLED = "FULFILLED"
+    EXPIRED = "EXPIRED"
+    DECLINED = "DECLINED"
+    CANCELLED = "CANCELLED"
 
 
 class WebhookEventType(str, Enum):
@@ -448,6 +471,28 @@ class VaultIdentityOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class VaultIdentityListItem(VaultIdentityOutput):
+    agent_name: str = Field(alias="agentName")
+    agent_slug: str = Field(alias="agentSlug")
+
+
+class VaultAuditLogEntry(BaseModel):
+    """Credential audit entry — never contains secret material."""
+
+    id: str
+    credential_id: str = Field(alias="credentialId")
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
+    # e.g. access, store, delete, share, broker_use, broker_use_denied
+    action: str
+    actor: str
+    ip_address: str | None = Field(None, alias="ipAddress")
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
 class VaultLoginUri(BaseModel):
     uri: str
     match: str | None = None
@@ -492,6 +537,53 @@ class VaultCustomField(BaseModel):
     type: VaultCustomFieldType
 
 
+class VaultRateLimit(BaseModel):
+    requests: int
+    window: str  # e.g. "1m", "1h", "1d"
+
+
+class VaultApiKeyData(BaseModel):
+    provider: str
+    key: str  # stored encrypted; always read back masked
+    prefix: str | None = None
+    rate_limit: VaultRateLimit | None = Field(None, alias="rateLimit")
+    expires_at: str | None = Field(None, alias="expiresAt")
+    scopes: list[str] | None = None
+    # Hosts this key may be brokered to via use_credential. Fail-closed:
+    # with no hosts the broker refuses every call. After creation only a
+    # master key may change this list.
+    allowed_hosts: list[str] | None = Field(None, alias="allowedHosts")
+    auth_header: str | None = Field(None, alias="authHeader")
+    auth_scheme: str | None = Field(None, alias="authScheme")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultOAuthTokenData(BaseModel):
+    provider: str
+    access_token: str = Field(alias="accessToken")  # read back masked
+    refresh_token: str | None = Field(None, alias="refreshToken")  # never read back
+    token_endpoint: str | None = Field(None, alias="tokenEndpoint")
+    client_id: str | None = Field(None, alias="clientId")
+    client_secret: str | None = Field(None, alias="clientSecret")
+    scopes: list[str] | None = None
+    expires_at: str | None = Field(None, alias="expiresAt")
+    auto_refresh: bool | None = Field(None, alias="autoRefresh")
+    allowed_hosts: list[str] | None = Field(None, alias="allowedHosts")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultCertificateData(BaseModel):
+    format: str  # "pem" | "p12" | "jks"
+    certificate: str
+    private_key: str = Field(alias="privateKey")  # read back masked
+    chain: list[str] | None = None
+    expires_at: str | None = Field(None, alias="expiresAt")
+
+    model_config = {"populate_by_name": True}
+
+
 class VaultCredential(BaseModel):
     id: str
     type: CredentialType
@@ -500,8 +592,15 @@ class VaultCredential(BaseModel):
     login: VaultLoginData | None = None
     card: VaultCardData | None = None
     identity: VaultIdentityData | None = None
+    oauth_token: VaultOAuthTokenData | None = Field(None, alias="oauthToken")
+    api_key: VaultApiKeyData | None = Field(None, alias="apiKey")
+    certificate: VaultCertificateData | None = None
     fields: list[VaultCustomField] | None = None
     favorite: bool
+    reveal_policy: RevealPolicy | None = Field(None, alias="revealPolicy")
+    folder_id: str | None = Field(None, alias="folderId")
+    organization_id: str | None = Field(None, alias="organizationId")
+    collection_ids: list[str] | None = Field(None, alias="collectionIds")
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 
@@ -545,6 +644,32 @@ class VaultTokenOutput(BaseModel):
 class VaultRevokeTokensResult(BaseModel):
     success: bool
     revoked: int
+
+
+class VaultCredentialRequest(BaseModel):
+    """A human-in-the-loop credential request (the secret is filled out-of-band)."""
+
+    request_id: str = Field(alias="requestId")
+    fill_url: str = Field(alias="fillUrl")
+    status: CredentialRequestStatus
+    expires_at: str = Field(alias="expiresAt")
+    email_sent: bool = Field(alias="emailSent")
+    credential_id: str | None = Field(None, alias="credentialId")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultCredentialRequestStatusOutput(BaseModel):
+    status: CredentialRequestStatus
+    credential_id: str | None = Field(None, alias="credentialId")
+    # Masked preview (e.g. ****1234) — never the plaintext.
+    masked_preview: str | None = Field(None, alias="maskedPreview")
+
+    model_config = {"populate_by_name": True}
+
+
+class VaultCredentialRequestCancelResult(BaseModel):
+    status: CredentialRequestStatus
 
 
 # ---------------------------------------------------------------------------
