@@ -8,6 +8,8 @@ rejections surface as typed exceptions — never as silent success.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -133,29 +135,41 @@ class TestSendEmail:
         ]
 
 
-def _http_client_with_response(status_code: int, body: dict) -> HTTPClient:
-    """Real HTTPClient wired to a canned httpx response (no network)."""
+@contextmanager
+def _http_client_with_handler(
+    handler: Callable[[httpx.Request], httpx.Response],
+) -> Iterator[HTTPClient]:
+    """Real HTTPClient wired to a canned httpx transport (no network)."""
+    client = HTTPClient(api_key="sk-test", base_url="https://api.test")
+    client._client.close()  # replace the real transport, don't leak it
+    client._client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        yield client
+    finally:
+        client.close()
 
+
+@contextmanager
+def _http_client_with_response(status_code: int, body: dict) -> Iterator[HTTPClient]:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(status_code, json=body)
 
-    client = HTTPClient(api_key="sk-test", base_url="https://api.test")
-    client._client = httpx.Client(transport=httpx.MockTransport(handler))
-    return client
+    with _http_client_with_handler(handler) as client:
+        yield client
 
 
 class TestSendEmailErrors:
     """4xx responses surface as typed exceptions through the REAL HTTP layer."""
 
     def test_send_email_400_raises_validation_error(self) -> None:
-        http = _http_client_with_response(
-            400,
-            {"error": {"message": "to must contain valid emails", "code": "VALIDATION_ERROR"}},
-        )
-        resource = MessagesResource(http)
-
-        with pytest.raises(ValidationError) as exc_info:
-            resource.send_email(
+        with (
+            _http_client_with_response(
+                400,
+                {"error": {"message": "to must contain valid emails", "code": "VALIDATION_ERROR"}},
+            ) as http,
+            pytest.raises(ValidationError) as exc_info,
+        ):
+            MessagesResource(http).send_email(
                 agent_id="agent_001",
                 to=["not-an-email"],
                 subject="Hello",
@@ -165,13 +179,13 @@ class TestSendEmailErrors:
         assert "valid emails" in exc_info.value.message
 
     def test_send_email_404_raises_not_found(self) -> None:
-        http = _http_client_with_response(
-            404, {"error": {"message": "Agent not found", "code": "NOT_FOUND"}}
-        )
-        resource = MessagesResource(http)
-
-        with pytest.raises(NotFoundError):
-            resource.send_email(
+        with (
+            _http_client_with_response(
+                404, {"error": {"message": "Agent not found", "code": "NOT_FOUND"}}
+            ) as http,
+            pytest.raises(NotFoundError),
+        ):
+            MessagesResource(http).send_email(
                 agent_id="agent_missing",
                 to=["user@example.com"],
                 subject="Hello",
@@ -188,17 +202,15 @@ class TestSendEmailErrors:
             captured["url"] = str(request.url)
             return httpx.Response(200, json=MESSAGE_RAW)
 
-        http = HTTPClient(api_key="sk-test", base_url="https://api.test")
-        http._client = httpx.Client(transport=httpx.MockTransport(handler))
-
-        MessagesResource(http).send_email(
-            agent_id="agent_001",
-            to=["user@example.com"],
-            subject="Wire check",
-            body="Hi",
-            attachments=[{"filename": "a.txt", "content": PDF_BASE64}],
-            in_reply_to="<parent@agents.useanima.sh>",
-        )
+        with _http_client_with_handler(handler) as http:
+            MessagesResource(http).send_email(
+                agent_id="agent_001",
+                to=["user@example.com"],
+                subject="Wire check",
+                body="Hi",
+                attachments=[{"filename": "a.txt", "content": PDF_BASE64}],
+                in_reply_to="<parent@agents.useanima.sh>",
+            )
 
         assert captured["url"] == "https://api.test/v1/messages/email"
         assert captured["body"]["attachments"] == [{"filename": "a.txt", "content": PDF_BASE64}]
