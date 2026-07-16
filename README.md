@@ -79,8 +79,18 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 | `get(message_id)` | Get a message by ID |
 | `list(*, cursor?, limit?, agent_id?, thread_id?, channel?, direction?, date_from?, date_to?)` | List messages with filters |
 | `search(query, *, agent_id?, channel?, direction?, status?, date_from?, date_to?, cursor?, limit?)` | Full-text search messages |
+| `semantic_search(query, *, agent_id?, limit?, threshold?)` | Search messages by meaning (vector similarity) |
 | `upload_attachment(message_id, *, filename, mime_type, size_bytes)` | Upload an attachment |
 | `get_attachment_url(attachment_id)` | Get a download URL for an attachment |
+
+Semantic search ranks messages by meaning, not keywords — results carry a
+`similarity` score (0-1):
+
+```python
+results = client.messages.semantic_search("unpaid invoices from suppliers", limit=5)
+for r in results:
+    print(f"{r.similarity:.2f} {r.channel} {r.content[:60]}")
+```
 
 Sending with an attachment (dict in the API wire shape — exactly one of `content` (base64) or `url`):
 
@@ -113,6 +123,30 @@ message = client.messages.send_email(
 | `list(*, cursor?, limit?, agent_id?)` | List emails with pagination |
 | `upload_attachment(message_id, *, filename, mime_type, size_bytes)` | Upload an email attachment |
 | `get_attachment_url(attachment_id)` | Get a download URL for an attachment |
+
+### `client.emails.drafts`
+
+Composed-but-not-sent emails owned by an agent. Drafts may be incomplete (no
+recipients, subject, or body yet); `send` atomically converts a draft into a
+delivered message and deletes the draft.
+
+| Method | Description |
+|--------|-------------|
+| `create(*, agent_id, from_identity_id?, to?, cc?, bcc?, subject?, body?, body_html?, in_reply_to?, references?, metadata?)` | Create a draft (only `agent_id` required) |
+| `get(draft_id)` | Get a draft by ID |
+| `list(*, cursor?, limit?, agent_id?)` | List drafts with pagination |
+| `send(draft_id)` | Send the draft — returns the new `MessageOutput` |
+| `delete(draft_id)` | Discard a draft — returns its final state |
+
+```python
+draft = client.emails.drafts.create(
+    agent_id=agent.id,
+    to=["user@example.com"],
+    subject="Quarterly report",
+    body="Numbers attached below.",
+)
+message = client.emails.drafts.send(draft.id)  # draft is deleted server-side
+```
 
 ### `client.phones`
 

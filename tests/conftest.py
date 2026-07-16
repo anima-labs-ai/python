@@ -214,3 +214,98 @@ VAULT_CREDENTIAL_REQUEST_STATUS_RAW: dict[str, Any] = {
     "credentialId": "cred_001",
     "maskedPreview": "****1234",
 }
+
+EMAIL_DRAFT_RAW: dict[str, Any] = {
+    "id": "draft_001",
+    "agentId": "agent_001",
+    "orgId": "org_001",
+    "fromIdentityId": None,
+    "to": ["user@example.com"],
+    "cc": [],
+    "bcc": [],
+    "subject": "Quarterly report",
+    "body": "Draft body",
+    "bodyHtml": None,
+    "inReplyTo": None,
+    "references": [],
+    "metadata": None,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z",
+}
+
+PAGINATED_DRAFTS_RAW: dict[str, Any] = {
+    "items": [EMAIL_DRAFT_RAW],
+    "pagination": {"nextCursor": None, "hasMore": False},
+}
+
+SEMANTIC_SEARCH_RAW: dict[str, Any] = {
+    "results": [
+        {
+            "id": "msg_001",
+            "content": "Hi there",
+            "similarity": 0.91,
+            "channel": "EMAIL",
+            "direction": "OUTBOUND",
+            "createdAt": "2025-01-01T00:00:00Z",
+            "agentId": "agent_001",
+        }
+    ]
+}
+
+DOMAIN_RAW: dict[str, Any] = {
+    "id": "dom_001",
+    "domain": "mail.example.com",
+    "status": "PENDING",
+    "verified": False,
+    "verificationCooldownUntil": None,
+    "verificationToken": "anima-verify-tok123",
+    "verificationMethod": "DNS_TXT",
+    "dkimSelector": "anima",
+    "dkimPublicKey": "MIIBIjANBg...",
+    "spfConfigured": False,
+    "dmarcConfigured": False,
+    "mxConfigured": False,
+    "feedbackEnabled": False,
+    "records": [
+        {
+            "type": "TXT",
+            "name": "_anima.mail.example.com",
+            "value": "anima-verify-tok123",
+            "priority": None,
+            "status": "MISSING",
+        }
+    ],
+    "createdAt": "2025-01-01T00:00:00Z",
+}
+
+DOMAIN_DNS_RECORDS_RAW: dict[str, Any] = {
+    "txt": {"name": "_anima.mail.example.com", "value": "anima-verify-tok123"},
+    "mailFrom": {
+        "name": "bounce.mail.example.com",
+        "mx": {
+            "name": "bounce.mail.example.com",
+            "value": "feedback-smtp.useanima.sh",
+            "priority": 10,
+        },
+        "spf": "v=spf1 include:useanima.sh ~all",
+    },
+    "dkim": [{"name": "anima._domainkey.mail.example.com", "value": "v=DKIM1; p=MIIBIjANBg..."}],
+    "mx": {"name": "mail.example.com", "value": "mx.useanima.sh", "priority": 10},
+    "spf": "v=spf1 include:useanima.sh ~all",
+    "dmarc": "v=DMARC1; p=none; rua=mailto:dmarc@mail.example.com",
+}
+
+DOMAIN_DELIVERABILITY_RAW: dict[str, Any] = {
+    "domain": "mail.example.com",
+    "sent": 100,
+    "delivered": 97,
+    "bounced": 2,
+    "complained": 1,
+    "bounceRate": 0.02,
+    "complaintRate": 0.01,
+    "isHealthy": True,
+}
+
+DOMAIN_ZONE_FILE_RAW: dict[str, Any] = {
+    "zoneFile": "; Anima DNS zone for mail.example.com\n_anima.mail.example.com. IN TXT ...",
+}

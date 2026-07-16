@@ -1,10 +1,36 @@
 from __future__ import annotations
 
+# `list` in method annotations would resolve to the sibling `list()` method
+# (class-scope shadowing), so the builtin is referenced explicitly where needed.
+import builtins
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
-from .._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
+from .._types import (
+    AttachmentDownloadOutput,
+    AttachmentOutput,
+    MessageOutput,
+    PaginatedResponse,
+    SemanticSearchResult,
+)
+
+
+def _to_semantic_search_payload(
+    query: str,
+    *,
+    agent_id: str | None = None,
+    limit: int | None = None,
+    threshold: float | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {"query": query}
+    if agent_id is not None:
+        payload["agentId"] = agent_id
+    if limit is not None:
+        payload["limit"] = limit
+    if threshold is not None:
+        payload["threshold"] = threshold
+    return payload
 
 
 def _to_list_query(
@@ -191,6 +217,30 @@ class MessagesResource:
         raw = self._client.request("POST", "/messages/search", payload, options=options)
         return PaginatedResponse[MessageOutput].model_validate(raw)
 
+    def semantic_search(
+        self,
+        query: str,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+        threshold: float | None = None,
+        options: RequestOptions | None = None,
+    ) -> builtins.list[SemanticSearchResult]:
+        """Search messages by meaning, not keywords (vector embeddings).
+
+        Returns messages ranked by cosine similarity to ``query``.
+        ``threshold`` (0-1, server default 0.7) drops weak matches;
+        ``limit`` caps results (server default 10, max 50). An empty list
+        means no matches above the threshold.
+        """
+        raw = self._client.request(
+            "POST",
+            "/messages/search/semantic",
+            _to_semantic_search_payload(query, agent_id=agent_id, limit=limit, threshold=threshold),
+            options=options,
+        )
+        return [SemanticSearchResult.model_validate(item) for item in raw["results"]]
+
     def upload_attachment(
         self,
         message_id: str,
@@ -372,6 +422,30 @@ class AsyncMessagesResource:
             payload["pagination"] = pagination
         raw = await self._client.request("POST", "/messages/search", payload, options=options)
         return PaginatedResponse[MessageOutput].model_validate(raw)
+
+    async def semantic_search(
+        self,
+        query: str,
+        *,
+        agent_id: str | None = None,
+        limit: int | None = None,
+        threshold: float | None = None,
+        options: RequestOptions | None = None,
+    ) -> builtins.list[SemanticSearchResult]:
+        """Search messages by meaning, not keywords (vector embeddings).
+
+        Returns messages ranked by cosine similarity to ``query``.
+        ``threshold`` (0-1, server default 0.7) drops weak matches;
+        ``limit`` caps results (server default 10, max 50). An empty list
+        means no matches above the threshold.
+        """
+        raw = await self._client.request(
+            "POST",
+            "/messages/search/semantic",
+            _to_semantic_search_payload(query, agent_id=agent_id, limit=limit, threshold=threshold),
+            options=options,
+        )
+        return [SemanticSearchResult.model_validate(item) for item in raw["results"]]
 
     async def upload_attachment(
         self,
