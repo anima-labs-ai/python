@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "anima-labs"
-version = "0.5.0"
+version = "0.6.0"
 description = "Anima SDK for Python — unified agent identity infrastructure (email, phone, vault)"
 readme = "README.md"
 license = "MIT"
