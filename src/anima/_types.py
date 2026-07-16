@@ -229,6 +229,18 @@ class EmailIdentityOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class InboxOutput(BaseModel):
+    id: str
+    email: str
+    domain: str
+    local_part: str = Field(alias="localPart")
+    display_name: str | None = Field(None, alias="displayName")
+    agent_id: str | None = Field(None, alias="agentId")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
 class PhoneCapabilities(BaseModel):
     sms: bool
     mms: bool

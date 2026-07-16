@@ -25,6 +25,18 @@ jobs:
           pip install -e ".[events]"
           pip install pytest pytest-asyncio ruff mypy
 
+      - name: Banned-token guard (rebrand mangle)
+        # The anima.email -> useanima.sh rebrand find-replace once mangled the
+        # code identifier `anima.emails.*` into a nonsense token. This gate
+        # keeps that token (and anything like it) from ever shipping again.
+        # Pattern uses [.] so this workflow file does not match itself.
+        run: |
+          if git grep -In "useanima[.]shs"; then
+            echo "::error::Banned rebrand-mangle token found (\"useanima\" + \".shs\"). Restore the original identifier."
+            exit 1
+          fi
+          echo "Clean: no rebrand-mangle tokens."
+
       - name: Lint with ruff
         run: ruff check .
 

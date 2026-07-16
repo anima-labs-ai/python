@@ -28,6 +28,7 @@ from .resources.emails import AsyncEmailsResource, EmailsResource
 from .resources.events import AsyncEventsResource, EventsResource
 from .resources.extension import AsyncExtensionResource, ExtensionResource
 from .resources.identity import AsyncIdentityResource, IdentityResource
+from .resources.inboxes import AsyncInboxesResource, InboxesResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.organizations import AsyncOrganizationsResource, OrganizationsResource
 from .resources.phones import AsyncPhonesResource, PhonesResource
@@ -84,6 +85,7 @@ class Anima:
         self.emails = EmailsResource(self._http)
         self.events = EventsResource(self._http)
         self.identity = IdentityResource(self._http)
+        self.inboxes = InboxesResource(self._http)
         self.messages = MessagesResource(self._http)
         self.organizations = OrganizationsResource(self._http)
         self.phones = PhonesResource(self._http)
@@ -186,6 +188,7 @@ class AsyncAnima:
         self.emails = AsyncEmailsResource(self._http)
         self.events = AsyncEventsResource(self._http)
         self.identity = AsyncIdentityResource(self._http)
+        self.inboxes = AsyncInboxesResource(self._http)
         self.messages = AsyncMessagesResource(self._http)
         self.organizations = AsyncOrganizationsResource(self._http)
         self.phones = AsyncPhonesResource(self._http)

@@ -74,13 +74,37 @@ Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All asy
 
 | Method | Description |
 |--------|-------------|
-| `send_email(*, agent_id, to, subject, body, cc?, bcc?, body_html?, headers?, metadata?)` | Send an email |
+| `send_email(*, agent_id, to, subject, body, cc?, bcc?, body_html?, attachments?, in_reply_to?, references?, headers?, metadata?)` | Send an email (attachments + threading supported) |
 | `send_sms(*, agent_id, to, body, media_urls?, metadata?)` | Send an SMS |
 | `get(message_id)` | Get a message by ID |
 | `list(*, cursor?, limit?, agent_id?, thread_id?, channel?, direction?, date_from?, date_to?)` | List messages with filters |
 | `search(query, *, agent_id?, channel?, direction?, status?, date_from?, date_to?, cursor?, limit?)` | Full-text search messages |
 | `upload_attachment(message_id, *, filename, mime_type, size_bytes)` | Upload an attachment |
 | `get_attachment_url(attachment_id)` | Get a download URL for an attachment |
+
+Sending with an attachment (dict in the API wire shape — exactly one of `content` (base64) or `url`):
+
+```python
+message = client.messages.send_email(
+    agent_id=agent.id,
+    to=["user@example.com"],
+    subject="Your invoice",
+    body="Invoice attached.",
+    attachments=[
+        {"filename": "invoice.pdf", "contentType": "application/pdf", "content": pdf_base64},
+    ],
+)
+```
+
+### `client.inboxes`
+
+| Method | Description |
+|--------|-------------|
+| `create(*, username?, domain?, display_name?, agent_id?)` | Create an inbox (address generated when omitted) |
+| `get(inbox_id)` | Get an inbox by ID |
+| `list(*, cursor?, limit?, query?)` | List inboxes with pagination |
+| `update(inbox_id, *, display_name?, agent_id?)` | Update inbox fields |
+| `delete(inbox_id)` | Delete an inbox |
 
 ### `client.emails`
 

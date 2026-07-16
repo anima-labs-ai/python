@@ -83,6 +83,21 @@ PAGINATED_MESSAGES_RAW: dict[str, Any] = {
     "pagination": {"nextCursor": None, "hasMore": False},
 }
 
+INBOX_RAW: dict[str, Any] = {
+    "id": "inbox_001",
+    "email": "support@agents.useanima.sh",
+    "domain": "agents.useanima.sh",
+    "localPart": "support",
+    "displayName": "Support",
+    "agentId": "agent_001",
+    "createdAt": "2025-01-01T00:00:00Z",
+}
+
+PAGINATED_INBOXES_RAW: dict[str, Any] = {
+    "items": [INBOX_RAW],
+    "pagination": {"nextCursor": None, "hasMore": False},
+}
+
 ATTACHMENT_RAW: dict[str, Any] = {
     "id": "att_001",
     "filename": "report.pdf",
