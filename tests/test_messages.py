@@ -1,4 +1,5 @@
-"""Tests for MessagesResource send paths (send_email / send_sms).
+"""Tests for MessagesResource send paths (send_email / send_sms) and
+semantic search.
 
 send_email is the only email send path the SDK exposes; these tests pin the
 exact wire payload (camelCase keys, optional keys omitted) and that API
@@ -17,10 +18,10 @@ import pytest
 
 from anima._exceptions import NotFoundError, ValidationError
 from anima._http import AsyncHTTPClient, HTTPClient
-from anima._types import MessageOutput
+from anima._types import MessageOutput, SemanticSearchResult
 from anima.resources.messages import AsyncMessagesResource, MessagesResource
 
-from .conftest import MESSAGE_RAW
+from .conftest import MESSAGE_RAW, SEMANTIC_SEARCH_RAW
 
 PDF_BASE64 = "JVBERi0xLjQKJdP0zOEK"  # tiny base64 blob standing in for real bytes
 
@@ -293,3 +294,67 @@ class TestAsyncSendEmail:
         assert payload["attachments"] == [{"filename": "doc.pdf", "content": PDF_BASE64}]
         assert payload["inReplyTo"] == "<parent@agents.useanima.sh>"
         assert payload["references"] == ["<parent@agents.useanima.sh>"]
+
+
+class TestSemanticSearch:
+    """semantic_search is the pgvector-backed "search by meaning" endpoint —
+    the SDK's job is to send the exact contract payload and unwrap the ranked
+    `results` array into typed models."""
+
+    def test_semantic_search_minimal_payload(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = SEMANTIC_SEARCH_RAW
+        results = MessagesResource(mock_http).semantic_search("invoices from acme")
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/messages/search/semantic",
+            {"query": "invoices from acme"},
+            options=None,
+        )
+        assert len(results) == 1
+        assert isinstance(results[0], SemanticSearchResult)
+        assert results[0].id == "msg_001"
+        assert results[0].similarity == pytest.approx(0.91)
+        assert results[0].agent_id == "agent_001"
+
+    def test_semantic_search_full_payload(self, mock_http: MagicMock) -> None:
+        """limit/threshold must go over the wire as numbers (not strings) and
+        agent_id as camelCase — the server validates types strictly."""
+        mock_http.request.return_value = SEMANTIC_SEARCH_RAW
+        MessagesResource(mock_http).semantic_search(
+            "contract renewal",
+            agent_id="agent_001",
+            limit=25,
+            threshold=0.5,
+        )
+
+        payload = mock_http.request.call_args[0][2]
+        assert payload == {
+            "query": "contract renewal",
+            "agentId": "agent_001",
+            "limit": 25,
+            "threshold": 0.5,
+        }
+
+    def test_semantic_search_no_matches_returns_empty_list(self, mock_http: MagicMock) -> None:
+        mock_http.request.return_value = {"results": []}
+        results = MessagesResource(mock_http).semantic_search("nothing like this exists")
+
+        assert results == []
+
+    @pytest.mark.asyncio
+    async def test_async_semantic_search(self) -> None:
+        mock_http = AsyncMock(spec=AsyncHTTPClient)
+        mock_http.request.return_value = SEMANTIC_SEARCH_RAW
+        results = await AsyncMessagesResource(mock_http).semantic_search(
+            "invoices from acme", limit=5
+        )
+
+        mock_http.request.assert_called_once_with(
+            "POST",
+            "/messages/search/semantic",
+            {"query": "invoices from acme", "limit": 5},
+            options=None,
+        )
+        assert len(results) == 1
+        assert isinstance(results[0], SemanticSearchResult)

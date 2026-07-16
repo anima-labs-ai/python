@@ -3,6 +3,7 @@ from __future__ import annotations
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import AttachmentDownloadOutput, AttachmentOutput, MessageOutput, PaginatedResponse
+from .drafts import AsyncEmailDraftsResource, EmailDraftsResource
 
 
 def _to_query(
@@ -24,6 +25,11 @@ def _to_query(
 class EmailsResource:
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
+
+    @property
+    def drafts(self) -> EmailDraftsResource:
+        """Email drafts: ``client.emails.drafts.create(...)`` etc."""
+        return EmailDraftsResource(self._client)
 
     def list(
         self,
@@ -74,6 +80,11 @@ class EmailsResource:
 class AsyncEmailsResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
+
+    @property
+    def drafts(self) -> AsyncEmailDraftsResource:
+        """Email drafts: ``await client.emails.drafts.create(...)`` etc."""
+        return AsyncEmailDraftsResource(self._client)
 
     def list(
         self,

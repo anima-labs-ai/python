@@ -330,6 +330,52 @@ class AttachmentDownloadOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class SemanticSearchResult(BaseModel):
+    """A message matched by semantic (embedding) search, ranked by similarity."""
+
+    id: str
+    content: str
+    similarity: float
+    channel: str
+    direction: str
+    agent_id: str = Field(alias="agentId")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Email drafts
+# ---------------------------------------------------------------------------
+
+
+class EmailDraftOutput(BaseModel):
+    """A composed-but-not-sent email owned by an agent.
+
+    Unlike a :class:`MessageOutput`, a draft may be incomplete (no recipients,
+    subject, or body yet) and has no thread/status/delivery state. Sending a
+    draft converts it into a Message and deletes the draft row.
+    """
+
+    id: str
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
+    from_identity_id: str | None = Field(None, alias="fromIdentityId")
+    to: list[str]
+    cc: list[str]
+    bcc: list[str]
+    subject: str | None = None
+    body: str | None = None
+    body_html: str | None = Field(None, alias="bodyHtml")
+    in_reply_to: str | None = Field(None, alias="inReplyTo")
+    references: list[str]
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
 # ---------------------------------------------------------------------------
 # Domains
 # ---------------------------------------------------------------------------

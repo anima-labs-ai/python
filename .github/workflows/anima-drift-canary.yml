@@ -1,0 +1,139 @@
+name: Anima drift canary
+
+# The Python SDK is hand-written against the anima monorepo's contracts
+# (packages/contracts). Unlike the CLI there is no typecheck that binds the
+# two repos, so contract changes on anima main are INVISIBLE here — which is
+# exactly how SDK surfaces silently rotted before (the CLI was the only
+# surface that didn't lose ops, because it was the only one with a drift
+# signal).
+#
+# .anima-ref pins the anima commit this SDK was last reconciled against.
+# This canary diffs the contract sources between that pin and anima HEAD
+# once a day and files a labeled issue when they diverge — an early,
+# non-blocking signal to review the change, mirror anything SDK-relevant,
+# and bump the pin. It also exercises ANIMA_REPO_TOKEN daily: that
+# fine-grained PAT has a hard expiry and has lapsed silently before
+# (cli, 2026-07-05), so its next expiry should surface here rather than on
+# a human's PR.
+#
+# Security: no untrusted external input reaches run: blocks — only
+# github.* built-ins passed via env, and file contents from our own repos
+# passed via files. Scheduled workflows run from the default branch only.
+
+on:
+  schedule:
+    # Daily, 05:27 UTC — before the Sofia workday; staggered off the CLI
+    # canary (05:17) and off the top of the hour to dodge the scheduler
+    # crunch.
+    - cron: "27 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    name: Diff pinned contracts against anima HEAD
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify ANIMA_REPO_TOKEN secret is configured
+        env:
+          ANIMA_REPO_TOKEN: ${{ secrets.ANIMA_REPO_TOKEN }}
+        run: |
+          if [ -z "$ANIMA_REPO_TOKEN" ]; then
+            echo "::error::Repo secret ANIMA_REPO_TOKEN is not set."
+            echo "::error::The canary needs a fine-grained PAT with 'Contents: Read' on anima-labs-ai/anima."
+            exit 1
+          fi
+
+      - name: Checkout python SDK
+        uses: actions/checkout@v4
+        with:
+          path: python
+
+      # No `ref:` on purpose — the whole point is to compare against HEAD.
+      - name: Checkout anima monorepo at HEAD
+        uses: actions/checkout@v4
+        with:
+          repository: anima-labs-ai/anima
+          path: anima
+          token: ${{ secrets.ANIMA_REPO_TOKEN }}
+          fetch-depth: 1
+
+      - name: Diff contract sources between the pin and HEAD
+        working-directory: anima
+        env:
+          PINNED_REF_FILE: ${{ github.workspace }}/python/.anima-ref
+        run: |
+          pinned="$(tr -d '[:space:]' < "$PINNED_REF_FILE")"
+          if [ -z "$pinned" ]; then
+            echo "::error::.anima-ref is empty or unreadable."
+            exit 1
+          fi
+          git fetch --depth 1 origin "$pinned"
+          head="$(git rev-parse HEAD)"
+          echo "Pinned anima commit: $pinned"
+          echo "anima HEAD:          $head"
+          echo "$head" > "$RUNNER_TEMP/anima-head"
+          paths="packages/contracts/src"
+          exclude=":(exclude)packages/contracts/src/__tests__"
+          if git diff --quiet "$pinned" "$head" -- "$paths" "$exclude"; then
+            echo "No contract drift: pinned contracts match anima HEAD."
+            exit 0
+          fi
+          git diff --stat "$pinned" "$head" -- "$paths" "$exclude" \
+            | tee "$RUNNER_TEMP/contract-drift.stat"
+          echo "::error::Contract sources changed between the pinned anima commit and HEAD — review for SDK impact and bump .anima-ref."
+          exit 1
+
+      # One open issue at a time: if an anima-drift issue is already open,
+      # the repeat failure is visible on it and in the Actions history —
+      # don't spam a new issue per day.
+      - name: File drift issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PINNED_REF_FILE: python/.anima-ref
+        run: |
+          gh label create anima-drift \
+            --repo "$GITHUB_REPOSITORY" \
+            --description "Contracts drifted between .anima-ref and anima monorepo HEAD" \
+            --color D93F0B --force
+          open_count="$(gh issue list --repo "$GITHUB_REPOSITORY" --label anima-drift --state open --json number --jq 'length')"
+          if [ "$open_count" != "0" ]; then
+            echo "An anima-drift issue is already open — not filing another."
+            exit 0
+          fi
+          pinned="$(tr -d '[:space:]' < "$PINNED_REF_FILE" 2>/dev/null || echo 'unreadable')"
+          head="$(cat "$RUNNER_TEMP/anima-head" 2>/dev/null || echo 'unknown')"
+          {
+            echo "The daily drift canary failed: the anima contract sources no longer match the commit pinned in \`.anima-ref\`."
+            echo
+            echo "Failed run: $RUN_URL"
+            echo "Pinned anima commit (.anima-ref): $pinned"
+            echo "anima HEAD at run time: $head"
+            echo "Contract compare: https://github.com/anima-labs-ai/anima/compare/$pinned...$head"
+            echo
+            if [ -f "$RUNNER_TEMP/contract-drift.stat" ]; then
+              echo "Changed contract files:"
+              echo '```'
+              cat "$RUNNER_TEMP/contract-drift.stat"
+              echo '```'
+              echo
+            fi
+            echo "What this means: nothing is broken *yet* — the SDK keeps working against endpoints that still exist. But new/changed/removed routes or schemas are now invisible to this repo, which is exactly how SDK surfaces silently lost operations before."
+            echo
+            echo "Checklist:"
+            echo "1. Open the failed run and look at which step failed."
+            echo "   - Failed at **checkout** with \"Bad credentials\": ANIMA_REPO_TOKEN expired again — mint a new fine-grained PAT (Contents: Read on anima-labs-ai/anima) and run: \`gh secret set ANIMA_REPO_TOKEN --repo anima-labs-ai/python\`"
+            echo "   - Failed at **diff**: review the compare link for SDK-relevant changes (routes the SDK mirrors, schema fields on exposed models)."
+            echo "2. Mirror anything SDK-relevant (resources + tests), or confirm the change doesn't touch surfaced endpoints."
+            echo "3. Bump \`.anima-ref\` to the anima HEAD SHA in the same PR — that is the reconciliation record and re-greens the canary."
+            echo "4. Close this issue when the canary is green again."
+          } > "$RUNNER_TEMP/drift-issue.md"
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Anima contracts drifted from the .anima-ref pin" \
+            --label anima-drift \
+            --body-file "$RUNNER_TEMP/drift-issue.md"
