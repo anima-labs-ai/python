@@ -4,6 +4,7 @@ from .domains import AsyncDomainsResource, DomainsResource
 from .emails import AsyncEmailsResource, EmailsResource
 from .events import AsyncEventsResource, EventsResource
 from .extension import AsyncExtensionResource, ExtensionResource
+from .inboxes import AsyncInboxesResource, InboxesResource
 from .messages import AsyncMessagesResource, MessagesResource
 from .organizations import AsyncOrganizationsResource, OrganizationsResource
 from .phones import AsyncPhonesResource, PhonesResource
@@ -22,6 +23,8 @@ __all__ = [
     "AsyncEventsResource",
     "ExtensionResource",
     "AsyncExtensionResource",
+    "InboxesResource",
+    "AsyncInboxesResource",
     "MessagesResource",
     "AsyncMessagesResource",
     "OrganizationsResource",

@@ -19,6 +19,17 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Banned-token guard (rebrand mangle)
+        # The anima.email -> useanima.sh rebrand find-replace once mangled the
+        # code identifier `anima.emails.*` into a nonsense token. Never ship a
+        # release containing it. Pattern uses [.] so this file doesn't match.
+        run: |
+          if git grep -In "useanima[.]shs"; then
+            echo "::error::Banned rebrand-mangle token found (\"useanima\" + \".shs\"). Restore the original identifier."
+            exit 1
+          fi
+          echo "Clean: no rebrand-mangle tokens."
+
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip

@@ -52,10 +52,24 @@ class MessagesResource:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         body_html: str | None = None,
+        attachments: list[dict[str, Any]] | None = None,
+        in_reply_to: str | None = None,
+        references: list[str] | None = None,
         headers: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
         options: RequestOptions | None = None,
     ) -> MessageOutput:
+        """Send an email through an agent.
+
+        Each ``attachments`` entry is a dict in the API wire shape:
+        ``"filename"``, ``"contentType"`` (both optional, inferred server-side),
+        exactly one of ``"content"`` (base64 bytes) or ``"url"`` (server-fetched),
+        and optional ``"contentId"`` for inline images referenced from the HTML
+        body via ``cid:`` URIs. Max 20 attachments / 25MB total per email.
+
+        ``in_reply_to`` is the Message-ID of the email being replied to;
+        ``references`` is the ordered Message-ID chain for threading.
+        """
         payload: dict[str, Any] = {
             "agentId": agent_id,
             "to": to,
@@ -68,6 +82,12 @@ class MessagesResource:
             payload["bcc"] = bcc
         if body_html is not None:
             payload["bodyHtml"] = body_html
+        if attachments is not None:
+            payload["attachments"] = attachments
+        if in_reply_to is not None:
+            payload["inReplyTo"] = in_reply_to
+        if references is not None:
+            payload["references"] = references
         if headers is not None:
             payload["headers"] = headers
         if metadata is not None:
@@ -214,10 +234,24 @@ class AsyncMessagesResource:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         body_html: str | None = None,
+        attachments: list[dict[str, Any]] | None = None,
+        in_reply_to: str | None = None,
+        references: list[str] | None = None,
         headers: dict[str, str] | None = None,
         metadata: dict[str, Any] | None = None,
         options: RequestOptions | None = None,
     ) -> MessageOutput:
+        """Send an email through an agent.
+
+        Each ``attachments`` entry is a dict in the API wire shape:
+        ``"filename"``, ``"contentType"`` (both optional, inferred server-side),
+        exactly one of ``"content"`` (base64 bytes) or ``"url"`` (server-fetched),
+        and optional ``"contentId"`` for inline images referenced from the HTML
+        body via ``cid:`` URIs. Max 20 attachments / 25MB total per email.
+
+        ``in_reply_to`` is the Message-ID of the email being replied to;
+        ``references`` is the ordered Message-ID chain for threading.
+        """
         payload: dict[str, Any] = {
             "agentId": agent_id,
             "to": to,
@@ -230,6 +264,12 @@ class AsyncMessagesResource:
             payload["bcc"] = bcc
         if body_html is not None:
             payload["bodyHtml"] = body_html
+        if attachments is not None:
+            payload["attachments"] = attachments
+        if in_reply_to is not None:
+            payload["inReplyTo"] = in_reply_to
+        if references is not None:
+            payload["references"] = references
         if headers is not None:
             payload["headers"] = headers
         if metadata is not None:
