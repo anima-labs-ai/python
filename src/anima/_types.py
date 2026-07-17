@@ -317,6 +317,12 @@ class MessageOutput(BaseModel):
     sent_at: str | None = Field(None, alias="sentAt")
     received_at: str | None = Field(None, alias="receivedAt")
     attachments: list[AttachmentOutput]
+    #: Workflow labels on this message. Always contains exactly one of the
+    #: system labels ``unread`` or ``read``; may also contain ``archived``,
+    #: ``spam`` (the inbound spam verdict) and any labels you add. Change them
+    #: with ``messages.update_labels()``. Defaults to empty so a client on this
+    #: version keeps parsing messages served by an API that predates B3.
+    labels: list[str] = Field(default_factory=list)
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 

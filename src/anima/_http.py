@@ -7,6 +7,7 @@ import contextlib
 import random
 import time
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Callable, TypeVar
 
@@ -220,7 +221,13 @@ class HTTPClient:
         method: str,
         path: str,
         body: Any | None = None,
-        query: dict[str, str] | None = None,
+        # ``list[str]`` values become repeated keys (``?labels=a&labels=b``) —
+        # the form the API reads as an array. httpx expands them natively.
+        # Mapping, not dict: dict is INVARIANT in its value type, so a
+        # ``dict[str, str]`` (what most resources build) is not a
+        # ``dict[str, str | list[str]]`` and every existing caller would fail to
+        # typecheck. Mapping is covariant, and this parameter is read-only here.
+        query: Mapping[str, str | list[str]] | None = None,
         options: RequestOptions | None = None,
     ) -> Any:
         url = self._build_url(path)
@@ -369,7 +376,13 @@ class AsyncHTTPClient:
         method: str,
         path: str,
         body: Any | None = None,
-        query: dict[str, str] | None = None,
+        # ``list[str]`` values become repeated keys (``?labels=a&labels=b``) —
+        # the form the API reads as an array. httpx expands them natively.
+        # Mapping, not dict: dict is INVARIANT in its value type, so a
+        # ``dict[str, str]`` (what most resources build) is not a
+        # ``dict[str, str | list[str]]`` and every existing caller would fail to
+        # typecheck. Mapping is covariant, and this parameter is read-only here.
+        query: Mapping[str, str | list[str]] | None = None,
         options: RequestOptions | None = None,
     ) -> Any:
         url = self._build_url(path)
