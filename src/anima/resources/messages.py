@@ -41,10 +41,12 @@ def _to_list_query(
     thread_id: str | None = None,
     channel: str | None = None,
     direction: str | None = None,
+    labels: list[str] | None = None,
+    include_spam: bool | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> dict[str, str] | None:
-    params: dict[str, str] = {}
+) -> dict[str, str | list[str]] | None:
+    params: dict[str, str | list[str]] = {}
     if cursor is not None:
         params["cursor"] = cursor
     if limit is not None:
@@ -57,11 +59,45 @@ def _to_list_query(
         params["channel"] = channel
     if direction is not None:
         params["direction"] = direction
+    # Passed through as a list so httpx emits one ``labels=`` key per label.
+    # ",".join() would ask for a single label literally named "a,b", which
+    # matches nothing — an empty inbox rather than an error.
+    if labels:
+        params["labels"] = labels
+    # ``is not None``, not truthiness: ``include_spam=False`` is the caller
+    # explicitly overriding and must reach the wire.
+    if include_spam is not None:
+        params["includeSpam"] = "true" if include_spam else "false"
     if date_from is not None:
         params["dateRange.from"] = date_from
     if date_to is not None:
         params["dateRange.to"] = date_to
     return params or None
+
+
+def _to_labels_payload(
+    message_id: str,
+    add_labels: list[str] | None,
+    remove_labels: list[str] | None,
+) -> dict[str, Any]:
+    """Body for PATCH /messages/{id}/labels.
+
+    Add/remove rather than a whole-array replace: two agents working one inbox
+    would silently erase each other's tags under a ``set``, and the server
+    applies both operations in a single statement so concurrent callers
+    converge. Refusing the empty call here beats a 400 round-trip — the API's
+    error would not say which of the two operations the caller forgot.
+    """
+    if not add_labels and not remove_labels:
+        raise ValueError("update_labels requires at least one of add_labels or remove_labels.")
+    # ``id`` travels in the path AND the body: the contract's input schema
+    # carries it, so omitting it 400s on a required field.
+    payload: dict[str, Any] = {"id": message_id}
+    if add_labels:
+        payload["addLabels"] = add_labels
+    if remove_labels:
+        payload["removeLabels"] = remove_labels
+    return payload
 
 
 class MessagesResource:
@@ -146,6 +182,29 @@ class MessagesResource:
             self._client.request("GET", f"/messages/{message_id}", options=options)
         )
 
+    def update_labels(
+        self,
+        message_id: str,
+        *,
+        add_labels: builtins.list[str] | None = None,
+        remove_labels: builtins.list[str] | None = None,
+        options: RequestOptions | None = None,
+    ) -> MessageOutput:
+        """Add and/or remove labels on one message — the agent's workflow state.
+
+        Adding ``read`` removes ``unread`` and vice versa. Returns the updated
+        message, so the caller never has to guess what the labels became. One
+        message per call: there is no batch form.
+        """
+        return MessageOutput.model_validate(
+            self._client.request(
+                "PATCH",
+                f"/messages/{message_id}/labels",
+                _to_labels_payload(message_id, add_labels, remove_labels),
+                options=options,
+            )
+        )
+
     def list(
         self,
         *,
@@ -155,6 +214,8 @@ class MessagesResource:
         thread_id: str | None = None,
         channel: str | None = None,
         direction: str | None = None,
+        labels: builtins.list[str] | None = None,
+        include_spam: bool | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
     ) -> SyncPageIterator[MessageOutput]:
@@ -170,6 +231,8 @@ class MessagesResource:
             thread_id=thread_id,
             channel=channel,
             direction=direction,
+            labels=labels,
+            include_spam=include_spam,
             date_from=date_from,
             date_to=date_to,
         )
@@ -182,6 +245,8 @@ class MessagesResource:
         channel: str | None = None,
         direction: str | None = None,
         status: str | None = None,
+        labels: builtins.list[str] | None = None,
+        include_spam: bool | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
         cursor: str | None = None,
@@ -198,6 +263,10 @@ class MessagesResource:
             filters["direction"] = direction
         if status is not None:
             filters["status"] = status
+        if labels:
+            filters["labels"] = labels
+        if include_spam is not None:
+            filters["includeSpam"] = include_spam
         date_range: dict[str, str] = {}
         if date_from is not None:
             date_range["from"] = date_from
@@ -352,6 +421,29 @@ class AsyncMessagesResource:
             await self._client.request("GET", f"/messages/{message_id}", options=options)
         )
 
+    async def update_labels(
+        self,
+        message_id: str,
+        *,
+        add_labels: builtins.list[str] | None = None,
+        remove_labels: builtins.list[str] | None = None,
+        options: RequestOptions | None = None,
+    ) -> MessageOutput:
+        """Add and/or remove labels on one message — the agent's workflow state.
+
+        Adding ``read`` removes ``unread`` and vice versa. Returns the updated
+        message, so the caller never has to guess what the labels became. One
+        message per call: there is no batch form.
+        """
+        return MessageOutput.model_validate(
+            await self._client.request(
+                "PATCH",
+                f"/messages/{message_id}/labels",
+                _to_labels_payload(message_id, add_labels, remove_labels),
+                options=options,
+            )
+        )
+
     def list(
         self,
         *,
@@ -361,6 +453,8 @@ class AsyncMessagesResource:
         thread_id: str | None = None,
         channel: str | None = None,
         direction: str | None = None,
+        labels: builtins.list[str] | None = None,
+        include_spam: bool | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
     ) -> AsyncPageIterator[MessageOutput]:
@@ -376,6 +470,8 @@ class AsyncMessagesResource:
             thread_id=thread_id,
             channel=channel,
             direction=direction,
+            labels=labels,
+            include_spam=include_spam,
             date_from=date_from,
             date_to=date_to,
         )
@@ -388,6 +484,8 @@ class AsyncMessagesResource:
         channel: str | None = None,
         direction: str | None = None,
         status: str | None = None,
+        labels: builtins.list[str] | None = None,
+        include_spam: bool | None = None,
         date_from: str | None = None,
         date_to: str | None = None,
         cursor: str | None = None,
@@ -404,6 +502,10 @@ class AsyncMessagesResource:
             filters["direction"] = direction
         if status is not None:
             filters["status"] = status
+        if labels:
+            filters["labels"] = labels
+        if include_spam is not None:
+            filters["includeSpam"] = include_spam
         date_range: dict[str, str] = {}
         if date_from is not None:
             date_range["from"] = date_from

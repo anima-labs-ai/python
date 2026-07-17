@@ -11,14 +11,22 @@ def _to_query(
     cursor: str | None = None,
     limit: int | None = None,
     agent_id: str | None = None,
-) -> dict[str, str] | None:
-    params: dict[str, str] = {}
+    labels: list[str] | None = None,
+    include_spam: bool | None = None,
+) -> dict[str, str | list[str]] | None:
+    params: dict[str, str | list[str]] = {}
     if cursor is not None:
         params["cursor"] = cursor
     if limit is not None:
         params["limit"] = str(limit)
     if agent_id is not None:
         params["agentId"] = agent_id
+    # One ``labels=`` key per label; an explicit ``include_spam=False`` is a
+    # real override and must survive, hence ``is not None``.
+    if labels:
+        params["labels"] = labels
+    if include_spam is not None:
+        params["includeSpam"] = "true" if include_spam else "false"
     return params or None
 
 
@@ -37,16 +45,37 @@ class EmailsResource:
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
+        labels: list[str] | None = None,
+        include_spam: bool | None = None,
     ) -> SyncPageIterator[MessageOutput]:
         def _fetch(
-            cursor: str | None = cursor, limit: int | None = limit, agent_id: str | None = agent_id
+            cursor: str | None = cursor,
+            limit: int | None = limit,
+            agent_id: str | None = agent_id,
+            labels: list[str] | None = labels,
+            include_spam: bool | None = include_spam,
         ) -> PaginatedResponse[MessageOutput]:
             raw = self._client.request(
-                "GET", "/email", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id)
+                "GET",
+                "/email",
+                query=_to_query(
+                    cursor=cursor,
+                    limit=limit,
+                    agent_id=agent_id,
+                    labels=labels,
+                    include_spam=include_spam,
+                ),
             )
             return PaginatedResponse[MessageOutput].model_validate(raw)
 
-        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, agent_id=agent_id)
+        return SyncPageIterator(
+            _fetch,
+            cursor=cursor,
+            limit=limit,
+            agent_id=agent_id,
+            labels=labels,
+            include_spam=include_spam,
+        )
 
     def upload_attachment(
         self,
@@ -92,16 +121,37 @@ class AsyncEmailsResource:
         cursor: str | None = None,
         limit: int | None = None,
         agent_id: str | None = None,
+        labels: list[str] | None = None,
+        include_spam: bool | None = None,
     ) -> AsyncPageIterator[MessageOutput]:
         async def _fetch(
-            cursor: str | None = cursor, limit: int | None = limit, agent_id: str | None = agent_id
+            cursor: str | None = cursor,
+            limit: int | None = limit,
+            agent_id: str | None = agent_id,
+            labels: list[str] | None = labels,
+            include_spam: bool | None = include_spam,
         ) -> PaginatedResponse[MessageOutput]:
             raw = await self._client.request(
-                "GET", "/email", query=_to_query(cursor=cursor, limit=limit, agent_id=agent_id)
+                "GET",
+                "/email",
+                query=_to_query(
+                    cursor=cursor,
+                    limit=limit,
+                    agent_id=agent_id,
+                    labels=labels,
+                    include_spam=include_spam,
+                ),
             )
             return PaginatedResponse[MessageOutput].model_validate(raw)
 
-        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, agent_id=agent_id)
+        return AsyncPageIterator(
+            _fetch,
+            cursor=cursor,
+            limit=limit,
+            agent_id=agent_id,
+            labels=labels,
+            include_spam=include_spam,
+        )
 
     async def upload_attachment(
         self,
