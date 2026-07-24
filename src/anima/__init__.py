@@ -103,7 +103,6 @@ from ._types import (
     VerifyCredentialOutput,
     Voice,
     VoiceGender,
-    VoiceProvider,
     VoiceTier,
     WalletOutput,
     WalletPayOutput,
@@ -162,7 +161,6 @@ __all__ = [
     "VerificationMethod",
     "CallDirection",
     "VoiceGender",
-    "VoiceProvider",
     "VoiceTier",
     "WebhookEventType",
     # Events (WebSocket)
