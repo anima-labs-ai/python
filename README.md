@@ -46,11 +46,13 @@ Every method is available in an async variant via `AsyncAnima`:
 import asyncio
 from anima import AsyncAnima
 
+
 async def main():
     async with AsyncAnima(api_key="sk-...") as client:
         agents = await client.agents.list(org_id="org_123")
         for agent in agents.items:
             print(agent.name)
+
 
 asyncio.run(main())
 ```
@@ -158,6 +160,23 @@ message = client.emails.drafts.send(draft.id)  # draft is deleted server-side
 | `release(phone_id)` | Release a phone number |
 | `update_config(phone_id, *, is_primary?, ten_dlc_status?, metadata?)` | Update phone configuration |
 
+### `client.voices`
+
+Browse the multilingual voice catalog (English, Spanish, French, German, Italian, Japanese, Dutch, and more). Each voice carries descriptive metadata and a vendor-neutral `sample_url` preview.
+
+| Method | Description |
+|--------|-------------|
+| `list(*, language?, gender?)` | List catalog voices, optionally filtered by language or gender |
+
+```python
+# Only Spanish voices
+result = client.voices.list(language="es")
+for voice in result["voices"]:
+    print(voice.id, voice.name, voice.language, voice.descriptors)
+    if voice.sample_url:  # vendor-neutral preview served from the API host
+        print("preview:", voice.sample_url)
+```
+
 ### `client.domains`
 
 | Method | Description |
@@ -243,7 +262,7 @@ webhook = client.webhooks.create(
     #       WebhookAuthCustomHeader(header_name=, value=), WebhookAuthNone().
     auth_config=WebhookAuthBearer(token="your-endpoint-token"),
     rate_limit_per_minute=120,  # omit for unlimited
-    max_attempts=5,             # 1-10, default 3
+    max_attempts=5,  # 1-10, default 3
 )
 print(webhook.id, webhook.auth_type)  # -> "wh_..." "BEARER"
 ```
@@ -259,7 +278,7 @@ Verify incoming webhook signatures to ensure authenticity:
 ```python
 from anima import Anima, AnimaError
 
-payload = request.body          # raw request body (str or bytes)
+payload = request.body  # raw request body (str or bytes)
 sig = request.headers["anima-signature"]
 secret = "whsec_..."
 

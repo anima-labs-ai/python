@@ -8,13 +8,10 @@ from .._types import Voice
 
 def _to_query(
     *,
-    tier: str | None = None,
     gender: str | None = None,
     language: str | None = None,
 ) -> dict[str, str] | None:
     params: dict[str, str] = {}
-    if tier is not None:
-        params["tier"] = tier
     if gender is not None:
         params["gender"] = gender
     if language is not None:
@@ -29,16 +26,15 @@ class VoicesResource:
     def list(
         self,
         *,
-        tier: str | None = None,
         gender: str | None = None,
         language: str | None = None,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        """List available voices, optionally filtered by tier, gender, or language."""
+        """List available voices, optionally filtered by gender or language."""
         raw = self._client.request(
             "GET",
             "/voice/catalog",
-            query=_to_query(tier=tier, gender=gender, language=language),
+            query=_to_query(gender=gender, language=language),
             options=options,
         )
         if isinstance(raw, dict) and "voices" in raw:
@@ -53,16 +49,15 @@ class AsyncVoicesResource:
     async def list(
         self,
         *,
-        tier: str | None = None,
         gender: str | None = None,
         language: str | None = None,
         options: RequestOptions | None = None,
     ) -> dict[str, Any]:
-        """List available voices, optionally filtered by tier, gender, or language."""
+        """List available voices, optionally filtered by gender or language."""
         raw = await self._client.request(
             "GET",
             "/voice/catalog",
-            query=_to_query(tier=tier, gender=gender, language=language),
+            query=_to_query(gender=gender, language=language),
             options=options,
         )
         if isinstance(raw, dict) and "voices" in raw:

@@ -1419,29 +1419,26 @@ class VoiceGender(str, Enum):
     NEUTRAL = "neutral"
 
 
-class VoiceProvider(str, Enum):
-    TELNYX = "telnyx"
-    ELEVENLABS = "elevenlabs"
-    AWS_POLLY = "aws-polly"
-
-
 class CallDirection(str, Enum):
     INBOUND = "INBOUND"
     OUTBOUND = "OUTBOUND"
 
 
 class Voice(BaseModel):
+    """A catalog voice. Vendor-neutral: the underlying provider/model is never
+    exposed — only descriptive metadata and a proxied preview URL."""
+
     id: str
     name: str
-    provider: VoiceProvider
-    tier: VoiceTier
-    gender: VoiceGender | None = None
-    language: str
+    gender: VoiceGender
     accent: str | None = None
-    style: str | None = None
-    age_range: str | None = Field(None, alias="ageRange")
-    description: str | None = None
-    preview_url: str | None = Field(None, alias="previewUrl")
+    age: str | None = None
+    descriptors: list[str]
+    use_cases: list[str] = Field(alias="useCases")
+    language: str
+    #: Vendor-neutral preview URL under the API host — the client never touches
+    #: the provider CDN. ``None`` until a sample clip has been generated.
+    sample_url: str | None = Field(None, alias="sampleUrl")
 
     model_config = {"populate_by_name": True}
 
