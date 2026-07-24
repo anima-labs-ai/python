@@ -23,7 +23,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[events]"
-          pip install pytest pytest-asyncio ruff mypy
+          # Pin ruff + mypy: both are unpinned formatters/type-checkers whose
+          # output changes between releases. An unpinned `ruff format --check`
+          # went red the day ruff 0.16.0 shipped (it reformats code that is
+          # clean under the version the repo was formatted with). Pin to the
+          # versions the codebase is known-good against; bump deliberately.
+          pip install pytest pytest-asyncio ruff==0.15.20 mypy==2.1.0
 
       - name: Banned-token guard (rebrand mangle)
         # The anima.email -> useanima.sh rebrand find-replace once mangled the
