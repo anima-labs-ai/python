@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from anima._types import CallOutput, CallTranscript, CreateCallOutput
+from anima._voice_connection import VoiceConnection
 from anima.resources.calls import CallsResource
 
 # ---------------------------------------------------------------------------
@@ -201,3 +205,61 @@ class TestCallsGetTranscript:
         assert seg.end_time == 2.5
         assert seg.confidence == 0.98
         assert seg.is_final is True
+
+
+class TestVoiceConnectionUnknownFrames:
+    """The live-call WebSocket must never crash on an unrecognized frame.
+
+    ``/ws/voice`` emits speculative frames such as ``call.transcription.eager``
+    (a pre-final Flux end-of-turn hint, sent so harnesses can pre-warm their
+    LLM) ahead of the authoritative ``call.transcription`` with ``isFinal``.
+    ``VoiceConnection`` is a transparent forwarder: it hands every frame to the
+    ``on_message`` handlers untouched and never dispatches on ``type``, so an
+    unknown/eager frame is delivered as-is and can never raise. These tests lock
+    that forward-compat guarantee — the receive path must not regress into a
+    type switch that drops or fails on frames it does not recognize.
+    """
+
+    def _connection(self) -> VoiceConnection:
+        """Build a VoiceConnection without opening a socket or starting a thread."""
+        pytest.importorskip("websocket")  # VoiceConnection.__init__ requires it
+        with patch.object(VoiceConnection, "_connect", lambda self: None):
+            return VoiceConnection("wss://api.useanima.sh/v1/ws/voice?token=sk-test")
+
+    def test_eager_transcription_frame_is_forwarded_not_raised(self) -> None:
+        conn = self._connection()
+        received: list[dict[str, Any]] = []
+        conn.on_message(received.append)
+
+        eager = {
+            "type": "call.transcription.eager",
+            "callId": "call_001",
+            "turnId": "turn_007",
+            "text": "I need to check my",
+            "confidence": 0.9,
+            "timestamp": 1234567890,
+        }
+        # Simulate the frame arriving off the socket. It must not raise, and is
+        # forwarded verbatim — the SDK does not interpret it as a turn; callers
+        # key on the later isFinal=True call.transcription for the real turn.
+        conn._on_message(None, json.dumps(eager))
+
+        assert received == [eager]
+
+    def test_unknown_frame_type_is_ignored_gracefully(self) -> None:
+        conn = self._connection()
+        received: list[dict[str, Any]] = []
+        conn.on_message(received.append)
+
+        # A frame type the SDK has never seen must not crash the receive path,
+        # and a normal frame after it must still be delivered.
+        conn._on_message(None, json.dumps({"type": "call.some.future.frame", "x": 1}))
+        conn._on_message(
+            None,
+            json.dumps({"type": "call.transcription", "text": "done", "isFinal": True}),
+        )
+
+        assert [m["type"] for m in received] == [
+            "call.some.future.frame",
+            "call.transcription",
+        ]
