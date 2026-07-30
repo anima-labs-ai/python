@@ -13,10 +13,18 @@ from pydantic import BaseModel, Field
 
 
 class Tier(str, Enum):
+    """Organization subscription tier.
+
+    Mirrors ``TierSchema`` in the anima contracts and the Prisma ``Tier`` enum.
+    Because pydantic validates enum members, a value missing here is not a
+    cosmetic gap: parsing an organization on that tier raises ValidationError.
+    STARTER was missing while DEVELOPER and SCALE — which the API cannot
+    return — were present, so every STARTER org failed to parse.
+    """
+
     FREE = "FREE"
-    DEVELOPER = "DEVELOPER"
+    STARTER = "STARTER"
     GROWTH = "GROWTH"
-    SCALE = "SCALE"
     ENTERPRISE = "ENTERPRISE"
 
 
