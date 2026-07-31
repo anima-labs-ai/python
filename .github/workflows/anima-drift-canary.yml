@@ -87,10 +87,18 @@ jobs:
           echo "::error::Contract sources changed between the pinned anima commit and HEAD — review for SDK impact and bump .anima-ref."
           exit 1
 
-      # One open issue at a time: if an anima-drift issue is already open,
-      # the repeat failure is visible on it and in the Actions history —
-      # don't spam a new issue per day.
-      - name: File drift issue
+      # One open issue at a time, kept accurate.
+      #
+      # This used to `exit 0` when an anima-drift issue was already open, on the
+      # theory that "the repeat failure is visible on it". It was not: the body
+      # is written once at file time and never updated, so the issue froze at
+      # the first day's drift while the real drift grew underneath it. This repo
+      # sat red for two weeks on an issue that reported the pin as "unreadable"
+      # and listed no files, through two reconciliations nobody was told about.
+      #
+      # Refreshing the body instead costs no new notification, still never opens
+      # a second issue, and means the issue always describes today's drift.
+      - name: File or refresh drift issue
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -101,17 +109,21 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --description "Contracts drifted between .anima-ref and anima monorepo HEAD" \
             --color D93F0B --force
-          open_count="$(gh issue list --repo "$GITHUB_REPOSITORY" --label anima-drift --state open --json number --jq 'length')"
-          if [ "$open_count" != "0" ]; then
-            echo "An anima-drift issue is already open — not filing another."
-            exit 0
-          fi
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --label anima-drift \
+            --state open --json number,createdAt --jq '.[0] // empty')"
+          existing_num="$(printf '%s' "$existing" | jq -r '.number // empty')"
+          first_seen="$(printf '%s' "$existing" | jq -r '.createdAt // empty')"
           pinned="$(tr -d '[:space:]' < "$PINNED_REF_FILE" 2>/dev/null || echo 'unreadable')"
           head="$(cat "$RUNNER_TEMP/anima-head" 2>/dev/null || echo 'unknown')"
           {
             echo "The daily drift canary failed: the anima contract sources no longer match the commit pinned in \`.anima-ref\`."
             echo
-            echo "Failed run: $RUN_URL"
+            if [ -n "$first_seen" ]; then
+              echo "First detected: $first_seen — still drifted. Everything below is"
+              echo "refreshed on every failing run, so it reflects today, not that date."
+              echo
+            fi
+            echo "Latest failing run: $RUN_URL"
             echo "Pinned anima commit (.anima-ref): $pinned"
             echo "anima HEAD at run time: $head"
             echo "Contract compare: https://github.com/anima-labs-ai/anima/compare/$pinned...$head"
@@ -131,9 +143,17 @@ jobs:
             echo "   - Failed at **diff**: review the compare link for SDK-relevant changes (routes the SDK mirrors, schema fields on exposed models)."
             echo "2. Mirror anything SDK-relevant (resources + tests), or confirm the change doesn't touch surfaced endpoints."
             echo "3. Bump \`.anima-ref\` to the anima HEAD SHA in the same PR — that is the reconciliation record and re-greens the canary."
-            echo "4. Close this issue when the canary is green again."
+            echo "4. Close this issue when the canary is green again. Leaving it open"
+            echo "   no longer suppresses alerts, but it does keep a stale title in"
+            echo "   everyone's issue list."
           } > "$RUNNER_TEMP/drift-issue.md"
-          gh issue create --repo "$GITHUB_REPOSITORY" \
-            --title "Anima contracts drifted from the .anima-ref pin" \
-            --label anima-drift \
-            --body-file "$RUNNER_TEMP/drift-issue.md"
+          if [ -n "$existing_num" ]; then
+            gh issue edit "$existing_num" --repo "$GITHUB_REPOSITORY" \
+              --body-file "$RUNNER_TEMP/drift-issue.md"
+            echo "Refreshed anima-drift issue #$existing_num with this run's drift."
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" \
+              --title "Anima contracts drifted from the .anima-ref pin" \
+              --label anima-drift \
+              --body-file "$RUNNER_TEMP/drift-issue.md"
+          fi
