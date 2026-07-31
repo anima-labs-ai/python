@@ -19,10 +19,9 @@ class IdentityResource:
             self._client.request("GET", f"/agents/{agent_id}/did", options=options)
         )
 
-    def resolve_did(self, did: str, *, options: RequestOptions | None = None) -> DidDocument:
-        return DidDocument.model_validate(
-            self._client.request("GET", f"/identity/did/{did}", options=options)
-        )
+    # No resolve_did. It called GET /identity/did/{did}, which the API has
+    # never served, and resolving a DID to its owning agent is what
+    # registry.get_by_did does -- GET /registry/agents/{did}.
 
     def rotate_keys(
         self, agent_id: str, *, options: RequestOptions | None = None
@@ -59,11 +58,6 @@ class AsyncIdentityResource:
     async def get_did(self, agent_id: str, *, options: RequestOptions | None = None) -> DidDocument:
         return DidDocument.model_validate(
             await self._client.request("GET", f"/agents/{agent_id}/did", options=options)
-        )
-
-    async def resolve_did(self, did: str, *, options: RequestOptions | None = None) -> DidDocument:
-        return DidDocument.model_validate(
-            await self._client.request("GET", f"/identity/did/{did}", options=options)
         )
 
     async def rotate_keys(

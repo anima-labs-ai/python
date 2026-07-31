@@ -42,9 +42,20 @@ class AnomalyResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = self._client.request(
-            "GET", f"/orgs/{org_id}/anomaly/alerts", query=query, options=options
+            "GET", f"/orgs/{org_id}/anomaly-alerts", query=query, options=options
         )
         return PaginatedResponse[AnomalyAlertOutput].model_validate(raw)
+
+    def get_alert(
+        self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
+    ) -> AnomalyAlertOutput:
+        return AnomalyAlertOutput.model_validate(
+            self._client.request(
+                "GET",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}",
+                options=options,
+            )
+        )
 
     def acknowledge_alert(
         self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
@@ -52,7 +63,7 @@ class AnomalyResource:
         return AnomalyAlertOutput.model_validate(
             self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/alerts/{alert_id}/acknowledge",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/acknowledge",
                 options=options,
             )
         )
@@ -63,7 +74,19 @@ class AnomalyResource:
         return AnomalyAlertOutput.model_validate(
             self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/alerts/{alert_id}/resolve",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/resolve",
+                options=options,
+            )
+        )
+
+    def false_positive_alert(
+        self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
+    ) -> AnomalyAlertOutput:
+        """Mark an alert as a false positive, which feeds the detector's baseline."""
+        return AnomalyAlertOutput.model_validate(
+            self._client.request(
+                "POST",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/false-positive",
                 options=options,
             )
         )
@@ -88,7 +111,7 @@ class AnomalyResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = self._client.request(
-            "GET", f"/orgs/{org_id}/anomaly/rules", query=query, options=options
+            "GET", f"/orgs/{org_id}/anomaly-rules", query=query, options=options
         )
         return PaginatedResponse[AnomalyRuleOutput].model_validate(raw)
 
@@ -120,7 +143,7 @@ class AnomalyResource:
         if enabled is not None:
             payload["enabled"] = enabled
         return AnomalyRuleOutput.model_validate(
-            self._client.request("POST", f"/orgs/{org_id}/anomaly/rules", payload, options=options)
+            self._client.request("POST", f"/orgs/{org_id}/anomaly-rules", payload, options=options)
         )
 
     def update_rule(
@@ -151,21 +174,21 @@ class AnomalyResource:
             payload["enabled"] = enabled
         return AnomalyRuleOutput.model_validate(
             self._client.request(
-                "PATCH", f"/orgs/{org_id}/anomaly/rules/{rule_id}", payload, options=options
+                "PATCH", f"/orgs/{org_id}/anomaly-rules/{rule_id}", payload, options=options
             )
         )
 
     def delete_rule(
         self, *, org_id: str, rule_id: str, options: RequestOptions | None = None
     ) -> None:
-        self._client.request("DELETE", f"/orgs/{org_id}/anomaly/rules/{rule_id}", options=options)
+        self._client.request("DELETE", f"/orgs/{org_id}/anomaly-rules/{rule_id}", options=options)
 
     def get_baseline(
         self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
     ) -> AgentBaselineOutput:
         return AgentBaselineOutput.model_validate(
             self._client.request(
-                "GET", f"/orgs/{org_id}/anomaly/baselines/{agent_id}", options=options
+                "GET", f"/orgs/{org_id}/agents/{agent_id}/baselines", options=options
             )
         )
 
@@ -184,8 +207,19 @@ class AnomalyResource:
         return QuarantineOutput.model_validate(
             self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/quarantine/{agent_id}",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 payload,
+                options=options,
+            )
+        )
+
+    def get_quarantine(
+        self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
+    ) -> QuarantineOutput:
+        return QuarantineOutput.model_validate(
+            self._client.request(
+                "GET",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 options=options,
             )
         )
@@ -193,10 +227,15 @@ class AnomalyResource:
     def release_quarantine(
         self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
     ) -> QuarantineOutput:
+        """Lift a quarantine.
+
+        The API models this as DELETE on the quarantine itself; this used to
+        POST to a ``/release`` sub-path that does not exist.
+        """
         return QuarantineOutput.model_validate(
             self._client.request(
-                "POST",
-                f"/orgs/{org_id}/anomaly/quarantine/{agent_id}/release",
+                "DELETE",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 options=options,
             )
         )
@@ -232,9 +271,20 @@ class AsyncAnomalyResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = await self._client.request(
-            "GET", f"/orgs/{org_id}/anomaly/alerts", query=query, options=options
+            "GET", f"/orgs/{org_id}/anomaly-alerts", query=query, options=options
         )
         return PaginatedResponse[AnomalyAlertOutput].model_validate(raw)
+
+    async def get_alert(
+        self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
+    ) -> AnomalyAlertOutput:
+        return AnomalyAlertOutput.model_validate(
+            await self._client.request(
+                "GET",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}",
+                options=options,
+            )
+        )
 
     async def acknowledge_alert(
         self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
@@ -242,7 +292,7 @@ class AsyncAnomalyResource:
         return AnomalyAlertOutput.model_validate(
             await self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/alerts/{alert_id}/acknowledge",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/acknowledge",
                 options=options,
             )
         )
@@ -253,7 +303,19 @@ class AsyncAnomalyResource:
         return AnomalyAlertOutput.model_validate(
             await self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/alerts/{alert_id}/resolve",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/resolve",
+                options=options,
+            )
+        )
+
+    async def false_positive_alert(
+        self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
+    ) -> AnomalyAlertOutput:
+        """Mark an alert as a false positive, which feeds the detector's baseline."""
+        return AnomalyAlertOutput.model_validate(
+            await self._client.request(
+                "POST",
+                f"/orgs/{org_id}/anomaly-alerts/{alert_id}/false-positive",
                 options=options,
             )
         )
@@ -278,7 +340,7 @@ class AsyncAnomalyResource:
         if limit is not None:
             query["limit"] = str(limit)
         raw = await self._client.request(
-            "GET", f"/orgs/{org_id}/anomaly/rules", query=query, options=options
+            "GET", f"/orgs/{org_id}/anomaly-rules", query=query, options=options
         )
         return PaginatedResponse[AnomalyRuleOutput].model_validate(raw)
 
@@ -311,7 +373,7 @@ class AsyncAnomalyResource:
             payload["enabled"] = enabled
         return AnomalyRuleOutput.model_validate(
             await self._client.request(
-                "POST", f"/orgs/{org_id}/anomaly/rules", payload, options=options
+                "POST", f"/orgs/{org_id}/anomaly-rules", payload, options=options
             )
         )
 
@@ -343,7 +405,7 @@ class AsyncAnomalyResource:
             payload["enabled"] = enabled
         return AnomalyRuleOutput.model_validate(
             await self._client.request(
-                "PATCH", f"/orgs/{org_id}/anomaly/rules/{rule_id}", payload, options=options
+                "PATCH", f"/orgs/{org_id}/anomaly-rules/{rule_id}", payload, options=options
             )
         )
 
@@ -351,7 +413,7 @@ class AsyncAnomalyResource:
         self, *, org_id: str, rule_id: str, options: RequestOptions | None = None
     ) -> None:
         await self._client.request(
-            "DELETE", f"/orgs/{org_id}/anomaly/rules/{rule_id}", options=options
+            "DELETE", f"/orgs/{org_id}/anomaly-rules/{rule_id}", options=options
         )
 
     async def get_baseline(
@@ -359,7 +421,7 @@ class AsyncAnomalyResource:
     ) -> AgentBaselineOutput:
         return AgentBaselineOutput.model_validate(
             await self._client.request(
-                "GET", f"/orgs/{org_id}/anomaly/baselines/{agent_id}", options=options
+                "GET", f"/orgs/{org_id}/agents/{agent_id}/baselines", options=options
             )
         )
 
@@ -378,8 +440,19 @@ class AsyncAnomalyResource:
         return QuarantineOutput.model_validate(
             await self._client.request(
                 "POST",
-                f"/orgs/{org_id}/anomaly/quarantine/{agent_id}",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 payload,
+                options=options,
+            )
+        )
+
+    async def get_quarantine(
+        self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
+    ) -> QuarantineOutput:
+        return QuarantineOutput.model_validate(
+            await self._client.request(
+                "GET",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 options=options,
             )
         )
@@ -387,10 +460,11 @@ class AsyncAnomalyResource:
     async def release_quarantine(
         self, *, org_id: str, agent_id: str, options: RequestOptions | None = None
     ) -> QuarantineOutput:
+        """Lift a quarantine. DELETE, not POST to a ``/release`` sub-path."""
         return QuarantineOutput.model_validate(
             await self._client.request(
-                "POST",
-                f"/orgs/{org_id}/anomaly/quarantine/{agent_id}/release",
+                "DELETE",
+                f"/orgs/{org_id}/agents/{agent_id}/quarantine",
                 options=options,
             )
         )

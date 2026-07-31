@@ -865,19 +865,26 @@ WebhookAuthConfig = Union[
 # ---------------------------------------------------------------------------
 
 
-class SecurityScanWarning(BaseModel):
-    rule_id: str = Field(alias="ruleId")
-    severity: SecuritySeverity
-    description: str
-    match: str | None = None
+# SecurityScanWarning/SecurityScanOutput used to sit here. They typed a
+# POST /security/scan endpoint the API has never served -- scanning runs
+# inside the send paths, not as a callable route. The security surface that
+# does exist is the event feed and the scanner status below.
+
+
+class AiScannerStatus(BaseModel):
+    """Whether the scanner runs on traffic, not merely whether one is configured."""
+
+    active: bool
+    provider: str | None = None
+    fallback_reason: str | None = Field(None, alias="fallbackReason")
 
     model_config = {"populate_by_name": True}
 
 
-class SecurityScanOutput(BaseModel):
-    blocked: bool
-    warnings: list[SecurityScanWarning]
-    summary: str
+class ScannerStatusOutput(BaseModel):
+    ai_scanner: AiScannerStatus = Field(alias="aiScanner")
+
+    model_config = {"populate_by_name": True}
 
 
 class SecurityEventOutput(BaseModel):
@@ -993,113 +1000,10 @@ class RegistryAgentOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Wallet
+# Wallet and Pods models used to live here. Both products were removed from
+# the API -- there is no /agents/{id}/wallet or /pods route -- so the models
+# and their resources went with them.
 # ---------------------------------------------------------------------------
-
-
-class WalletStatus(str, Enum):
-    ACTIVE = "ACTIVE"
-    FROZEN = "FROZEN"
-
-
-class WalletOutput(BaseModel):
-    id: str
-    agent_id: str = Field(alias="agentId")
-    address: str
-    currency: str
-    balance: float
-    status: WalletStatus
-    spend_limit_daily: float | None = Field(None, alias="spendLimitDaily")
-    spend_limit_monthly: float | None = Field(None, alias="spendLimitMonthly")
-    metadata: dict[str, Any]
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class WalletPayOutput(BaseModel):
-    transaction_id: str = Field(alias="transactionId")
-    from_: str = Field(alias="from")
-    to: str
-    amount: float
-    currency: str
-    status: str
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class X402FetchOutput(BaseModel):
-    status: int
-    headers: dict[str, str]
-    body: str
-    payment_amount: float | None = Field(None, alias="paymentAmount")
-    transaction_id: str | None = Field(None, alias="transactionId")
-
-    model_config = {"populate_by_name": True}
-
-
-class WalletTransactionOutput(BaseModel):
-    id: str
-    wallet_id: str = Field(alias="walletId")
-    type: str
-    amount: float
-    currency: str
-    from_: str | None = Field(None, alias="from")
-    to: str | None = None
-    memo: str | None = None
-    status: str
-    metadata: dict[str, Any] | None = None
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-# ---------------------------------------------------------------------------
-# Pods
-# ---------------------------------------------------------------------------
-
-
-class PodStatus(str, Enum):
-    RUNNING = "RUNNING"
-    STOPPED = "STOPPED"
-    CREATING = "CREATING"
-    ERROR = "ERROR"
-
-
-class PodResourceSpec(BaseModel):
-    cpu: str | None = None
-    memory: str | None = None
-    storage: str | None = None
-
-
-class PodOutput(BaseModel):
-    id: str
-    agent_id: str = Field(alias="agentId")
-    name: str
-    image: str
-    status: PodStatus
-    resources: PodResourceSpec
-    env: dict[str, str]
-    metadata: dict[str, Any]
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class PodUsageOutput(BaseModel):
-    pod_id: str = Field(alias="podId")
-    cpu_usage: float = Field(alias="cpuUsage")
-    memory_usage: float = Field(alias="memoryUsage")
-    storage_usage: float = Field(alias="storageUsage")
-    network_in: float = Field(alias="networkIn")
-    network_out: float = Field(alias="networkOut")
-    uptime_seconds: int = Field(alias="uptimeSeconds")
-    measured_at: str = Field(alias="measuredAt")
-
-    model_config = {"populate_by_name": True}
 
 
 # ---------------------------------------------------------------------------
