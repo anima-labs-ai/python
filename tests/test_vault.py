@@ -10,6 +10,7 @@ from anima._http import AsyncHTTPClient
 from anima._types import (
     CredentialRequestStatus,
     RevealPolicy,
+    UseCredentialOutput,
     VaultAuditLogEntry,
     VaultCredential,
     VaultCredentialRequest,
@@ -197,7 +198,11 @@ class TestUseCredential:
             },
             options=None,
         )
-        assert result["status"] == 200
+        # Typed since 0.8.0 -- this returned a bare dict, alone among the
+        # vault methods and unlike the node and go SDKs.
+        assert isinstance(result, UseCredentialOutput)
+        assert result.status == 200
+        assert result.truncated is False
 
     def test_agent_use_path_is_broker(self) -> None:
         # The old UNGATED exchange_token is gone; an agent uses secrets via the
@@ -236,7 +241,8 @@ class TestUseCredential:
             },
             options=None,
         )
-        assert result["status"] == 200
+        assert isinstance(result, UseCredentialOutput)
+        assert result.status == 200
 
     def test_exchange_token_for_injection_posts_to_exchange(self, mock_http: MagicMock) -> None:
         # Returns plaintext; the API gates it to injector credentials (master /

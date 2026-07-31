@@ -744,6 +744,99 @@ class VaultCredentialRequestCancelResult(BaseModel):
     status: CredentialRequestStatus
 
 
+class UseCredentialOutput(BaseModel):
+    """The upstream response from a brokered call, scrubbed of the credential."""
+
+    status: int
+    headers: dict[str, str]
+    body: str
+    # True when the body exceeded the size cap and was cut off.
+    truncated: bool
+
+
+class OAuthAuthMethod(str, Enum):
+    OAUTH2 = "OAUTH2"
+    OAUTH2_PKCE = "OAUTH2_PKCE"
+    API_KEY = "API_KEY"
+    BASIC = "BASIC"
+    BEARER = "BEARER"
+
+
+class OAuthAppDefinition(BaseModel):
+    """A connectable service. Public info only -- never client secrets."""
+
+    id: str
+    slug: str
+    name: str
+    description: str | None = None
+    icon_url: str | None = Field(None, alias="iconUrl")
+    auth_method: OAuthAuthMethod = Field(alias="authMethod")
+    default_scopes: list[str] = Field(alias="defaultScopes")
+    requires_pkce: bool = Field(alias="requiresPkce")
+    category: str | None = None
+    is_managed: bool = Field(alias="isManaged")
+    is_active: bool = Field(alias="isActive")
+
+    model_config = {"populate_by_name": True}
+
+
+class ConnectedAccountStatus(str, Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    EXPIRED = "EXPIRED"
+    REFRESHING = "REFRESHING"
+    FAILED = "FAILED"
+    REVOKED = "REVOKED"
+
+
+class ConnectedAccount(BaseModel):
+    """An agent's authenticated connection to a service."""
+
+    id: str
+    agent_id: str = Field(alias="agentId")
+    user_id: str | None = Field(None, alias="userId")
+    app_definition_id: str = Field(alias="appDefinitionId")
+    app_slug: str = Field(alias="appSlug")
+    app_name: str = Field(alias="appName")
+    app_icon_url: str | None = Field(None, alias="appIconUrl")
+    custom_app_id: str | None = Field(None, alias="customAppId")
+    granted_scopes: list[str] = Field(alias="grantedScopes")
+    account_label: str | None = Field(None, alias="accountLabel")
+    account_email: str | None = Field(None, alias="accountEmail")
+    status: ConnectedAccountStatus
+    status_message: str | None = Field(None, alias="statusMessage")
+    token_expires_at: str | None = Field(None, alias="tokenExpiresAt")
+    last_refreshed_at: str | None = Field(None, alias="lastRefreshedAt")
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ConnectLinkOutput(BaseModel):
+    """A hosted auth URL for zero-code authentication. Expires in 10 minutes."""
+
+    link_url: str = Field(alias="linkUrl")
+    token: str
+    expires_at: str = Field(alias="expiresAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class ConnectLinkStatus(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    EXPIRED = "EXPIRED"
+    FAILED = "FAILED"
+
+
+class ConnectLinkStatusOutput(BaseModel):
+    status: ConnectLinkStatus
+    connected_account_id: str | None = Field(None, alias="connectedAccountId")
+
+    model_config = {"populate_by_name": True}
+
+
 # ---------------------------------------------------------------------------
 # Webhooks
 # ---------------------------------------------------------------------------
@@ -947,6 +1040,13 @@ class DidRotateOutput(BaseModel):
 
 
 class VerifiableCredential(BaseModel):
+    """The decoded W3C credential, as returned inside ``VerifyCredentialOutput``.
+
+    Distinct from :class:`VerifiableCredentialRecord`, which is the platform's
+    row for an issued credential. ``identity.list_credentials`` returns records,
+    not documents.
+    """
+
     id: str
     type: str
     issuer: str
@@ -957,6 +1057,52 @@ class VerifiableCredential(BaseModel):
     proof: dict[str, Any]
 
     model_config = {"populate_by_name": True}
+
+
+class VerifiableCredentialRecord(BaseModel):
+    """The platform's record of an issued credential.
+
+    The signed credential itself is ``jwt_vc``; everything else is Anima's
+    bookkeeping (issuance, expiry, revocation).
+    """
+
+    id: str
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
+    type: str
+    jwt_vc: str = Field(alias="jwtVc")
+    issuer_did: str = Field(alias="issuerDid")
+    subject_did: str = Field(alias="subjectDid")
+    issued_at: str = Field(alias="issuedAt")
+    expires_at: str | None = Field(None, alias="expiresAt")
+    revoked: bool
+    revoked_at: str | None = Field(None, alias="revokedAt")
+    revocation_index: int | None = Field(None, alias="revocationIndex")
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class VerifiableCredentialType(str, Enum):
+    """The credential types Anima issues.
+
+    Platform verification events auto-issue EMAIL_VERIFIED/OWNER_BOUND (email
+    OTP), PHONE_VERIFIED (number provisioning), and PAYMENT_CAPABLE (paid
+    Stripe checkout). Those, plus KYB_COMPLETED, derive the agent card's public
+    verification level and are platform-reserved -- asking for them via
+    ``identity.issue_credential`` returns 403. Only the org-attestation types
+    (ADDRESS_VERIFIED, TRUST_SCORE) are issuable there.
+    """
+
+    EMAIL_VERIFIED = "AnimaEmailVerified"
+    PHONE_VERIFIED = "AnimaPhoneVerified"
+    ADDRESS_VERIFIED = "AnimaAddressVerified"
+    KYB_COMPLETED = "AnimaKYBCompleted"
+    PAYMENT_CAPABLE = "AnimaPaymentCapable"
+    OWNER_BOUND = "AnimaOwnerBound"
+    TRUST_SCORE = "AnimaTrustScore"
 
 
 class VerifyCredentialOutput(BaseModel):

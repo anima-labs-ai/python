@@ -1,10 +1,32 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from ..._http import RequestOptions
-from ..._types import VaultCredential, VaultRevokeTokensResult, VaultTokenOutput
+from ..._types import (
+    UseCredentialOutput,
+    VaultCredential,
+    VaultRevokeTokensResult,
+    VaultTokenOutput,
+)
 from ._base import _AsyncVaultBase, _SyncVaultBase
+
+
+def _use_payload(
+    method: str,
+    url: str,
+    agent_id: str | None,
+    headers: dict[str, str] | None,
+    body: str | None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {"method": method, "url": url}
+    if agent_id is not None:
+        payload["agentId"] = agent_id
+    if headers is not None:
+        payload["headers"] = headers
+    if body is not None:
+        payload["body"] = body
+    return payload
 
 
 class _SyncTokensMixin(_SyncVaultBase):
@@ -50,24 +72,19 @@ class _SyncTokensMixin(_SyncVaultBase):
         headers: dict[str, str] | None = None,
         body: str | None = None,
         options: RequestOptions | None = None,
-    ) -> dict[str, Any]:
+    ) -> UseCredentialOutput:
         """Make an outbound HTTPS call with the credential attached server-side.
 
         Returns the upstream response (status/headers/body); the plaintext
         secret is never returned. Works for brokered credentials.
         """
-        payload: dict[str, Any] = {"method": method, "url": url}
-        if agent_id is not None:
-            payload["agentId"] = agent_id
-        if headers is not None:
-            payload["headers"] = headers
-        if body is not None:
-            payload["body"] = body
-        return cast(
-            dict[str, Any],
+        return UseCredentialOutput.model_validate(
             self._client.request(
-                "POST", f"/vault/credentials/{credential_id}/use", payload, options=options
-            ),
+                "POST",
+                f"/vault/credentials/{credential_id}/use",
+                _use_payload(method, url, agent_id, headers, body),
+                options=options,
+            )
         )
 
     def revoke_tokens(
@@ -130,23 +147,18 @@ class _AsyncTokensMixin(_AsyncVaultBase):
         headers: dict[str, str] | None = None,
         body: str | None = None,
         options: RequestOptions | None = None,
-    ) -> dict[str, Any]:
+    ) -> UseCredentialOutput:
         """Make an outbound HTTPS call with the credential attached server-side.
 
         Returns the upstream response; the plaintext secret is never returned.
         """
-        payload: dict[str, Any] = {"method": method, "url": url}
-        if agent_id is not None:
-            payload["agentId"] = agent_id
-        if headers is not None:
-            payload["headers"] = headers
-        if body is not None:
-            payload["body"] = body
-        return cast(
-            dict[str, Any],
+        return UseCredentialOutput.model_validate(
             await self._client.request(
-                "POST", f"/vault/credentials/{credential_id}/use", payload, options=options
-            ),
+                "POST",
+                f"/vault/credentials/{credential_id}/use",
+                _use_payload(method, url, agent_id, headers, body),
+                options=options,
+            )
         )
 
     async def revoke_tokens(

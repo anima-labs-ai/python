@@ -303,6 +303,13 @@ API_ROUTES: frozenset[str] = frozenset(
 
 _CALL = re.compile(r'request\(\s*"([A-Z]+)",\s*f?"([^"]+)"')
 
+# Catches a path built by concatenation instead of an f-string. _CALL stops at
+# the closing quote of the first literal, so ``"GET", "/voice/calls/" + call_id
+# + "/transcript"`` would be checked as GET /voice/calls -- a real route, so it
+# passes while everything after the id goes unverified. The go SDK shipped
+# exactly that. Use an f-string.
+_CONCAT = re.compile(r'request\(\s*"[A-Z]+",\s*"(/[^"]*)"\s*\+')
+
 
 def _normalise(path: str) -> str:
     """Path params differ per call site; compare shapes, not ids."""
@@ -331,3 +338,15 @@ def test_scan_actually_found_the_resource_calls() -> None:
 def test_no_resource_calls_a_route_the_api_does_not_serve() -> None:
     unknown = sorted(f"{name}: {route}" for name, route in _sdk_calls() if route not in API_ROUTES)
     assert unknown == []
+
+
+def test_no_resource_builds_a_path_by_concatenation() -> None:
+    concatenated: list[str] = []
+    for path in sorted(RESOURCES_DIR.rglob("*.py")):
+        if "__pycache__" in str(path):
+            continue
+        concatenated += [
+            f'{path.name}: "{prefix}" + ... -- the scan cannot see past the +, use an f-string'
+            for prefix in _CONCAT.findall(path.read_text())
+        ]
+    assert concatenated == []
