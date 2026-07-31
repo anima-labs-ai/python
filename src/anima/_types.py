@@ -1195,19 +1195,70 @@ class ComplianceFramework(str, Enum):
     PCI = "PCI"
 
 
+# Every value below is SCREAMING_SNAKE because that is what the API validates
+# against -- packages/contracts/src/schemas/compliance.py{,-controls} in the
+# monorepo. These were lowercase, so every compliance request this SDK built
+# was rejected. tests/test_compliance.py pins them.
 class ComplianceControlStatus(str, Enum):
-    NOT_STARTED = "not_started"
-    IN_PROGRESS = "in_progress"
-    IMPLEMENTED = "implemented"
-    VERIFIED = "verified"
-    FAILED = "failed"
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    IMPLEMENTED = "IMPLEMENTED"
+    VERIFIED = "VERIFIED"
+    FAILED = "FAILED"
+
+
+class ComplianceControlCategory(str, Enum):
+    CC1 = "CC1"
+    CC2 = "CC2"
+    CC3 = "CC3"
+    CC4 = "CC4"
+    CC5 = "CC5"
+    CC6 = "CC6"
+    CC7 = "CC7"
+    CC8 = "CC8"
+    CC9 = "CC9"
+    A1 = "A1"
+    PI1 = "PI1"
+    C1 = "C1"
+    P1 = "P1"
+
+
+class ComplianceReportType(str, Enum):
+    SOC2_SUMMARY = "SOC2_SUMMARY"
+    ACTIVITY_REPORT = "ACTIVITY_REPORT"
+    ACCESS_REVIEW = "ACCESS_REVIEW"
+    AUDIT_EXPORT = "AUDIT_EXPORT"
+    GDPR_DSAR = "GDPR_DSAR"
+
+
+class ComplianceReportStatus(str, Enum):
+    PENDING = "PENDING"
+    GENERATING = "GENERATING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ComplianceReportFormat(str, Enum):
+    JSON = "JSON"
+    CSV = "CSV"
+    PDF = "PDF"
+
+
+class DsarType(str, Enum):
+    ACCESS = "ACCESS"
+    DELETE = "DELETE"
+    RECTIFY = "RECTIFY"
+    PORTABILITY = "PORTABILITY"
+    RESTRICT = "RESTRICT"
 
 
 class DsarStatus(str, Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    REJECTED = "rejected"
+    RECEIVED = "RECEIVED"
+    VERIFIED = "VERIFIED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    DENIED = "DENIED"
+    OVERDUE = "OVERDUE"
 
 
 class ComplianceControlOutput(BaseModel):
@@ -1217,7 +1268,7 @@ class ComplianceControlOutput(BaseModel):
     control_id: str = Field(alias="controlId")
     title: str
     description: str
-    category: str
+    category: ComplianceControlCategory
     status: ComplianceControlStatus
     owner: str | None = None
     last_tested_at: str | None = Field(None, alias="lastTestedAt")
@@ -1238,42 +1289,112 @@ class SeedFrameworkOutput(BaseModel):
 class ComplianceReportOutput(BaseModel):
     id: str
     org_id: str = Field(alias="orgId")
-    type: str
-    status: str
+    type: ComplianceReportType
     title: str
-    summary: str | None = None
-    data: dict[str, Any] | None = None
-    generated_at: str = Field(alias="generatedAt")
+    description: str | None = None
+    status: ComplianceReportStatus
+    format: ComplianceReportFormat
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    content: dict[str, Any] | None = None
+    error_message: str | None = Field(None, alias="errorMessage")
+    generated_by: str | None = Field(None, alias="generatedBy")
+    period_start: str | None = Field(None, alias="periodStart")
+    period_end: str | None = Field(None, alias="periodEnd")
+    completed_at: str | None = Field(None, alias="completedAt")
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 
     model_config = {"populate_by_name": True}
 
 
-class ComplianceReportDownloadOutput(BaseModel):
-    url: str
-    format: str
-    expires_at: str = Field(alias="expiresAt")
+class ExportReportOutput(BaseModel):
+    """The export comes back inline. There is no signed download URL."""
+
+    data: str
+    content_type: str = Field(alias="contentType")
+    filename: str
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceTemplateOutput(BaseModel):
+    type: str
+    title: str
+    description: str
+
+
+class ListTemplatesOutput(BaseModel):
+    items: list[ComplianceTemplateOutput] = Field(default_factory=list)
+
+
+class DashboardReportSummary(BaseModel):
+    id: str
+    type: str
+    title: str
+    status: str
+    created_at: str = Field(alias="createdAt")
+    completed_at: str | None = Field(None, alias="completedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardDsarSummary(BaseModel):
+    id: str
+    type: str
+    status: str
+    subject_email: str = Field(alias="subjectEmail")
+    due_at: str = Field(alias="dueAt")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardReportsSection(BaseModel):
+    total: int
+    by_type: dict[str, int] = Field(default_factory=dict, alias="byType")
+    by_status: dict[str, int] = Field(default_factory=dict, alias="byStatus")
+    recent_reports: list[DashboardReportSummary] = Field(
+        default_factory=list, alias="recentReports"
+    )
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardDsarsSection(BaseModel):
+    total: int
+    by_status: dict[str, int] = Field(default_factory=dict, alias="byStatus")
+    by_type: dict[str, int] = Field(default_factory=dict, alias="byType")
+    overdue: int = 0
+    average_resolution_days: float | None = Field(None, alias="averageResolutionDays")
+    recent_requests: list[DashboardDsarSummary] = Field(
+        default_factory=list, alias="recentRequests"
+    )
 
     model_config = {"populate_by_name": True}
 
 
 class ComplianceFrameworkSummary(BaseModel):
+    framework: str
     total_controls: int = Field(alias="totalControls")
-    implemented: int
-    verified: int
-    failed: int
-    not_started: int = Field(alias="notStarted")
-    score: float
+    implemented_count: int = Field(alias="implementedCount")
+    progress: int
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardComplianceSection(BaseModel):
+    overall_progress: int = Field(alias="overallProgress")
+    framework_summaries: list[ComplianceFrameworkSummary] = Field(
+        default_factory=list, alias="frameworkSummaries"
+    )
 
     model_config = {"populate_by_name": True}
 
 
 class ComplianceDashboardOutput(BaseModel):
-    org_id: str = Field(alias="orgId")
-    frameworks: dict[str, ComplianceFrameworkSummary]
-    overall_score: float = Field(alias="overallScore")
-    recent_activity: list[ComplianceReportOutput] = Field(alias="recentActivity")
+    reports: DashboardReportsSection
+    dsars: DashboardDsarsSection
+    compliance: DashboardComplianceSection
 
     model_config = {"populate_by_name": True}
 
@@ -1281,12 +1402,19 @@ class ComplianceDashboardOutput(BaseModel):
 class DsarOutput(BaseModel):
     id: str
     org_id: str = Field(alias="orgId")
-    subject_email: str = Field(alias="subjectEmail")
-    request_type: str = Field(alias="requestType")
+    type: DsarType
     status: DsarStatus
+    subject_email: str = Field(alias="subjectEmail")
+    subject_name: str | None = Field(None, alias="subjectName")
+    subject_id: str | None = Field(None, alias="subjectId")
     description: str | None = None
-    metadata: dict[str, Any] | None = None
+    requested_at: str = Field(alias="requestedAt")
+    verified_at: str | None = Field(None, alias="verifiedAt")
+    due_at: str = Field(alias="dueAt")
     completed_at: str | None = Field(None, alias="completedAt")
+    processed_by: str | None = Field(None, alias="processedBy")
+    response: dict[str, Any] | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 
