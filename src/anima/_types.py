@@ -744,6 +744,16 @@ class VaultCredentialRequestCancelResult(BaseModel):
     status: CredentialRequestStatus
 
 
+class UseCredentialOutput(BaseModel):
+    """The upstream response from a brokered call, scrubbed of the credential."""
+
+    status: int
+    headers: dict[str, str]
+    body: str
+    # True when the body exceeded the size cap and was cut off.
+    truncated: bool
+
+
 # ---------------------------------------------------------------------------
 # Webhooks
 # ---------------------------------------------------------------------------
@@ -865,19 +875,26 @@ WebhookAuthConfig = Union[
 # ---------------------------------------------------------------------------
 
 
-class SecurityScanWarning(BaseModel):
-    rule_id: str = Field(alias="ruleId")
-    severity: SecuritySeverity
-    description: str
-    match: str | None = None
+# SecurityScanWarning/SecurityScanOutput used to sit here. They typed a
+# POST /security/scan endpoint the API has never served -- scanning runs
+# inside the send paths, not as a callable route. The security surface that
+# does exist is the event feed and the scanner status below.
+
+
+class AiScannerStatus(BaseModel):
+    """Whether the scanner runs on traffic, not merely whether one is configured."""
+
+    active: bool
+    provider: str | None = None
+    fallback_reason: str | None = Field(None, alias="fallbackReason")
 
     model_config = {"populate_by_name": True}
 
 
-class SecurityScanOutput(BaseModel):
-    blocked: bool
-    warnings: list[SecurityScanWarning]
-    summary: str
+class ScannerStatusOutput(BaseModel):
+    ai_scanner: AiScannerStatus = Field(alias="aiScanner")
+
+    model_config = {"populate_by_name": True}
 
 
 class SecurityEventOutput(BaseModel):
@@ -939,22 +956,61 @@ class DidRotateOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class VerifiableCredential(BaseModel):
+class VerifiableCredentialRecord(BaseModel):
+    """The platform's record of an issued credential.
+
+    The signed credential itself is ``jwt_vc``; everything else is Anima's
+    bookkeeping (issuance, expiry, revocation).
+    """
+
     id: str
+    agent_id: str = Field(alias="agentId")
+    org_id: str = Field(alias="orgId")
     type: str
-    issuer: str
-    subject: str
-    issuance_date: str = Field(alias="issuanceDate")
-    expiration_date: str | None = Field(None, alias="expirationDate")
-    credential_subject: dict[str, Any] = Field(alias="credentialSubject")
-    proof: dict[str, Any]
+    jwt_vc: str = Field(alias="jwtVc")
+    issuer_did: str = Field(alias="issuerDid")
+    subject_did: str = Field(alias="subjectDid")
+    issued_at: str = Field(alias="issuedAt")
+    expires_at: str | None = Field(None, alias="expiresAt")
+    revoked: bool
+    revoked_at: str | None = Field(None, alias="revokedAt")
+    revocation_index: int | None = Field(None, alias="revocationIndex")
+    metadata: dict[str, Any] | None = None
+    created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
 
     model_config = {"populate_by_name": True}
 
 
+class VerifiableCredentialType(str, Enum):
+    """The credential types Anima issues.
+
+    Platform verification events auto-issue EMAIL_VERIFIED/OWNER_BOUND (email
+    OTP), PHONE_VERIFIED (number provisioning), and PAYMENT_CAPABLE (paid
+    Stripe checkout). Those, plus KYB_COMPLETED, derive the agent card's public
+    verification level and are platform-reserved -- asking for them via
+    ``identity.issue_credential`` returns 403. Only the org-attestation types
+    (ADDRESS_VERIFIED, TRUST_SCORE) are issuable there.
+    """
+
+    EMAIL_VERIFIED = "AnimaEmailVerified"
+    PHONE_VERIFIED = "AnimaPhoneVerified"
+    ADDRESS_VERIFIED = "AnimaAddressVerified"
+    KYB_COMPLETED = "AnimaKYBCompleted"
+    PAYMENT_CAPABLE = "AnimaPaymentCapable"
+    OWNER_BOUND = "AnimaOwnerBound"
+    TRUST_SCORE = "AnimaTrustScore"
+
+
 class VerifyCredentialOutput(BaseModel):
     valid: bool
-    credential: VerifiableCredential | None = None
+    # The decoded JWT-VC payload, left opaque: the contract types it as
+    # z.record(z.unknown()).nullable() and the value is a JwtVcPayload --
+    # {iss, sub, vc, iat, exp, jti}, with the W3C credential under "vc".
+    # It was modelled as a flat W3C document, so every field parsed as
+    # missing. Non-None for most invalid results too (revoked, expired,
+    # bad signature all decode), so branch on `valid`, not on this.
+    credential: dict[str, Any] | None = None
     errors: list[str]
 
 
@@ -993,113 +1049,10 @@ class RegistryAgentOutput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Wallet
+# Wallet and Pods models used to live here. Both products were removed from
+# the API -- there is no /agents/{id}/wallet or /pods route -- so the models
+# and their resources went with them.
 # ---------------------------------------------------------------------------
-
-
-class WalletStatus(str, Enum):
-    ACTIVE = "ACTIVE"
-    FROZEN = "FROZEN"
-
-
-class WalletOutput(BaseModel):
-    id: str
-    agent_id: str = Field(alias="agentId")
-    address: str
-    currency: str
-    balance: float
-    status: WalletStatus
-    spend_limit_daily: float | None = Field(None, alias="spendLimitDaily")
-    spend_limit_monthly: float | None = Field(None, alias="spendLimitMonthly")
-    metadata: dict[str, Any]
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class WalletPayOutput(BaseModel):
-    transaction_id: str = Field(alias="transactionId")
-    from_: str = Field(alias="from")
-    to: str
-    amount: float
-    currency: str
-    status: str
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class X402FetchOutput(BaseModel):
-    status: int
-    headers: dict[str, str]
-    body: str
-    payment_amount: float | None = Field(None, alias="paymentAmount")
-    transaction_id: str | None = Field(None, alias="transactionId")
-
-    model_config = {"populate_by_name": True}
-
-
-class WalletTransactionOutput(BaseModel):
-    id: str
-    wallet_id: str = Field(alias="walletId")
-    type: str
-    amount: float
-    currency: str
-    from_: str | None = Field(None, alias="from")
-    to: str | None = None
-    memo: str | None = None
-    status: str
-    metadata: dict[str, Any] | None = None
-    created_at: str = Field(alias="createdAt")
-
-    model_config = {"populate_by_name": True}
-
-
-# ---------------------------------------------------------------------------
-# Pods
-# ---------------------------------------------------------------------------
-
-
-class PodStatus(str, Enum):
-    RUNNING = "RUNNING"
-    STOPPED = "STOPPED"
-    CREATING = "CREATING"
-    ERROR = "ERROR"
-
-
-class PodResourceSpec(BaseModel):
-    cpu: str | None = None
-    memory: str | None = None
-    storage: str | None = None
-
-
-class PodOutput(BaseModel):
-    id: str
-    agent_id: str = Field(alias="agentId")
-    name: str
-    image: str
-    status: PodStatus
-    resources: PodResourceSpec
-    env: dict[str, str]
-    metadata: dict[str, Any]
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class PodUsageOutput(BaseModel):
-    pod_id: str = Field(alias="podId")
-    cpu_usage: float = Field(alias="cpuUsage")
-    memory_usage: float = Field(alias="memoryUsage")
-    storage_usage: float = Field(alias="storageUsage")
-    network_in: float = Field(alias="networkIn")
-    network_out: float = Field(alias="networkOut")
-    uptime_seconds: int = Field(alias="uptimeSeconds")
-    measured_at: str = Field(alias="measuredAt")
-
-    model_config = {"populate_by_name": True}
 
 
 # ---------------------------------------------------------------------------
@@ -1195,19 +1148,70 @@ class ComplianceFramework(str, Enum):
     PCI = "PCI"
 
 
+# Every value below is SCREAMING_SNAKE because that is what the API validates
+# against -- packages/contracts/src/schemas/compliance.py{,-controls} in the
+# monorepo. These were lowercase, so every compliance request this SDK built
+# was rejected. tests/test_compliance.py pins them.
 class ComplianceControlStatus(str, Enum):
-    NOT_STARTED = "not_started"
-    IN_PROGRESS = "in_progress"
-    IMPLEMENTED = "implemented"
-    VERIFIED = "verified"
-    FAILED = "failed"
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    IMPLEMENTED = "IMPLEMENTED"
+    VERIFIED = "VERIFIED"
+    FAILED = "FAILED"
+
+
+class ComplianceControlCategory(str, Enum):
+    CC1 = "CC1"
+    CC2 = "CC2"
+    CC3 = "CC3"
+    CC4 = "CC4"
+    CC5 = "CC5"
+    CC6 = "CC6"
+    CC7 = "CC7"
+    CC8 = "CC8"
+    CC9 = "CC9"
+    A1 = "A1"
+    PI1 = "PI1"
+    C1 = "C1"
+    P1 = "P1"
+
+
+class ComplianceReportType(str, Enum):
+    SOC2_SUMMARY = "SOC2_SUMMARY"
+    ACTIVITY_REPORT = "ACTIVITY_REPORT"
+    ACCESS_REVIEW = "ACCESS_REVIEW"
+    AUDIT_EXPORT = "AUDIT_EXPORT"
+    GDPR_DSAR = "GDPR_DSAR"
+
+
+class ComplianceReportStatus(str, Enum):
+    PENDING = "PENDING"
+    GENERATING = "GENERATING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ComplianceReportFormat(str, Enum):
+    JSON = "JSON"
+    CSV = "CSV"
+    PDF = "PDF"
+
+
+class DsarType(str, Enum):
+    ACCESS = "ACCESS"
+    DELETE = "DELETE"
+    RECTIFY = "RECTIFY"
+    PORTABILITY = "PORTABILITY"
+    RESTRICT = "RESTRICT"
 
 
 class DsarStatus(str, Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    REJECTED = "rejected"
+    RECEIVED = "RECEIVED"
+    VERIFIED = "VERIFIED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    DENIED = "DENIED"
+    OVERDUE = "OVERDUE"
 
 
 class ComplianceControlOutput(BaseModel):
@@ -1217,7 +1221,7 @@ class ComplianceControlOutput(BaseModel):
     control_id: str = Field(alias="controlId")
     title: str
     description: str
-    category: str
+    category: ComplianceControlCategory
     status: ComplianceControlStatus
     owner: str | None = None
     last_tested_at: str | None = Field(None, alias="lastTestedAt")
@@ -1238,42 +1242,112 @@ class SeedFrameworkOutput(BaseModel):
 class ComplianceReportOutput(BaseModel):
     id: str
     org_id: str = Field(alias="orgId")
-    type: str
-    status: str
+    type: ComplianceReportType
     title: str
-    summary: str | None = None
-    data: dict[str, Any] | None = None
-    generated_at: str = Field(alias="generatedAt")
+    description: str | None = None
+    status: ComplianceReportStatus
+    format: ComplianceReportFormat
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    content: dict[str, Any] | None = None
+    error_message: str | None = Field(None, alias="errorMessage")
+    generated_by: str | None = Field(None, alias="generatedBy")
+    period_start: str | None = Field(None, alias="periodStart")
+    period_end: str | None = Field(None, alias="periodEnd")
+    completed_at: str | None = Field(None, alias="completedAt")
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 
     model_config = {"populate_by_name": True}
 
 
-class ComplianceReportDownloadOutput(BaseModel):
-    url: str
-    format: str
-    expires_at: str = Field(alias="expiresAt")
+class ExportReportOutput(BaseModel):
+    """The export comes back inline. There is no signed download URL."""
+
+    data: str
+    content_type: str = Field(alias="contentType")
+    filename: str
+
+    model_config = {"populate_by_name": True}
+
+
+class ComplianceTemplateOutput(BaseModel):
+    type: str
+    title: str
+    description: str
+
+
+class ListTemplatesOutput(BaseModel):
+    items: list[ComplianceTemplateOutput] = Field(default_factory=list)
+
+
+class DashboardReportSummary(BaseModel):
+    id: str
+    type: str
+    title: str
+    status: str
+    created_at: str = Field(alias="createdAt")
+    completed_at: str | None = Field(None, alias="completedAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardDsarSummary(BaseModel):
+    id: str
+    type: str
+    status: str
+    subject_email: str = Field(alias="subjectEmail")
+    due_at: str = Field(alias="dueAt")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardReportsSection(BaseModel):
+    total: int
+    by_type: dict[str, int] = Field(default_factory=dict, alias="byType")
+    by_status: dict[str, int] = Field(default_factory=dict, alias="byStatus")
+    recent_reports: list[DashboardReportSummary] = Field(
+        default_factory=list, alias="recentReports"
+    )
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardDsarsSection(BaseModel):
+    total: int
+    by_status: dict[str, int] = Field(default_factory=dict, alias="byStatus")
+    by_type: dict[str, int] = Field(default_factory=dict, alias="byType")
+    overdue: int = 0
+    average_resolution_days: float | None = Field(None, alias="averageResolutionDays")
+    recent_requests: list[DashboardDsarSummary] = Field(
+        default_factory=list, alias="recentRequests"
+    )
 
     model_config = {"populate_by_name": True}
 
 
 class ComplianceFrameworkSummary(BaseModel):
+    framework: str
     total_controls: int = Field(alias="totalControls")
-    implemented: int
-    verified: int
-    failed: int
-    not_started: int = Field(alias="notStarted")
-    score: float
+    implemented_count: int = Field(alias="implementedCount")
+    progress: int
+
+    model_config = {"populate_by_name": True}
+
+
+class DashboardComplianceSection(BaseModel):
+    overall_progress: int = Field(alias="overallProgress")
+    framework_summaries: list[ComplianceFrameworkSummary] = Field(
+        default_factory=list, alias="frameworkSummaries"
+    )
 
     model_config = {"populate_by_name": True}
 
 
 class ComplianceDashboardOutput(BaseModel):
-    org_id: str = Field(alias="orgId")
-    frameworks: dict[str, ComplianceFrameworkSummary]
-    overall_score: float = Field(alias="overallScore")
-    recent_activity: list[ComplianceReportOutput] = Field(alias="recentActivity")
+    reports: DashboardReportsSection
+    dsars: DashboardDsarsSection
+    compliance: DashboardComplianceSection
 
     model_config = {"populate_by_name": True}
 
@@ -1281,12 +1355,19 @@ class ComplianceDashboardOutput(BaseModel):
 class DsarOutput(BaseModel):
     id: str
     org_id: str = Field(alias="orgId")
-    subject_email: str = Field(alias="subjectEmail")
-    request_type: str = Field(alias="requestType")
+    type: DsarType
     status: DsarStatus
+    subject_email: str = Field(alias="subjectEmail")
+    subject_name: str | None = Field(None, alias="subjectName")
+    subject_id: str | None = Field(None, alias="subjectId")
     description: str | None = None
-    metadata: dict[str, Any] | None = None
+    requested_at: str = Field(alias="requestedAt")
+    verified_at: str | None = Field(None, alias="verifiedAt")
+    due_at: str = Field(alias="dueAt")
     completed_at: str | None = Field(None, alias="completedAt")
+    processed_by: str | None = Field(None, alias="processedBy")
+    response: dict[str, Any] | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
 

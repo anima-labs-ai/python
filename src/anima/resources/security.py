@@ -1,35 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
-
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
-from .._types import PaginatedResponse, SecurityEventOutput, SecurityScanOutput
+from .._types import PaginatedResponse, ScannerStatusOutput, SecurityEventOutput
 
 
 class SecurityResource:
     def __init__(self, client: HTTPClient) -> None:
         self._client = client
 
-    def scan_content(
-        self,
-        *,
-        org_id: str,
-        channel: str,
-        body: str,
-        agent_id: str | None = None,
-        subject: str | None = None,
-        metadata: dict[str, Any] | None = None,
-        options: RequestOptions | None = None,
-    ) -> SecurityScanOutput:
-        payload: dict[str, Any] = {"orgId": org_id, "channel": channel, "body": body}
-        if agent_id is not None:
-            payload["agentId"] = agent_id
-        if subject is not None:
-            payload["subject"] = subject
-        if metadata is not None:
-            payload["metadata"] = metadata
-        return SecurityScanOutput.model_validate(
-            self._client.request("POST", "/security/scan", payload, options=options)
+    # No scan_content. It POSTed to /security/scan, which the API has never
+    # served -- scanning runs inside the send paths, not as a callable route.
+
+    def get_scanner_status(
+        self, *, org_id: str, options: RequestOptions | None = None
+    ) -> ScannerStatusOutput:
+        return ScannerStatusOutput.model_validate(
+            self._client.request("GET", f"/orgs/{org_id}/security/scanner-status", options=options)
         )
 
     def list_events(
@@ -64,26 +50,15 @@ class AsyncSecurityResource:
     def __init__(self, client: AsyncHTTPClient) -> None:
         self._client = client
 
-    async def scan_content(
-        self,
-        *,
-        org_id: str,
-        channel: str,
-        body: str,
-        agent_id: str | None = None,
-        subject: str | None = None,
-        metadata: dict[str, Any] | None = None,
-        options: RequestOptions | None = None,
-    ) -> SecurityScanOutput:
-        payload: dict[str, Any] = {"orgId": org_id, "channel": channel, "body": body}
-        if agent_id is not None:
-            payload["agentId"] = agent_id
-        if subject is not None:
-            payload["subject"] = subject
-        if metadata is not None:
-            payload["metadata"] = metadata
-        return SecurityScanOutput.model_validate(
-            await self._client.request("POST", "/security/scan", payload, options=options)
+    # No scan_content -- see the sync resource above.
+
+    async def get_scanner_status(
+        self, *, org_id: str, options: RequestOptions | None = None
+    ) -> ScannerStatusOutput:
+        return ScannerStatusOutput.model_validate(
+            await self._client.request(
+                "GET", f"/orgs/{org_id}/security/scanner-status", options=options
+            )
         )
 
     async def list_events(

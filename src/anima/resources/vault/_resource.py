@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from .credentials import _AsyncCredentialsMixin, _SyncCredentialsMixin
 from .identities import _AsyncIdentitiesMixin, _SyncIdentitiesMixin
-from .oauth import AsyncVaultOAuthResource, VaultOAuthResource
 from .requests import _AsyncCredentialRequestsMixin, _SyncCredentialRequestsMixin
 from .sharing import _AsyncSharingMixin, _SyncSharingMixin
 from .tokens import _AsyncTokensMixin, _SyncTokensMixin
@@ -20,10 +19,6 @@ class VaultResource(
     query the audit trail. Each sub-resource surface lives in its own module and
     is composed here so the whole API hangs off ``client.vault``."""
 
-    @property
-    def oauth(self) -> VaultOAuthResource:
-        return VaultOAuthResource(self._client)
-
 
 class AsyncVaultResource(
     _AsyncIdentitiesMixin,
@@ -33,7 +28,3 @@ class AsyncVaultResource(
     _AsyncTokensMixin,
 ):
     """Async mirror of :class:`VaultResource`."""
-
-    @property
-    def oauth(self) -> AsyncVaultOAuthResource:
-        return AsyncVaultOAuthResource(self._client)
