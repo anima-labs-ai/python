@@ -42,7 +42,7 @@ class IdentityResource:
 
     # No resolve_did. It called GET /identity/did/{did}, which the API has
     # never served, and resolving a DID to its owning agent is what
-    # registry.get_by_did does -- GET /registry/agents/{did}.
+    # registry.lookup(did) does -- GET /registry/agents/{did}.
 
     def rotate_keys(
         self, agent_id: str, *, options: RequestOptions | None = None

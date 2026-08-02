@@ -754,89 +754,6 @@ class UseCredentialOutput(BaseModel):
     truncated: bool
 
 
-class OAuthAuthMethod(str, Enum):
-    OAUTH2 = "OAUTH2"
-    OAUTH2_PKCE = "OAUTH2_PKCE"
-    API_KEY = "API_KEY"
-    BASIC = "BASIC"
-    BEARER = "BEARER"
-
-
-class OAuthAppDefinition(BaseModel):
-    """A connectable service. Public info only -- never client secrets."""
-
-    id: str
-    slug: str
-    name: str
-    description: str | None = None
-    icon_url: str | None = Field(None, alias="iconUrl")
-    auth_method: OAuthAuthMethod = Field(alias="authMethod")
-    default_scopes: list[str] = Field(alias="defaultScopes")
-    requires_pkce: bool = Field(alias="requiresPkce")
-    category: str | None = None
-    is_managed: bool = Field(alias="isManaged")
-    is_active: bool = Field(alias="isActive")
-
-    model_config = {"populate_by_name": True}
-
-
-class ConnectedAccountStatus(str, Enum):
-    PENDING = "PENDING"
-    ACTIVE = "ACTIVE"
-    EXPIRED = "EXPIRED"
-    REFRESHING = "REFRESHING"
-    FAILED = "FAILED"
-    REVOKED = "REVOKED"
-
-
-class ConnectedAccount(BaseModel):
-    """An agent's authenticated connection to a service."""
-
-    id: str
-    agent_id: str = Field(alias="agentId")
-    user_id: str | None = Field(None, alias="userId")
-    app_definition_id: str = Field(alias="appDefinitionId")
-    app_slug: str = Field(alias="appSlug")
-    app_name: str = Field(alias="appName")
-    app_icon_url: str | None = Field(None, alias="appIconUrl")
-    custom_app_id: str | None = Field(None, alias="customAppId")
-    granted_scopes: list[str] = Field(alias="grantedScopes")
-    account_label: str | None = Field(None, alias="accountLabel")
-    account_email: str | None = Field(None, alias="accountEmail")
-    status: ConnectedAccountStatus
-    status_message: str | None = Field(None, alias="statusMessage")
-    token_expires_at: str | None = Field(None, alias="tokenExpiresAt")
-    last_refreshed_at: str | None = Field(None, alias="lastRefreshedAt")
-    created_at: str = Field(alias="createdAt")
-    updated_at: str = Field(alias="updatedAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class ConnectLinkOutput(BaseModel):
-    """A hosted auth URL for zero-code authentication. Expires in 10 minutes."""
-
-    link_url: str = Field(alias="linkUrl")
-    token: str
-    expires_at: str = Field(alias="expiresAt")
-
-    model_config = {"populate_by_name": True}
-
-
-class ConnectLinkStatus(str, Enum):
-    PENDING = "PENDING"
-    COMPLETED = "COMPLETED"
-    EXPIRED = "EXPIRED"
-    FAILED = "FAILED"
-
-
-class ConnectLinkStatusOutput(BaseModel):
-    status: ConnectLinkStatus
-    connected_account_id: str | None = Field(None, alias="connectedAccountId")
-
-    model_config = {"populate_by_name": True}
-
-
 # ---------------------------------------------------------------------------
 # Webhooks
 # ---------------------------------------------------------------------------
@@ -1039,26 +956,6 @@ class DidRotateOutput(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class VerifiableCredential(BaseModel):
-    """The decoded W3C credential, as returned inside ``VerifyCredentialOutput``.
-
-    Distinct from :class:`VerifiableCredentialRecord`, which is the platform's
-    row for an issued credential. ``identity.list_credentials`` returns records,
-    not documents.
-    """
-
-    id: str
-    type: str
-    issuer: str
-    subject: str
-    issuance_date: str = Field(alias="issuanceDate")
-    expiration_date: str | None = Field(None, alias="expirationDate")
-    credential_subject: dict[str, Any] = Field(alias="credentialSubject")
-    proof: dict[str, Any]
-
-    model_config = {"populate_by_name": True}
-
-
 class VerifiableCredentialRecord(BaseModel):
     """The platform's record of an issued credential.
 
@@ -1107,7 +1004,13 @@ class VerifiableCredentialType(str, Enum):
 
 class VerifyCredentialOutput(BaseModel):
     valid: bool
-    credential: VerifiableCredential | None = None
+    # The decoded JWT-VC payload, left opaque: the contract types it as
+    # z.record(z.unknown()).nullable() and the value is a JwtVcPayload --
+    # {iss, sub, vc, iat, exp, jti}, with the W3C credential under "vc".
+    # It was modelled as a flat W3C document, so every field parsed as
+    # missing. Non-None for most invalid results too (revoked, expired,
+    # bad signature all decode), so branch on `valid`, not on this.
+    credential: dict[str, Any] | None = None
     errors: list[str]
 
 

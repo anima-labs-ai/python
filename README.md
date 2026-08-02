@@ -223,8 +223,11 @@ print(handoff.connect_url)  # open in the extension worker to complete the hands
 
 | Method | Description |
 |--------|-------------|
-| `scan_content(*, org_id, channel, body, agent_id?, subject?, metadata?)` | Scan content for threats |
+| `get_scanner_status(*, org_id)` | Whether AI scanning is running, and why not if it isn't |
 | `list_events(*, org_id, agent_id?, type?, severity?, cursor?, limit?)` | List security events |
+
+Content scanning is not a call you make — it runs inside the send paths, so a
+blocked message surfaces as an error from `emails.send` / `messages.send`.
 
 ### `client.organizations`
 

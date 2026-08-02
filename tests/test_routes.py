@@ -1,4 +1,4 @@
-"""Every path this SDK can call must exist on the API.
+r"""Every path this SDK can call must exist on the API.
 
 The per-resource tests assert paths against a mock, so they pass whether or
 not the server serves the route. That is how ``POST /security/scan`` and
@@ -11,14 +11,39 @@ allowlist below, generated from the monorepo's
 ``packages/contracts/src/contracts/*.ts`` at the commit in ``.anima-ref``. A
 new method reaching for a route that does not exist fails here.
 
-Regenerate when ``.anima-ref`` moves::
+WHAT THIS PROVES, AND WHAT IT DOES NOT. A path in the allowlist is DECLARED in
+the contracts. That is not the same as "the product is alive". Killed surfaces
+are routinely left in place -- anima ``894035bc`` deleted the OAuth console
+pages and says the procedures "remain dormant in packages/contracts +
+apps/api/routes/handlers/vault.ts; full backend cleanup is a separate chore"
+-- and some are declared ``deprecated: true`` and answer 400 by design
+(``POST /mcp-auth/sessions``). So a gap between this list and the SDK is NOT by
+itself evidence of missing coverage. In 2026-08 six dormant vault OAuth routes
+were read that way and re-added to all three SDKs; they were removed again.
+Check git history for a deliberate removal before filling any gap.
 
-    grep -rhoE 'method: "[A-Z]+", path: "[^"]+"' \
-      packages/contracts/src/contracts/*.ts |
-      sed -E 's/method: "([A-Z]+)", path: "([^"]+)"/\1 \2/' | sort -u
+Regenerate when ``.anima-ref`` moves, from the monorepo root::
 
-plus the three routes registered directly on fastify rather than through
-oRPC, which that grep does not see: ``GET /audit/events``,
+    python3 - <<'EOF'
+    import re, pathlib
+    src = "".join(p.read_text() for p in
+                  sorted(pathlib.Path("packages/contracts/src/contracts").glob("*.ts")))
+    out = set()
+    for m in re.finditer(r'\.route\(\s*\{(.*?)\}\s*\)', src, re.S):
+        meth = re.search(r'method:\s*"([A-Z]+)"', m.group(1))
+        path = re.search(r'path:\s*"([^"]+)"', m.group(1))
+        if meth and path:
+            out.add(meth.group(1) + " " + re.sub(r'\{[^}]*\}', '*', path.group(1)))
+    print("\n".join(sorted(out)))
+    EOF
+
+It must parse the whole ``.route({...})`` object, not one line: eight routes
+spread method and path across lines (``POST /addresses/*/validate``, the four
+mcp-auth ones, three agents email-identity ones). The single-line grep this
+docstring used to recommend silently dropped all eight.
+
+Then add the three routes registered directly on fastify rather than through
+oRPC, which no contracts scan can see: ``GET /audit/events``,
 ``GET /events/stream``, ``POST /a2a/inbound``.
 """
 
@@ -303,12 +328,19 @@ API_ROUTES: frozenset[str] = frozenset(
 
 _CALL = re.compile(r'request\(\s*"([A-Z]+)",\s*f?"([^"]+)"')
 
-# Catches a path built by concatenation instead of an f-string. _CALL stops at
-# the closing quote of the first literal, so ``"GET", "/voice/calls/" + call_id
-# + "/transcript"`` would be checked as GET /voice/calls -- a real route, so it
-# passes while everything after the id goes unverified. The go SDK shipped
-# exactly that. Use an f-string.
-_CONCAT = re.compile(r'request\(\s*"[A-Z]+",\s*"(/[^"]*)"\s*\+')
+# Catches a path built by concatenation instead of a single literal. _CALL
+# stops at the closing quote of the first literal, so ``"GET", "/voice/calls/"
+# + call_id + "/transcript"`` would be checked as GET /voice/calls -- a real
+# route, so it passes while everything after the id goes unverified. The go SDK
+# shipped exactly that. Use an f-string.
+#
+# The ``f?`` matters: catching only the plain string leaves
+# ``f"/voice/calls/{call_id}" + "/transcript"`` free to reopen the same hole.
+#
+# Residual gap: a path that does not *start* with a literal
+# (``request("GET", base + "/x")``) matches neither this nor _CALL, so it is
+# never checked. The count floor only catches a wholesale regression.
+_CONCAT = re.compile(r'request\(\s*"[A-Z]+",\s*f?"(/[^"]*)"\s*\+')
 
 
 def _normalise(path: str) -> str:
