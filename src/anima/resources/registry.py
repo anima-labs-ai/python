@@ -1,9 +1,23 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._types import RegistryAgentOutput
+
+
+def _did_path(did: str) -> str:
+    """Percent-encode a DID for use as a single path segment.
+
+    Colons are legal in a path segment, so most DIDs survive raw
+    interpolation. A ``did:web`` carrying a port does not: the spec
+    percent-encodes that colon, so the DID string itself contains ``%3A``.
+    Interpolated raw, the server decodes it back to ``:`` and looks up a
+    different DID. ``safe=""`` also escapes ``/``, which no DID method should
+    produce but which would otherwise silently split the path.
+    """
+    return quote(did, safe="")
 
 
 def _to_search_query(
@@ -116,7 +130,7 @@ class RegistryResource:
 
     def lookup(self, did: str, *, options: RequestOptions | None = None) -> RegistryAgentOutput:
         return RegistryAgentOutput.model_validate(
-            self._client.request("GET", f"/registry/agents/{did}", options=options)
+            self._client.request("GET", f"/registry/agents/{_did_path(did)}", options=options)
         )
 
     def update(
@@ -140,11 +154,11 @@ class RegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            self._client.request("PUT", f"/registry/agents/{did}", body, options=options)
+            self._client.request("PUT", f"/registry/agents/{_did_path(did)}", body, options=options)
         )
 
     def unlist(self, did: str, *, options: RequestOptions | None = None) -> None:
-        self._client.request("DELETE", f"/registry/agents/{did}", options=options)
+        self._client.request("DELETE", f"/registry/agents/{_did_path(did)}", options=options)
 
 
 class AsyncRegistryResource:
@@ -195,7 +209,7 @@ class AsyncRegistryResource:
         self, did: str, *, options: RequestOptions | None = None
     ) -> RegistryAgentOutput:
         return RegistryAgentOutput.model_validate(
-            await self._client.request("GET", f"/registry/agents/{did}", options=options)
+            await self._client.request("GET", f"/registry/agents/{_did_path(did)}", options=options)
         )
 
     async def update(
@@ -219,8 +233,10 @@ class AsyncRegistryResource:
             metadata=metadata,
         )
         return RegistryAgentOutput.model_validate(
-            await self._client.request("PUT", f"/registry/agents/{did}", body, options=options)
+            await self._client.request(
+                "PUT", f"/registry/agents/{_did_path(did)}", body, options=options
+            )
         )
 
     async def unlist(self, did: str, *, options: RequestOptions | None = None) -> None:
-        await self._client.request("DELETE", f"/registry/agents/{did}", options=options)
+        await self._client.request("DELETE", f"/registry/agents/{_did_path(did)}", options=options)

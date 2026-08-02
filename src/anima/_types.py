@@ -535,10 +535,16 @@ class VaultIdentityOutput(BaseModel):
     id: str
     agent_id: str = Field(alias="agentId")
     org_id: str = Field(alias="orgId")
+    # Identifiers in the vault backend. None until provisioning completes.
+    vault_user_id: str | None = Field(None, alias="vaultUserId")
+    vault_org_id: str | None = Field(None, alias="vaultOrgId")
+    collection_id: str | None = Field(None, alias="collectionId")
+    # One of ACTIVE, LOCKED, ERROR.
     status: str
     credential_count: int = Field(alias="credentialCount")
     last_sync_at: str | None = Field(None, alias="lastSyncAt")
     created_at: str = Field(alias="createdAt")
+    updated_at: str = Field(alias="updatedAt")
 
     model_config = {"populate_by_name": True}
 
@@ -742,6 +748,29 @@ class VaultCredentialRequestStatusOutput(BaseModel):
 
 class VaultCredentialRequestCancelResult(BaseModel):
     status: CredentialRequestStatus
+
+
+class VaultCredentialRequestListItem(BaseModel):
+    """A credential request in the org-wide list.
+
+    Distinct from :class:`VaultCredentialRequest`, which is what creating one
+    returns: this carries the requesting agent, type, reason and createdAt, and
+    its ``fill_url`` is present only while PENDING.
+    """
+
+    request_id: str = Field(alias="requestId")
+    agent_id: str = Field(alias="agentId")
+    type: CredentialType
+    name: str
+    reason: str
+    status: CredentialRequestStatus
+    # Present only while PENDING -- the URL stops working once filled.
+    fill_url: str | None = Field(None, alias="fillUrl")
+    credential_id: str | None = Field(None, alias="credentialId")
+    expires_at: str = Field(alias="expiresAt")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
 
 
 class UseCredentialOutput(BaseModel):

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions, unwrap_enum
 from .._types import (
     ComplianceControlCategory,
     ComplianceControlOutput,
@@ -23,15 +22,10 @@ from .._types import (
     SeedFrameworkOutput,
 )
 
-
-def _value(item: Any) -> Any:
-    """Unwrap an Enum to the string the API expects; pass anything else through.
-
-    Callers may hand in either ``DsarType.ACCESS`` or ``"ACCESS"``. Members of a
-    ``str, Enum`` already serialise correctly, but going through ``.value``
-    keeps that true regardless of how the enum is declared.
-    """
-    return item.value if isinstance(item, Enum) else item
+# Query params are unwrapped centrally by _http._encode_query (httpx
+# stringifies an Enum as "DsarType.ACCESS" where json.dumps gets it right).
+# This alias is for JSON bodies, which do not pass through that path.
+_value = unwrap_enum
 
 
 class ComplianceResource:

@@ -9,6 +9,7 @@ import time
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Callable, TypeVar
 
 import httpx
@@ -38,6 +39,47 @@ BASE_RETRY_DELAY = 0.5  # seconds
 MAX_RETRY_DELAY = 30.0  # seconds
 
 _MUTATING_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def _encode_query(
+    query: Mapping[str, Any] | None,
+) -> Mapping[str, str | list[str]] | None:
+    """Unwrap Enum members to their wire values before httpx sees them.
+
+    Every enum in this SDK subclasses ``str``, so passing one where a ``str``
+    is annotated type-checks cleanly. In a JSON body that is harmless --
+    ``json.dumps`` serialises a ``(str, Enum)`` to its value. In a query string
+    it is not: httpx calls ``str()`` on each param, and ``str(Tier.STARTER)``
+    is ``"Tier.STARTER"``, not ``"STARTER"``. So
+
+        client.security.list_events(org_id=..., severity=SecuritySeverity.HIGH)
+
+    passed mypy and sent ``?severity=SecuritySeverity.HIGH``, which the API
+    rejects. Doing this here rather than at each call site means a new resource
+    method cannot reintroduce it -- there were ~30 query assignments and only
+    the compliance ones unwrapped.
+    """
+    if query is None:
+        return None
+    return {
+        key: [_enum_value(v) for v in value] if isinstance(value, list) else _enum_value(value)
+        for key, value in query.items()
+    }
+
+
+def unwrap_enum(item: Any) -> Any:
+    """``Enum`` -> its value; everything else through unchanged.
+
+    The one implementation. Query params go through :func:`_encode_query`,
+    which calls this and then stringifies; JSON bodies call it directly, where
+    non-enum values (ints, dicts, lists) must survive untouched.
+    """
+    return item.value if isinstance(item, Enum) else item
+
+
+def _enum_value(value: Any) -> str:
+    """``Enum`` -> its value; everything else -> ``str``."""
+    return str(unwrap_enum(value))
 
 
 def _normalize_base_url(base_url: str) -> str:
@@ -250,7 +292,7 @@ class HTTPClient:
                     method,
                     url,
                     json=body if body is not None else None,
-                    params=query,
+                    params=_encode_query(query),
                     headers=headers,
                 )
 
@@ -405,7 +447,7 @@ class AsyncHTTPClient:
                     method,
                     url,
                     json=body if body is not None else None,
-                    params=query,
+                    params=_encode_query(query),
                     headers=headers,
                 )
 
