@@ -7,7 +7,7 @@ from .._types import (
     AgentBaselineOutput,
     AnomalyAlertOutput,
     AnomalyRuleOutput,
-    PaginatedResponse,
+    CursorPage,
     QuarantineOutput,
 )
 
@@ -27,7 +27,7 @@ class AnomalyResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AnomalyAlertOutput]:
+    ) -> CursorPage[AnomalyAlertOutput]:
         query: dict[str, str] = {}
         if agent_id is not None:
             query["agentId"] = agent_id
@@ -44,7 +44,7 @@ class AnomalyResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/anomaly-alerts", query=query, options=options
         )
-        return PaginatedResponse[AnomalyAlertOutput].model_validate(raw)
+        return CursorPage[AnomalyAlertOutput].model_validate(raw)
 
     def get_alert(
         self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
@@ -100,7 +100,7 @@ class AnomalyResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AnomalyRuleOutput]:
+    ) -> CursorPage[AnomalyRuleOutput]:
         query: dict[str, str] = {}
         if metric is not None:
             query["metric"] = metric
@@ -113,7 +113,7 @@ class AnomalyResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/anomaly-rules", query=query, options=options
         )
-        return PaginatedResponse[AnomalyRuleOutput].model_validate(raw)
+        return CursorPage[AnomalyRuleOutput].model_validate(raw)
 
     def create_rule(
         self,
@@ -256,7 +256,7 @@ class AsyncAnomalyResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AnomalyAlertOutput]:
+    ) -> CursorPage[AnomalyAlertOutput]:
         query: dict[str, str] = {}
         if agent_id is not None:
             query["agentId"] = agent_id
@@ -273,7 +273,7 @@ class AsyncAnomalyResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/anomaly-alerts", query=query, options=options
         )
-        return PaginatedResponse[AnomalyAlertOutput].model_validate(raw)
+        return CursorPage[AnomalyAlertOutput].model_validate(raw)
 
     async def get_alert(
         self, *, org_id: str, alert_id: str, options: RequestOptions | None = None
@@ -329,7 +329,7 @@ class AsyncAnomalyResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AnomalyRuleOutput]:
+    ) -> CursorPage[AnomalyRuleOutput]:
         query: dict[str, str] = {}
         if metric is not None:
             query["metric"] = metric
@@ -342,7 +342,7 @@ class AsyncAnomalyResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/anomaly-rules", query=query, options=options
         )
-        return PaginatedResponse[AnomalyRuleOutput].model_validate(raw)
+        return CursorPage[AnomalyRuleOutput].model_validate(raw)
 
     async def create_rule(
         self,

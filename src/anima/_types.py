@@ -194,6 +194,48 @@ class PaginatedResponse(BaseModel, Generic[T]):
     model_config = {"populate_by_name": True}
 
 
+class CursorPage(BaseModel, Generic[T]):
+    """A list response that carries its cursor FLAT rather than nested.
+
+    Roughly a third of the API's list endpoints answer ``{items, nextCursor}``
+    instead of ``{items, pagination: {nextCursor, hasMore}}`` -- audit logs,
+    anomaly alerts and rules, compliance controls/reports/dsars, A2A tasks.
+    Validating those against :class:`PaginatedResponse` raises, because
+    ``pagination`` is simply not there. That is not a hypothetical: every one
+    of those methods raised on every call until 2026-08-04.
+
+    Neither envelope is "the standard" -- the split is 23 to 24 across the
+    contracts -- so the SDK models both rather than pretending the API is
+    uniform.
+
+    ``pagination`` is exposed as a derived property so this stays a drop-in for
+    code written against ``PaginatedResponse``: ``page.items`` and
+    ``page.pagination.next_cursor`` both keep working, and the auto-paginating
+    iterators need no special case.
+    """
+
+    items: list[T]
+    next_cursor: str | None = Field(None, alias="nextCursor")
+    # Only some of these endpoints report a total, and they disagree on the
+    # name (audit logs say totalCount, registry search says total). None means
+    # the endpoint did not send one -- never "zero results".
+    total_count: int | None = Field(None, alias="totalCount")
+
+    model_config = {"populate_by_name": True}
+
+    @property
+    def pagination(self) -> CursorPagination:
+        """The nested shape, derived.
+
+        ``has_more`` is not sent by these endpoints; a null ``nextCursor`` is
+        how they say "no more pages", so it is derived rather than guessed.
+        """
+        return CursorPagination(
+            next_cursor=self.next_cursor,
+            has_more=self.next_cursor is not None,
+        )
+
+
 class DateRange(BaseModel):
     from_: str | None = Field(None, alias="from")
     to: str | None = None
@@ -1090,12 +1132,18 @@ class RegistryAgentOutput(BaseModel):
 
 
 class A2ATaskStatus(str, Enum):
-    SUBMITTED = "SUBMITTED"
-    WORKING = "WORKING"
-    INPUT_REQUIRED = "INPUT_REQUIRED"
-    COMPLETED = "COMPLETED"
-    CANCELED = "CANCELED"
-    FAILED = "FAILED"
+    # lowercase, because A2ATaskStatusEnum in the contract is
+    # ["submitted", "working", "input_required", "completed", "failed",
+    # "canceled"]. These were UPPERCASE until 2026-08-04 -- the same
+    # casing defect as AuditActorType but in the opposite direction, which is
+    # why "just uppercase everything" is not the rule. Note the API spells it
+    # "canceled" with one L.
+    SUBMITTED = "submitted"
+    WORKING = "working"
+    INPUT_REQUIRED = "input_required"
+    COMPLETED = "completed"
+    CANCELED = "canceled"
+    FAILED = "failed"
 
 
 class A2AArtifact(BaseModel):
@@ -1128,16 +1176,21 @@ class A2ATaskOutput(BaseModel):
 
 
 class AuditActorType(str, Enum):
-    API_KEY = "api_key"
-    USER = "user"
-    SYSTEM = "system"
-    AGENT = "agent"
+    # UPPERCASE because AuditActorTypeEnum in the contract is
+    # ["API_KEY", "USER", "SYSTEM", "AGENT"]. These were lowercase until
+    # 2026-08-04, which made every audit-log read raise in this SDK and fail
+    # silently in the node and go ones. Do not "normalise" the casing.
+    API_KEY = "API_KEY"
+    USER = "USER"
+    SYSTEM = "SYSTEM"
+    AGENT = "AGENT"
 
 
 class AuditResult(str, Enum):
-    SUCCESS = "success"
-    FAILURE = "failure"
-    DENIED = "denied"
+    # UPPERCASE -- see AuditActorType above.
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    DENIED = "DENIED"
 
 
 class AuditLogOutput(BaseModel):

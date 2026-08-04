@@ -13,12 +13,12 @@ from .._types import (
     ComplianceReportOutput,
     ComplianceReportStatus,
     ComplianceReportType,
+    CursorPage,
     DsarOutput,
     DsarStatus,
     DsarType,
     ExportReportOutput,
     ListTemplatesOutput,
-    PaginatedResponse,
     SeedFrameworkOutput,
 )
 
@@ -47,7 +47,7 @@ class ComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[ComplianceControlOutput]:
+    ) -> CursorPage[ComplianceControlOutput]:
         query: dict[str, str] = {}
         if framework is not None:
             query["framework"] = _value(framework)
@@ -62,7 +62,7 @@ class ComplianceResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/compliance/controls", query=query, options=options
         )
-        return PaginatedResponse[ComplianceControlOutput].model_validate(raw)
+        return CursorPage[ComplianceControlOutput].model_validate(raw)
 
     def get_control(
         self, *, org_id: str, control_id: str, options: RequestOptions | None = None
@@ -161,7 +161,7 @@ class ComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[ComplianceReportOutput]:
+    ) -> CursorPage[ComplianceReportOutput]:
         query: dict[str, str] = {}
         if type is not None:
             query["type"] = _value(type)
@@ -174,7 +174,7 @@ class ComplianceResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/compliance/reports", query=query, options=options
         )
-        return PaginatedResponse[ComplianceReportOutput].model_validate(raw)
+        return CursorPage[ComplianceReportOutput].model_validate(raw)
 
     def get_report(
         self, *, org_id: str, report_id: str, options: RequestOptions | None = None
@@ -268,7 +268,7 @@ class ComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[DsarOutput]:
+    ) -> CursorPage[DsarOutput]:
         query: dict[str, str] = {}
         if status is not None:
             query["status"] = _value(status)
@@ -281,7 +281,7 @@ class ComplianceResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/compliance/dsars", query=query, options=options
         )
-        return PaginatedResponse[DsarOutput].model_validate(raw)
+        return CursorPage[DsarOutput].model_validate(raw)
 
     def get_dsar(
         self, *, org_id: str, dsar_id: str, options: RequestOptions | None = None
@@ -338,7 +338,7 @@ class AsyncComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[ComplianceControlOutput]:
+    ) -> CursorPage[ComplianceControlOutput]:
         query: dict[str, str] = {}
         if framework is not None:
             query["framework"] = _value(framework)
@@ -353,7 +353,7 @@ class AsyncComplianceResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/compliance/controls", query=query, options=options
         )
-        return PaginatedResponse[ComplianceControlOutput].model_validate(raw)
+        return CursorPage[ComplianceControlOutput].model_validate(raw)
 
     async def get_control(
         self, *, org_id: str, control_id: str, options: RequestOptions | None = None
@@ -454,7 +454,7 @@ class AsyncComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[ComplianceReportOutput]:
+    ) -> CursorPage[ComplianceReportOutput]:
         query: dict[str, str] = {}
         if type is not None:
             query["type"] = _value(type)
@@ -467,7 +467,7 @@ class AsyncComplianceResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/compliance/reports", query=query, options=options
         )
-        return PaginatedResponse[ComplianceReportOutput].model_validate(raw)
+        return CursorPage[ComplianceReportOutput].model_validate(raw)
 
     async def get_report(
         self, *, org_id: str, report_id: str, options: RequestOptions | None = None
@@ -555,7 +555,7 @@ class AsyncComplianceResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[DsarOutput]:
+    ) -> CursorPage[DsarOutput]:
         query: dict[str, str] = {}
         if status is not None:
             query["status"] = _value(status)
@@ -568,7 +568,7 @@ class AsyncComplianceResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/compliance/dsars", query=query, options=options
         )
-        return PaginatedResponse[DsarOutput].model_validate(raw)
+        return CursorPage[DsarOutput].model_validate(raw)
 
     async def get_dsar(
         self, *, org_id: str, dsar_id: str, options: RequestOptions | None = None

@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
-from .._types import A2ATaskOutput, PaginatedResponse
+from .._types import A2ATaskOutput, CursorPage
 
 
 def _to_query(
@@ -70,14 +70,14 @@ class A2AResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[A2ATaskOutput]:
+    ) -> CursorPage[A2ATaskOutput]:
         raw = self._client.request(
             "GET",
             f"/agents/{agent_id}/a2a/tasks",
             query=_to_query(status=status, cursor=cursor, limit=limit),
             options=options,
         )
-        return PaginatedResponse[A2ATaskOutput].model_validate(raw)
+        return CursorPage[A2ATaskOutput].model_validate(raw)
 
     def cancel_task(
         self, agent_id: str, task_id: str, *, options: RequestOptions | None = None
@@ -156,14 +156,14 @@ class AsyncA2AResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[A2ATaskOutput]:
+    ) -> CursorPage[A2ATaskOutput]:
         raw = await self._client.request(
             "GET",
             f"/agents/{agent_id}/a2a/tasks",
             query=_to_query(status=status, cursor=cursor, limit=limit),
             options=options,
         )
-        return PaginatedResponse[A2ATaskOutput].model_validate(raw)
+        return CursorPage[A2ATaskOutput].model_validate(raw)
 
     async def cancel_task(
         self, agent_id: str, task_id: str, *, options: RequestOptions | None = None

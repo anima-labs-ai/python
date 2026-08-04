@@ -243,6 +243,33 @@ class TestEnumsAreAcceptedByTheApi:
                 )
             )
 
+    @org_scoped
+    def test_audit_actor_type_enum(self, client: Anima) -> None:
+        """UPPERCASE in the contract; this SDK had it lowercase until 2026-08-04.
+
+        Sent as a FILTER, so a wrong casing is a 400 rather than an empty list
+        -- a response-shape assertion would pass on an org with no audit rows.
+        """
+        from anima._types import AuditActorType
+
+        for actor_type in AuditActorType:
+            probe(
+                lambda a=actor_type: client.audit.list(
+                    org_id=ORG_ID or "", actor_type=a.value, limit=1
+                )
+            )
+
+    @org_scoped
+    def test_audit_result_enum(self, client: Anima) -> None:
+        from anima._types import AuditResult
+
+        for result in AuditResult:
+            probe(
+                lambda r=result: client.audit.list(
+                    org_id=ORG_ID or "", result=r.value, limit=1
+                )
+            )
+
     def test_security_severity_enum(self, client: Anima) -> None:
         """Also proves the query encoder: a raw Enum would send its repr."""
         from anima import SecuritySeverity
