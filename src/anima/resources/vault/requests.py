@@ -16,10 +16,11 @@ from ._base import _AsyncVaultBase, _SyncVaultBase
 
 
 def _requests_query(
-    cursor: str | None,
-    limit: int | None,
-    agent_id: str | None,
-    status: CredentialRequestStatus | str | None,
+    *,
+    cursor: str | None = None,
+    limit: int | None = None,
+    agent_id: str | None = None,
+    status: CredentialRequestStatus | str | None = None,
 ) -> dict[str, Any] | None:
     query: dict[str, Any] = {}
     if cursor is not None:
@@ -87,7 +88,7 @@ class _SyncCredentialRequestsMixin(_SyncVaultBase):
             raw = self._client.request(
                 "GET",
                 "/vault/credential-requests",
-                query=_requests_query(cursor, limit, agent_id, status),
+                query=_requests_query(cursor=cursor, limit=limit, agent_id=agent_id, status=status),
                 options=options,
             )
             return PaginatedResponse[VaultCredentialRequestListItem].model_validate(raw)
@@ -162,7 +163,7 @@ class _AsyncCredentialRequestsMixin(_AsyncVaultBase):
             raw = await self._client.request(
                 "GET",
                 "/vault/credential-requests",
-                query=_requests_query(cursor, limit, agent_id, status),
+                query=_requests_query(cursor=cursor, limit=limit, agent_id=agent_id, status=status),
                 options=options,
             )
             return PaginatedResponse[VaultCredentialRequestListItem].model_validate(raw)

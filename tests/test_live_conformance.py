@@ -78,18 +78,27 @@ def client() -> Iterator[Anima]:
     yield Anima(**kwargs)
 
 
+# How many probes got a real 2xx back. A 401 is a pass for each probe on its
+# own -- it proves the route exists -- but that does not compose: a key scoped
+# for nothing 401s everywhere and turns the whole module green having checked
+# no path, no query param and no response shape. See the canary at the bottom.
+_reached = 0
+
+
 def probe(call: Callable[[], Any]) -> None:
     """Run one read-only call and apply the verdict table in this module's docs.
 
     Returning normally means the probe passed. Anything that reaches the
     ``pytest.fail`` calls below is a real conformance defect.
     """
+    global _reached
     try:
         result = call()
         # PageIterator is lazy — force the first page so the request happens
         # and the response is validated.
         if hasattr(result, "items"):
             _ = result.items
+        _reached += 1
     except NotFoundError as err:
         pytest.fail(
             f"404 — the API does not serve this route. Either the SDK path is "
@@ -244,3 +253,23 @@ class TestEnumsAreAcceptedByTheApi:
                     org_id=ORG_ID or "", severity=s, limit=1
                 )
             )
+
+
+def test_the_run_reached_the_api() -> None:
+    """Fail a run in which no probe ever got a 2xx.
+
+    Every verdict above is sound on its own, but "401 is a pass" does not
+    compose: a key with no scopes is rejected everywhere, each probe passes
+    because the route demonstrably exists, and the module goes green having
+    verified nothing at all -- the same hollow tick the mocks were giving us,
+    which is the entire reason this file exists.
+
+    Deliberately the last test in the module: pytest runs tests in file order,
+    so every probe above has already run and settled ``_reached``.
+    """
+    assert _reached > 0, (
+        "no probe reached the API: every call was rejected (401/403), rate "
+        "limited, or skipped, so this run verified no path, no query param "
+        "and no response shape. Check that ANIMA_LIVE_API_KEY is valid and "
+        "scoped -- a green run in this state would prove nothing."
+    )
