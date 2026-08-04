@@ -264,11 +264,7 @@ class TestEnumsAreAcceptedByTheApi:
         from anima._types import AuditResult
 
         for result in AuditResult:
-            probe(
-                lambda r=result: client.audit.list(
-                    org_id=ORG_ID or "", result=r.value, limit=1
-                )
-            )
+            probe(lambda r=result: client.audit.list(org_id=ORG_ID or "", result=r.value, limit=1))
 
     def test_security_severity_enum(self, client: Anima) -> None:
         """Also proves the query encoder: a raw Enum would send its repr."""
