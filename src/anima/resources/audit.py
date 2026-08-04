@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
-from .._types import AuditLogExportOutput, AuditLogOutput, PaginatedResponse
+from .._types import AuditLogExportOutput, AuditLogOutput, CursorPage
 
 
 class AuditResource:
@@ -25,7 +25,7 @@ class AuditResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AuditLogOutput]:
+    ) -> CursorPage[AuditLogOutput]:
         query: dict[str, str] = {}
         if actor_id is not None:
             query["actorId"] = actor_id
@@ -50,7 +50,7 @@ class AuditResource:
         raw = self._client.request(
             "GET", f"/orgs/{org_id}/audit-logs", query=query, options=options
         )
-        return PaginatedResponse[AuditLogOutput].model_validate(raw)
+        return CursorPage[AuditLogOutput].model_validate(raw)
 
     def get(
         self, *, org_id: str, log_id: str, options: RequestOptions | None = None
@@ -110,7 +110,7 @@ class AsyncAuditResource:
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
-    ) -> PaginatedResponse[AuditLogOutput]:
+    ) -> CursorPage[AuditLogOutput]:
         query: dict[str, str] = {}
         if actor_id is not None:
             query["actorId"] = actor_id
@@ -135,7 +135,7 @@ class AsyncAuditResource:
         raw = await self._client.request(
             "GET", f"/orgs/{org_id}/audit-logs", query=query, options=options
         )
-        return PaginatedResponse[AuditLogOutput].model_validate(raw)
+        return CursorPage[AuditLogOutput].model_validate(raw)
 
     async def get(
         self, *, org_id: str, log_id: str, options: RequestOptions | None = None

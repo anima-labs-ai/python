@@ -169,7 +169,11 @@ A2A_TASK_RAW: dict[str, Any] = {
     "id": "task_001",
     "agentId": "agent_001",
     "type": "ping",
-    "status": "SUBMITTED",
+    # lowercase, as the API actually sends it: the A2ATask.status column
+    # defaults to "submitted" and the handler writes "submitted". This fixture
+    # said "SUBMITTED" and the SDK enum agreed with it, so the pair validated
+    # each other while no real response could ever parse.
+    "status": "submitted",
     "input": {},
     "output": None,
     "artifacts": [],
