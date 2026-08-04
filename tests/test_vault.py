@@ -448,10 +448,17 @@ class TestIdentitiesAndAudit:
                     "id": "vi_1",
                     "agentId": "agent_001",
                     "orgId": "org_001",
+                    # The vault-backend identifiers and updatedAt are all
+                    # required by ProvisionVaultOutput; the model omitted them
+                    # (as node and go did too), so this fixture omitted them.
+                    "vaultUserId": "vu_1",
+                    "vaultOrgId": "vo_1",
+                    "collectionId": "col_1",
                     "status": "ACTIVE",
                     "credentialCount": 3,
                     "lastSyncAt": None,
                     "createdAt": "2025-01-01T00:00:00Z",
+                    "updatedAt": "2025-01-02T00:00:00Z",
                     "agentName": "Billing Agent",
                     "agentSlug": "billing",
                 }

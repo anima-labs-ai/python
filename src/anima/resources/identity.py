@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any
 
-from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
+from .._http import AsyncHTTPClient, HTTPClient, RequestOptions, unwrap_enum
 from .._types import (
     AgentCardOutput,
     DidDocument,
@@ -22,7 +21,7 @@ def _issue_body(
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "agentId": agent_id,
-        "type": credential_type.value if isinstance(credential_type, Enum) else credential_type,
+        "type": unwrap_enum(credential_type),
     }
     if claims is not None:
         body["claims"] = claims

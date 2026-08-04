@@ -255,6 +255,14 @@ API_ROUTES: frozenset[str] = frozenset(
         "POST /phone/sms-unsuppress",
         "GET /phone/sms/threads",
         "GET /phone/sms/threads/*",
+        # Provisioning requests -- how an agent asks its owner for a vault or
+        # a phone number, neither of which it can provision itself.
+        "GET /provisioning-requests",
+        "POST /provisioning-requests",
+        "GET /provisioning-requests/*",
+        "POST /provisioning-requests/*/approve",
+        "POST /provisioning-requests/*/cancel",
+        "POST /provisioning-requests/*/decline",
         "POST /registry/agents",
         "DELETE /registry/agents/*",
         "GET /registry/agents/*",

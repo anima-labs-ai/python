@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
-from .._types import PaginatedResponse, ScannerStatusOutput, SecurityEventOutput
+from .._types import (
+    PaginatedResponse,
+    ScannerStatusOutput,
+    SecurityEventOutput,
+    SecurityEventType,
+    SecuritySeverity,
+)
 
 
 class SecurityResource:
@@ -23,13 +31,13 @@ class SecurityResource:
         *,
         org_id: str,
         agent_id: str | None = None,
-        type: str | None = None,
-        severity: str | None = None,
+        type: SecurityEventType | str | None = None,
+        severity: SecuritySeverity | str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> PaginatedResponse[SecurityEventOutput]:
-        query: dict[str, str] = {"orgId": org_id}
+        query: dict[str, Any] = {"orgId": org_id}
         if agent_id is not None:
             query["agentId"] = agent_id
         if type is not None:
@@ -66,13 +74,13 @@ class AsyncSecurityResource:
         *,
         org_id: str,
         agent_id: str | None = None,
-        type: str | None = None,
-        severity: str | None = None,
+        type: SecurityEventType | str | None = None,
+        severity: SecuritySeverity | str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> PaginatedResponse[SecurityEventOutput]:
-        query: dict[str, str] = {"orgId": org_id}
+        query: dict[str, Any] = {"orgId": org_id}
         if agent_id is not None:
             query["agentId"] = agent_id
         if type is not None:
