@@ -1622,3 +1622,77 @@ class ConnectExtensionResult(BaseModel):
     policy: str
 
     model_config = {"populate_by_name": True}
+
+
+# ---------------------------------------------------------------------------
+# Provisioning requests
+#
+# An agent cannot provision its own vault or phone number -- both endpoints are
+# master-gated and an agent key never holds master authority. This is how it
+# asks its owner instead: the agent files a request, the owner approves in the
+# console, and the resource is created. The agent receives the result, never
+# the privilege.
+#
+# Distinct from a credential request, which collects a SECRET the agent must
+# never see. This collects a DECISION.
+# ---------------------------------------------------------------------------
+
+
+class ProvisionableResource(str, Enum):
+    VAULT = "VAULT"
+    PHONE_NUMBER = "PHONE_NUMBER"
+
+
+class ProvisioningRequestStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    DECLINED = "DECLINED"
+    EXPIRED = "EXPIRED"
+    CANCELLED = "CANCELLED"
+
+
+class ProvisioningOptions(BaseModel):
+    """Per-resource options. Only PHONE_NUMBER takes any."""
+
+    country_code: str | None = Field(None, alias="countryCode")
+    area_code: str | None = Field(None, alias="areaCode")
+
+    model_config = {"populate_by_name": True}
+
+
+class ProvisioningRequest(BaseModel):
+    """A provisioning request and its current state."""
+
+    request_id: str = Field(alias="requestId")
+    agent_id: str = Field(alias="agentId")
+    # So the owner knows who is asking, not just an opaque id.
+    agent_name: str = Field(alias="agentName")
+    resource: ProvisionableResource
+    reason: str
+    # Lazily expired -- a request past its TTL reads as EXPIRED here even
+    # though nothing wrote that transition.
+    status: ProvisioningRequestStatus
+    options: ProvisioningOptions | None = None
+    expires_at: str = Field(alias="expiresAt")
+    decided_at: str | None = Field(None, alias="decidedAt")
+    # The owner's note, typically why it was declined -- surfaced so a second
+    # attempt can address the objection instead of repeating the first.
+    decided_note: str | None = Field(None, alias="decidedNote")
+    # Vault or phone identity id once APPROVED; None otherwise.
+    provisioned_id: str | None = Field(None, alias="provisionedId")
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class CreateProvisioningRequestResult(ProvisioningRequest):
+    """What creating a request returns.
+
+    ``email_sent`` False does NOT mean the request failed -- it is live and
+    visible in the console either way -- but no human was told, so nothing
+    will happen until someone looks.
+    """
+
+    email_sent: bool = Field(alias="emailSent")
+
+    model_config = {"populate_by_name": True}

@@ -32,6 +32,10 @@ from .resources.inboxes import AsyncInboxesResource, InboxesResource
 from .resources.messages import AsyncMessagesResource, MessagesResource
 from .resources.organizations import AsyncOrganizationsResource, OrganizationsResource
 from .resources.phones import AsyncPhonesResource, PhonesResource
+from .resources.provisioning_requests import (
+    AsyncProvisioningRequestsResource,
+    ProvisioningRequestsResource,
+)
 from .resources.registry import AsyncRegistryResource, RegistryResource
 from .resources.security import AsyncSecurityResource, SecurityResource
 from .resources.vault import AsyncVaultResource, VaultResource
@@ -87,6 +91,7 @@ class Anima:
         self.messages = MessagesResource(self._http)
         self.organizations = OrganizationsResource(self._http)
         self.phones = PhonesResource(self._http)
+        self.provisioning_requests = ProvisioningRequestsResource(self._http)
         self.registry = RegistryResource(self._http)
         self.security = SecurityResource(self._http)
         self.vault = VaultResource(self._http)
@@ -188,6 +193,7 @@ class AsyncAnima:
         self.messages = AsyncMessagesResource(self._http)
         self.organizations = AsyncOrganizationsResource(self._http)
         self.phones = AsyncPhonesResource(self._http)
+        self.provisioning_requests = AsyncProvisioningRequestsResource(self._http)
         self.registry = AsyncRegistryResource(self._http)
         self.security = AsyncSecurityResource(self._http)
         self.vault = AsyncVaultResource(self._http)

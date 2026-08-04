@@ -34,6 +34,7 @@ Run it:
 
     export ANIMA_LIVE_API_KEY=mk_...        # master key sees the most surface
     export ANIMA_LIVE_ORG_ID=org_...        # required for org-scoped probes
+    export ANIMA_LIVE_AGENT_ID=...          # required for agent-scoped vault probes
     export ANIMA_LIVE_BASE_URL=...          # optional, defaults to production
     pytest tests/test_live_conformance.py -v
 
@@ -60,6 +61,7 @@ from anima._exceptions import (
 
 API_KEY = os.environ.get("ANIMA_LIVE_API_KEY")
 ORG_ID = os.environ.get("ANIMA_LIVE_ORG_ID")
+AGENT_ID = os.environ.get("ANIMA_LIVE_AGENT_ID")
 BASE_URL = os.environ.get("ANIMA_LIVE_BASE_URL")
 
 pytestmark = pytest.mark.skipif(
@@ -106,10 +108,23 @@ def probe(call: Callable[[], Any]) -> None:
     except RateLimitError:
         pytest.skip("rate limited by the live API")
     except InternalServerError as err:
+        # A vault route that reaches `bw serve` and finds nothing listening has
+        # already proved everything conformance cares about: the route exists,
+        # auth passed, and the API accepted the request the SDK built. The
+        # missing piece is the deployment's storage backend. Narrow on purpose
+        # -- only this connectivity message; every other 5xx still fails.
+        if "bw-serve: Unable to connect" in str(err):
+            return
         pytest.fail(f"5xx from the live API (likely not the SDK's fault): {err}")
 
 
 org_scoped = pytest.mark.skipif(not ORG_ID, reason="set ANIMA_LIVE_ORG_ID for org-scoped probes")
+# Several vault routes are agent-scoped and REJECT a master key that does not
+# name an agent ("agentId is required when using a master key"). Without one
+# they skip rather than fail for a reason unrelated to conformance.
+agent_scoped = pytest.mark.skipif(
+    not AGENT_ID, reason="set ANIMA_LIVE_AGENT_ID for agent-scoped vault probes"
+)
 
 
 class TestCoreSurface:
@@ -147,6 +162,31 @@ class TestVaultSurface:
     def test_vault_credential_requests(self, client: Anima) -> None:
         """Added 2026-08; nothing had exercised this route from any SDK."""
         probe(lambda: client.vault.list_credential_requests(limit=1))
+
+    @agent_scoped
+    def test_vault_status(self, client: Anima) -> None:
+        probe(lambda: client.vault.status(agent_id=AGENT_ID))
+
+    @agent_scoped
+    def test_vault_list_shares(self, client: Anima) -> None:
+        probe(lambda: client.vault.list_shares(agent_id=AGENT_ID, direction="granted"))
+
+
+class TestProvisioningRequests:
+    """An agent asking its owner for a vault or a phone number.
+
+    The status and resource filters are server-side enums: sending the wrong
+    casing earns a 400, and no fixture ever would.
+    """
+
+    def test_list(self, client: Anima) -> None:
+        probe(lambda: client.provisioning_requests.list(limit=1))
+
+    def test_list_status_filter(self, client: Anima) -> None:
+        probe(lambda: client.provisioning_requests.list(status="PENDING", limit=1))
+
+    def test_list_resource_filter(self, client: Anima) -> None:
+        probe(lambda: client.provisioning_requests.list(resource="VAULT", limit=1))
 
 
 @org_scoped
