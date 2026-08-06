@@ -307,9 +307,15 @@ class AsyncProvisioningRequestsResource:
         request_id: str,
         *,
         note: str | None = None,
+        grant: PermissionGrantKind | str | None = None,
         options: RequestOptions | None = None,
     ) -> ProvisioningRequest:
         """Approve and provision. Requires a master credential.
+
+        ``grant`` is REQUIRED for a GENERIC (permission) request and rejected
+        on a resource request. Approving a permission request without it fails
+        with a 422: there is no default, because "once" and "always" are very
+        different commitments and guessing between them is not the SDK's call.
 
         Provisioning happens before the request is marked APPROVED, so a
         failure (plan too low, no numbers available, provider down) leaves it
@@ -319,7 +325,7 @@ class AsyncProvisioningRequestsResource:
             await self._client.request(
                 "POST",
                 f"{_BASE}/{request_id}/approve",
-                _decide_body(request_id, note),
+                _decide_body(request_id, note, grant),
                 options=options,
             )
         )
