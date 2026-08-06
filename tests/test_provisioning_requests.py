@@ -28,3 +28,82 @@ def test_generic_rows_parse():
         }
     )
     assert row.resource is ProvisionableResource.GENERIC
+
+
+def test_permission_detail_parses():
+    """A GENERIC row carries what the agent was actually refused."""
+    from anima._types import ProvisioningRequest
+
+    row = ProvisioningRequest.model_validate(
+        {
+            "requestId": "req_1",
+            "agentId": "agent_1",
+            "agentName": "Agent",
+            "resource": "GENERIC",
+            "reason": "Agent attempted agent.delete, which requires master authority.",
+            "status": "PENDING",
+            "options": None,
+            "permission": {
+                "procedurePath": "agent.delete",
+                "readOnly": False,
+                "argumentPreview": {"agentId": "agent_abc"},
+            },
+            "expiresAt": "2026-01-01T00:00:00Z",
+            "decidedAt": None,
+            "decidedNote": None,
+            "provisionedId": None,
+            "createdAt": "2026-01-01T00:00:00Z",
+        }
+    )
+    assert row.permission is not None
+    assert row.permission.procedure_path == "agent.delete"
+    assert row.permission.read_only is False
+    assert row.permission.argument_preview == {"agentId": "agent_abc"}
+
+
+def test_resource_request_has_no_permission_detail():
+    """Null, not absent-and-broken, on a plain resource request."""
+    from anima._types import ProvisioningRequest
+
+    row = ProvisioningRequest.model_validate(
+        {
+            "requestId": "req_2",
+            "agentId": "agent_1",
+            "agentName": "Agent",
+            "resource": "VAULT",
+            "reason": "needs a vault",
+            "status": "PENDING",
+            "options": None,
+            "permission": None,
+            "expiresAt": "2026-01-01T00:00:00Z",
+            "decidedAt": None,
+            "decidedNote": None,
+            "provisionedId": None,
+            "createdAt": "2026-01-01T00:00:00Z",
+        }
+    )
+    assert row.permission is None
+
+
+def test_approve_sends_the_grant():
+    """Approving a permission request without a grant is a 422 server-side.
+
+    Before this, `approve` accepted only a note, so the Python SDK could not
+    approve a permission request at all — the one thing an owner most needs to
+    do with one.
+    """
+    from anima._types import PermissionGrantKind
+    from anima.resources.provisioning_requests import _decide_body
+
+    assert _decide_body("req_1", None, PermissionGrantKind.ALWAYS) == {
+        "requestId": "req_1",
+        "grant": "always",
+    }
+    # A plain string is accepted too, so callers are not forced through the enum.
+    assert _decide_body("req_1", "ok", "once") == {
+        "requestId": "req_1",
+        "note": "ok",
+        "grant": "once",
+    }
+    # Omitted entirely for a resource request, which the API rejects a grant on.
+    assert _decide_body("req_1", None) == {"requestId": "req_1"}

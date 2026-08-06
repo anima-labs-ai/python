@@ -1719,6 +1719,32 @@ class ProvisioningOptions(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class PermissionGrantKind(str, Enum):
+    """How approving a permission request grants it.
+
+    ``ONCE`` binds the grant to the exact arguments the owner read and is spent
+    after one successful call. ``ALWAYS`` allows the procedure indefinitely and
+    does not expire. ``READS`` allows every read-only procedure at once
+    ("Bypass"); the API refuses it for a procedure that is not read-only.
+    """
+
+    ONCE = "once"
+    ALWAYS = "always"
+    READS = "reads"
+
+
+class PermissionRequestDetail(BaseModel):
+    """What a GENERIC request is asking for -- the operation an agent was refused."""
+
+    procedure_path: str = Field(alias="procedurePath")
+    # Derived from the contract server-side so a client never re-derives it,
+    # and it is what makes a READS grant applicable.
+    read_only: bool = Field(alias="readOnly")
+    # None -- rather than empty -- when the input was not an object, so
+    # "nothing to show" stays distinguishable from "shown and empty".
+    argument_preview: dict[str, str] | None = Field(None, alias="argumentPreview")
+
+
 class ProvisioningRequest(BaseModel):
     """A provisioning request and its current state."""
 
@@ -1737,7 +1763,10 @@ class ProvisioningRequest(BaseModel):
     # The owner's note, typically why it was declined -- surfaced so a second
     # attempt can address the objection instead of repeating the first.
     decided_note: str | None = Field(None, alias="decidedNote")
-    # Vault or phone identity id once APPROVED; None otherwise.
+    # Present only on a GENERIC request; None on a resource request.
+    permission: PermissionRequestDetail | None = None
+    # Vault or phone identity id once APPROVED; for GENERIC, the id of the
+    # permission the approval granted. None otherwise.
     provisioned_id: str | None = Field(None, alias="provisionedId")
     created_at: str = Field(alias="createdAt")
 

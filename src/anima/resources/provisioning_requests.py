@@ -19,6 +19,7 @@ from .._pagination import AsyncPageIterator, SyncPageIterator
 from .._types import (
     CreateProvisioningRequestResult,
     PaginatedResponse,
+    PermissionGrantKind,
     ProvisionableResource,
     ProvisioningRequest,
     ProvisioningRequestStatus,
@@ -72,10 +73,16 @@ def _create_body(
     return body
 
 
-def _decide_body(request_id: str, note: str | None) -> dict[str, Any]:
+def _decide_body(
+    request_id: str,
+    note: str | None,
+    grant: PermissionGrantKind | str | None = None,
+) -> dict[str, Any]:
     body: dict[str, Any] = {"requestId": request_id}
     if note is not None:
         body["note"] = note
+    if grant is not None:
+        body["grant"] = grant.value if isinstance(grant, PermissionGrantKind) else grant
     return body
 
 
@@ -161,9 +168,15 @@ class ProvisioningRequestsResource:
         request_id: str,
         *,
         note: str | None = None,
+        grant: PermissionGrantKind | str | None = None,
         options: RequestOptions | None = None,
     ) -> ProvisioningRequest:
         """Approve and provision. Requires a master credential.
+
+        ``grant`` is REQUIRED for a GENERIC (permission) request and rejected
+        on a resource request. Approving a permission request without it fails
+        with a 422: there is no default, because "once" and "always" are very
+        different commitments and guessing between them is not the SDK's call.
 
         Provisioning happens before the request is marked APPROVED, so a
         failure (plan too low, no numbers available, provider down) leaves it
@@ -173,7 +186,7 @@ class ProvisioningRequestsResource:
             self._client.request(
                 "POST",
                 f"{_BASE}/{request_id}/approve",
-                _decide_body(request_id, note),
+                _decide_body(request_id, note, grant),
                 options=options,
             )
         )
