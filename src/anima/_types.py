@@ -1694,6 +1694,12 @@ class ConnectExtensionResult(BaseModel):
 class ProvisionableResource(str, Enum):
     VAULT = "VAULT"
     PHONE_NUMBER = "PHONE_NUMBER"
+    # Appears on RESPONSES and as a list filter, never on create: a GENERIC row
+    # records a master-gated procedure an agent actually attempted, and is
+    # written only by the server, which knows the real procedure and arguments.
+    # The API refuses a create naming it. Without this member, listing raised a
+    # ValidationError for any org whose agent had ever hit a master gate.
+    GENERIC = "GENERIC"
 
 
 class ProvisioningRequestStatus(str, Enum):
