@@ -73,14 +73,11 @@ class VoiceConnection:
         self,
         to: str,
         *,
-        tier: str | None = None,
         greeting: str | None = None,
         from_number: str | None = None,
     ) -> None:
         """Create an outbound call."""
         data: dict[str, Any] = {"to": to}
-        if tier:
-            data["tier"] = tier
         if greeting:
             data["greeting"] = greeting
         if from_number:

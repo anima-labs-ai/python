@@ -1579,11 +1579,6 @@ class QuarantineOutput(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class VoiceTier(str, Enum):
-    BASIC = "basic"
-    PREMIUM = "premium"
-
-
 class VoiceGender(str, Enum):
     MALE = "male"
     FEMALE = "female"
@@ -1619,7 +1614,6 @@ class CallOutput(BaseModel):
     agent_id: str = Field(alias="agentId")
     phone_identity_id: str = Field(alias="phoneIdentityId")
     direction: CallDirection
-    tier: VoiceTier
     state: str
     from_number: str = Field(alias="from")
     to: str
@@ -1638,7 +1632,6 @@ class CreateCallOutput(BaseModel):
     state: str
     from_number: str = Field(alias="from")
     to: str
-    tier: str
     direction: str
 
     model_config = {"populate_by_name": True}
