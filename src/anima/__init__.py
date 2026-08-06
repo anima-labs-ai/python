@@ -114,7 +114,6 @@ from ._types import (
     VerifyCredentialOutput,
     Voice,
     VoiceGender,
-    VoiceTier,
     WebhookAuthBasic,
     WebhookAuthBearer,
     WebhookAuthConfig,
@@ -175,7 +174,6 @@ __all__ = [
     "VerificationMethod",
     "CallDirection",
     "VoiceGender",
-    "VoiceTier",
     "WebhookEventType",
     # Events (WebSocket)
     "AnimaEvent",

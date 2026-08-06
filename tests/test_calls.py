@@ -21,7 +21,6 @@ CALL_RAW: dict[str, Any] = {
     "agentId": "agent_001",
     "phoneIdentityId": "phi_001",
     "direction": "OUTBOUND",
-    "tier": "basic",
     "state": "completed",
     "from": "+15550001234",
     "to": "+15559876543",
@@ -43,7 +42,6 @@ CREATE_CALL_RAW: dict[str, Any] = {
     "state": "initiated",
     "from": "+15550001234",
     "to": "+15559876543",
-    "tier": "basic",
     "direction": "OUTBOUND",
 }
 
@@ -102,7 +100,6 @@ class TestCallsList:
         assert call.id == "call_001"
         assert call.agent_id == "agent_001"
         assert call.direction.value == "OUTBOUND"
-        assert call.tier.value == "basic"
         assert call.from_number == "+15550001234"
         assert call.duration_seconds == 175
 
@@ -156,7 +153,6 @@ class TestCallsCreate:
         resource.create(
             to="+15559876543",
             agent_id="agent_001",
-            tier="premium",
             greeting="Hello!",
             from_number="+15550001234",
         )
@@ -164,7 +160,6 @@ class TestCallsCreate:
         call_body = mock_http.request.call_args[0][2]
         assert call_body["to"] == "+15559876543"
         assert call_body["agentId"] == "agent_001"
-        assert call_body["tier"] == "premium"
         assert call_body["greeting"] == "Hello!"
         assert call_body["fromNumber"] == "+15550001234"
 
@@ -175,7 +170,6 @@ class TestCallsCreate:
 
         call_body = mock_http.request.call_args[0][2]
         assert "agentId" not in call_body
-        assert "tier" not in call_body
         assert "greeting" not in call_body
         assert "fromNumber" not in call_body
 
@@ -263,3 +257,44 @@ class TestVoiceConnectionUnknownFrames:
             "call.some.future.frame",
             "call.transcription",
         ]
+
+
+class TestFixturesMatchTheContract:
+    """The fixtures above must be what the API sends, not what the models want.
+
+    `tier` survived in `CallOutput` and `CreateCallOutput` as a REQUIRED field
+    the API has never returned, and every test here passed the whole time —
+    because `CALL_RAW` was written to satisfy the model rather than to mirror
+    the contract. A fixture derived from the type it feeds cannot fail. Once the
+    fixtures told the truth, eight tests broke at once with
+    `ValidationError: tier Field required`, which is what a Python caller got on
+    every `calls.list()`, `calls.get()` and `calls.create()`.
+
+    The field lists are spelled out on purpose, from
+    `packages/contracts/src/schemas/voice.ts` — deriving them from the models
+    would rebuild the same circle.
+    """
+
+    LIVE_CALL_FIELDS = {
+        "id",
+        "agentId",
+        "phoneIdentityId",
+        "direction",
+        "state",
+        "from",
+        "to",
+        "startedAt",
+        "answeredAt",
+        "endedAt",
+        "endReason",
+        "durationSeconds",
+        "createdAt",
+    }
+
+    LIVE_CREATE_CALL_FIELDS = {"callId", "state", "from", "to", "direction"}
+
+    def test_call_fixture_is_the_contract_shape(self) -> None:
+        assert set(CALL_RAW) == self.LIVE_CALL_FIELDS
+
+    def test_create_call_fixture_is_the_contract_shape(self) -> None:
+        assert set(CREATE_CALL_RAW) == self.LIVE_CREATE_CALL_FIELDS

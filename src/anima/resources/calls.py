@@ -73,7 +73,6 @@ class CallsResource:
         *,
         to: str,
         agent_id: str | None = None,
-        tier: str | None = None,
         greeting: str | None = None,
         from_number: str | None = None,
         options: RequestOptions | None = None,
@@ -82,8 +81,6 @@ class CallsResource:
         body: dict[str, Any] = {"to": to}
         if agent_id is not None:
             body["agentId"] = agent_id
-        if tier is not None:
-            body["tier"] = tier
         if greeting is not None:
             body["greeting"] = greeting
         if from_number is not None:
@@ -159,7 +156,6 @@ class AsyncCallsResource:
         *,
         to: str,
         agent_id: str | None = None,
-        tier: str | None = None,
         greeting: str | None = None,
         from_number: str | None = None,
         options: RequestOptions | None = None,
@@ -168,8 +164,6 @@ class AsyncCallsResource:
         body: dict[str, Any] = {"to": to}
         if agent_id is not None:
             body["agentId"] = agent_id
-        if tier is not None:
-            body["tier"] = tier
         if greeting is not None:
             body["greeting"] = greeting
         if from_number is not None:
