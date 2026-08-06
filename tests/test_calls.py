@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
 
 from anima._types import CallOutput, CallTranscript, CreateCallOutput
 from anima._voice_connection import VoiceConnection
@@ -259,8 +260,13 @@ class TestVoiceConnectionUnknownFrames:
         ]
 
 
+def wire_fields(model: type[BaseModel]) -> set[str]:
+    """The JSON names a model serializes — its alias where it has one."""
+    return {info.alias or name for name, info in model.model_fields.items()}
+
+
 class TestFixturesMatchTheContract:
-    """The fixtures above must be what the API sends, not what the models want.
+    """The fixtures AND the models must be what the API sends.
 
     `tier` survived in `CallOutput` and `CreateCallOutput` as a REQUIRED field
     the API has never returned, and every test here passed the whole time —
@@ -271,8 +277,14 @@ class TestFixturesMatchTheContract:
     every `calls.list()`, `calls.get()` and `calls.create()`.
 
     The field lists are spelled out on purpose, from
-    `packages/contracts/src/schemas/voice.ts` — deriving them from the models
-    would rebuild the same circle.
+    `packages/contracts/src/schemas/voice.ts`. Deriving the EXPECTED list from
+    the models is what would rebuild the circle; checking the models AGAINST a
+    spelled-out list is the opposite, and is what the node and Go SDKs do
+    (`Equals<keyof Call, ...>` and a reflect-over-json-tags check). Without the
+    model half, only a REQUIRED phantom field is caught — the fixture stops
+    parsing. An OPTIONAL one the API never sends would sit there indefinitely:
+    fixture unchanged, every test green, callers reading `None` and believing
+    it means the API said nothing.
     """
 
     LIVE_CALL_FIELDS = {
@@ -298,3 +310,9 @@ class TestFixturesMatchTheContract:
 
     def test_create_call_fixture_is_the_contract_shape(self) -> None:
         assert set(CREATE_CALL_RAW) == self.LIVE_CREATE_CALL_FIELDS
+
+    def test_call_model_is_the_contract_shape(self) -> None:
+        assert wire_fields(CallOutput) == self.LIVE_CALL_FIELDS
+
+    def test_create_call_model_is_the_contract_shape(self) -> None:
+        assert wire_fields(CreateCallOutput) == self.LIVE_CREATE_CALL_FIELDS
