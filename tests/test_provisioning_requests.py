@@ -1,5 +1,3 @@
-
-
 def test_generic_rows_parse():
     """A GENERIC row must deserialize.
 
