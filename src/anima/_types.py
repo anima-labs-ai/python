@@ -34,10 +34,6 @@ class AgentStatus(str, Enum):
     DELETED = "DELETED"
 
 
-class PhoneProvider(str, Enum):
-    TELNYX = "TELNYX"
-
-
 class TenDlcStatus(str, Enum):
     PENDING = "PENDING"
     REGISTERED = "REGISTERED"
@@ -300,11 +296,14 @@ class PhoneCapabilities(BaseModel):
 class PhoneIdentityOutput(BaseModel):
     id: str
     phone_number: str = Field(alias="phoneNumber")
-    provider: PhoneProvider
     provider_id: str | None = Field(None, alias="providerId")
     capabilities: PhoneCapabilities
     ten_dlc_status: TenDlcStatus = Field(alias="tenDlcStatus")
     is_primary: bool = Field(alias="isPrimary")
+    #: Voice this number answers with, from the voice catalog. ``None`` falls
+    #: back to the agent's voice, then the system default — so one agent's
+    #: support line and sales line can sound different.
+    voice_id: str | None = Field(None, alias="voiceId")
     created_at: str = Field(alias="createdAt")
 
     model_config = {"populate_by_name": True}
@@ -558,7 +557,6 @@ class ValidateAddressOutput(BaseModel):
 class PhoneProvisionOutput(BaseModel):
     id: str
     phone_number: str = Field(alias="phoneNumber")
-    provider: PhoneProvider
     provider_id: str | None = Field(None, alias="providerId")
     capabilities: PhoneCapabilities
     ten_dlc_status: TenDlcStatus = Field(alias="tenDlcStatus")
