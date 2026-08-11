@@ -47,13 +47,13 @@ def client() -> Anima:
 
 
 @pytest.mark.parametrize(("resource", "method", "expected"), UNWRAPPED_RETURNS)
-def test_envelope_is_unwrapped(
-    client: Anima, resource: str, method: str, expected: str
-) -> None:
+def test_envelope_is_unwrapped(client: Anima, resource: str, method: str, expected: str) -> None:
     fn = getattr(type(getattr(client, resource)), method)
     annotation = inspect.signature(fn).return_annotation
-    rendered = annotation if isinstance(annotation, str) else getattr(
-        annotation, "__name__", str(annotation)
+    rendered = (
+        annotation
+        if isinstance(annotation, str)
+        else getattr(annotation, "__name__", str(annotation))
     )
     assert rendered == expected, (
         f"client.{resource}.{method} returns {rendered!r}, not {expected!r}. "
@@ -63,9 +63,7 @@ def test_envelope_is_unwrapped(
 
 
 @pytest.mark.parametrize(("resource", "method"), PAGINATED_RETURNS)
-def test_paginated_resources_return_an_iterator(
-    client: Anima, resource: str, method: str
-) -> None:
+def test_paginated_resources_return_an_iterator(client: Anima, resource: str, method: str) -> None:
     fn = getattr(type(getattr(client, resource)), method)
     annotation = str(inspect.signature(fn).return_annotation)
     assert "SyncPageIterator" in annotation, (
