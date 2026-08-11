@@ -42,6 +42,17 @@ jobs:
           fi
           echo "Clean: no rebrand-mangle tokens."
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Lockfile is in sync with pyproject
+        # uv.lock has trailed pyproject.toml by exactly one release since
+        # 0.9.0: the release commit regenerates the lock and *then* bumps the
+        # version, so the lock records the previous one. It does not break CI
+        # (which installs with pip), which is why it went unnoticed — it just
+        # dirties the tree for every contributor who runs `uv run`.
+        run: uv lock --check
+
       - name: Lint with ruff
         run: ruff check .
 
