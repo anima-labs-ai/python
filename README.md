@@ -57,6 +57,29 @@ async def main():
 asyncio.run(main())
 ```
 
+## Response shapes
+
+This SDK **unwraps single-key response envelopes**. The API returns collections
+as `{"items": [...]}` and generated values as `{"password": "..."}`; the methods
+here hand back the payload directly:
+
+```python
+credentials = client.vault.list_credentials(agent_id=...)   # list[VaultCredential]
+password = client.vault.generate_password(length=24)        # str
+```
+
+Paginated resources are the one exception, because the cursor has to travel
+with the page: `client.messages.list(...)` returns a `SyncPageIterator`, whose
+`.items` is the first page and which iterates every page when consumed
+directly.
+
+> **Porting from the JavaScript SDK?** `@anima-labs/sdk` makes the opposite
+> choice and passes envelopes through — `listCredentials()` resolves to
+> `{ items }` and `generatePassword()` to `{ password }`. Both SDKs are
+> internally consistent; they are not consistent with each other. Code
+> translated line-by-line between them will read the wrong shape, and in
+> JavaScript that surfaces as `undefined` rather than an error.
+
 ## Resources
 
 Both `Anima` (sync) and `AsyncAnima` have identical resource interfaces. All async methods use `await`.
