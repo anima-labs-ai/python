@@ -114,15 +114,36 @@ class CredentialRequestStatus(str, Enum):
 
 
 class WebhookEventType(str, Enum):
+    """Every event the platform emits.
+
+    Mirrors the table published at docs.useanima.sh/webhooks;
+    ``GET /webhooks/event-types`` returns the same list from the live API.
+
+    Subscribing to a name that is not on this list is accepted by the API and
+    then never fires, so this enum is the only thing standing between a typo
+    and an endpoint that silently receives nothing.
+    """
+
     MESSAGE_RECEIVED = "message.received"
+    #: Inbound mail detected as automated. Fires *instead of* MESSAGE_RECEIVED.
+    MESSAGE_RECEIVED_AUTO = "message.received.auto"
     MESSAGE_SENT = "message.sent"
     MESSAGE_FAILED = "message.failed"
     MESSAGE_BOUNCED = "message.bounced"
+    MESSAGE_LOOP_DETECTED = "message.loop_detected"
     AGENT_CREATED = "agent.created"
     AGENT_UPDATED = "agent.updated"
     AGENT_DELETED = "agent.deleted"
     PHONE_PROVISIONED = "phone.provisioned"
     PHONE_RELEASED = "phone.released"
+    CALL_STARTED = "call.started"
+    CALL_ENDED = "call.ended"
+    CALL_SUMMARY_READY = "call.summary.ready"
+    CALL_SCORE_READY = "call.score.ready"
+    CALL_SECURITY_ALERT = "call.security.alert"
+    CALL_SECURITY_SCAN_READY = "call.security.scan.ready"
+    A2A_TASK_RECEIVED = "a2a.task.received"
+    VAULT_CREDENTIAL_REFRESH_FAILED = "vault.credential.refresh_failed"
 
 
 class SecurityEventType(str, Enum):
@@ -873,14 +894,33 @@ class WebhookDeliveryOutput(BaseModel):
 
 
 class WebhookEvent(BaseModel):
-    """Parsed webhook event payload."""
+    """A delivered webhook, exactly as it arrives on the wire.
 
-    id: str | None = None
-    type: WebhookEventType
-    created_at: str | None = Field(None, alias="createdAt")
-    data: dict[str, Any]
+    The payload is **flat**. There is no ``data`` envelope: ``event`` and
+    ``occurred_at`` sit alongside the event's own fields, so a
+    ``message.received`` delivery also carries ``messageId``, ``agentId``,
+    ``channel``, ``direction``, ``fromAddress``, ``toAddress``, ``threadId``
+    and — for email — ``subject`` and ``spam``.
 
-    model_config = {"populate_by_name": True}
+    Those extra fields keep their wire names, so they are camelCase::
+
+        event.event        # "message.received"
+        event.messageId    # "cme9x2k1p0001s601abcdefgh"
+        event.model_extra  # every event-specific field as a dict
+
+    The message **body is not included**; fetch ``GET /v1/messages/{id}`` when
+    you need content.
+
+    ``event`` is typed ``WebhookEventType | str`` on purpose. A delivery for an
+    event this SDK version predates parses as a plain string rather than
+    raising, so a new event type on the platform cannot break a deployed
+    consumer.
+    """
+
+    event: WebhookEventType | str
+    occurred_at: str = Field(alias="occurredAt")
+
+    model_config = {"populate_by_name": True, "extra": "allow"}
 
 
 # ---------------------------------------------------------------------------

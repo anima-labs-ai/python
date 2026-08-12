@@ -19,7 +19,8 @@ def fastapi_webhook_dependency(secret: str) -> Callable[..., Any]:
 
         @app.post("/webhooks")
         async def handle(event: WebhookEvent = Depends(webhook_dep)):
-            print(event.type, event.data)
+            # The payload is flat — no `data` envelope to unwrap.
+            print(event.event, event.occurred_at)
     """
 
     async def dependency(request: Any) -> WebhookEvent:
@@ -27,15 +28,22 @@ def fastapi_webhook_dependency(secret: str) -> Callable[..., Any]:
         from starlette.requests import Request as StarletteRequest
 
         req: StarletteRequest = request
+        # await req.body() is the raw bytes, which is what the signature covers.
         body = await req.body()
-        signature = req.headers.get("anima-signature") or req.headers.get("x-anima-signature")
-        if not signature:
+        signature = req.headers.get("x-anima-signature")
+        # Both headers are required: the timestamp is part of the signed content,
+        # so a receiver that reads only the signature cannot recompute the MAC.
+        timestamp = req.headers.get("x-anima-timestamp")
+        if not signature or not timestamp:
             # Import here to avoid hard dependency
             from starlette.exceptions import HTTPException
 
-            raise HTTPException(status_code=400, detail="Missing webhook signature header")
+            raise HTTPException(
+                status_code=400,
+                detail="Missing webhook signature or timestamp header",
+            )
 
-        return construct_webhook_event(body, signature, secret)
+        return construct_webhook_event(body, signature, timestamp, secret)
 
     # Annotate for FastAPI's dependency injection
     try:

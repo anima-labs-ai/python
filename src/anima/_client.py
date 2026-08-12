@@ -130,22 +130,29 @@ class Anima:
     @staticmethod
     def verify_webhook_signature(
         payload: str | bytes,
-        signature_header: str,
+        signature: str,
+        timestamp: str,
         secret: str,
         tolerance_seconds: int = 300,
     ) -> bool:
-        """Verify an incoming webhook signature."""
-        return verify_webhook_signature(payload, signature_header, secret, tolerance_seconds)
+        """Verify an incoming webhook signature.
+
+        Pass the raw body, the ``X-Anima-Signature`` header and the
+        ``X-Anima-Timestamp`` header. Both headers are required — the timestamp
+        is part of the signed content.
+        """
+        return verify_webhook_signature(payload, signature, timestamp, secret, tolerance_seconds)
 
     @staticmethod
     def construct_webhook_event(
         payload: str | bytes,
-        signature_header: str,
+        signature: str,
+        timestamp: str,
         secret: str,
         tolerance_seconds: int = 300,
     ) -> WebhookEvent:
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
-        return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)
+        return construct_webhook_event(payload, signature, timestamp, secret, tolerance_seconds)
 
 
 class AsyncAnima:
@@ -232,19 +239,26 @@ class AsyncAnima:
     @staticmethod
     def verify_webhook_signature(
         payload: str | bytes,
-        signature_header: str,
+        signature: str,
+        timestamp: str,
         secret: str,
         tolerance_seconds: int = 300,
     ) -> bool:
-        """Verify an incoming webhook signature."""
-        return verify_webhook_signature(payload, signature_header, secret, tolerance_seconds)
+        """Verify an incoming webhook signature.
+
+        Pass the raw body, the ``X-Anima-Signature`` header and the
+        ``X-Anima-Timestamp`` header. Both headers are required — the timestamp
+        is part of the signed content.
+        """
+        return verify_webhook_signature(payload, signature, timestamp, secret, tolerance_seconds)
 
     @staticmethod
     def construct_webhook_event(
         payload: str | bytes,
-        signature_header: str,
+        signature: str,
+        timestamp: str,
         secret: str,
         tolerance_seconds: int = 300,
     ) -> WebhookEvent:
         """Verify and parse an incoming webhook payload into a WebhookEvent."""
-        return construct_webhook_event(payload, signature_header, secret, tolerance_seconds)
+        return construct_webhook_event(payload, signature, timestamp, secret, tolerance_seconds)

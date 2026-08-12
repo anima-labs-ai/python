@@ -1,11 +1,31 @@
-"""Tests for webhook signature verification and event construction."""
+"""Tests for webhook signature verification and event construction.
+
+These exist because the previous ones passed while the code could not process a
+single real delivery.
+
+The old fixture built a Stripe-style ``t=<unix>,v1=<hex>`` header and a
+``{"type": ..., "data": {...}}`` payload — both invented to match the
+implementation. Nothing compared either against what the platform sends, so the
+suite agreed with the bug and stayed green.
+
+So ``_sign`` below is written from the platform's published scheme rather than
+from this SDK's parser, and the payload is the real ``message.received`` shape.
+Sources, all of which agree with each other:
+
+  - apps/api/src/services/webhook-signature.ts — buildWebhookSignatureHeaders
+  - apps/api/src/workers/inbound-email.ts      — the emitted payload
+  - docs.useanima.sh/webhooks                  — the customer-facing contract
+
+``TestPreFixSchemeRejected`` at the bottom holds the regression guards: if
+someone reintroduces the old header or the old envelope, those fail.
+"""
 
 from __future__ import annotations
 
 import hashlib
 import hmac
 import json
-import time
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 import pytest
@@ -17,159 +37,197 @@ from anima._types import (
     WebhookAuthCustomHeader,
     WebhookAuthNone,
     WebhookEvent,
+    WebhookEventType,
     WebhookOutput,
 )
-from anima._webhooks import (
-    _parse_signature_header,
-    construct_webhook_event,
-    verify_webhook_signature,
-)
+from anima._webhooks import construct_webhook_event, verify_webhook_signature
 from anima.resources.webhooks import WebhooksResource, _serialize_auth_config
 
 SECRET = "whsec_test_secret_123"
+SIGNED_AT = "2026-07-28T12:00:00.000Z"
+SIGNED_AT_MS = datetime(2026, 7, 28, 12, 0, 0, tzinfo=timezone.utc).timestamp() * 1000
+
+#: A real ``message.received`` delivery: flat, no ``data`` envelope.
+PAYLOAD = json.dumps(
+    {
+        "event": "message.received",
+        "occurredAt": SIGNED_AT,
+        "messageId": "cme9x2k1p0001s601abcdefgh",
+        "agentId": "cme9x2k1p0000s601ijklmnop",
+        "channel": "email",
+        "direction": "INBOUND",
+        "fromAddress": "user@example.com",
+        "toAddress": "support-agent@agents.useanima.sh",
+        "threadId": "cme9x2k1p0002s601qrstuvwx",
+        "subject": "Hello",
+        "spam": False,
+    }
+)
 
 
-def _sign(payload: str, timestamp: int) -> str:
-    """Create a valid signature header for testing."""
-    signed_payload = f"{timestamp}.{payload}"
-    sig = hmac.new(
-        SECRET.encode("utf-8"),
-        signed_payload.encode("utf-8"),
+def _sign(body: str, timestamp: str = SIGNED_AT, secret: str = SECRET) -> str:
+    """Reproduce the platform's signer: HMAC-SHA256 over ``{iso}.{body}``, hex."""
+    digest = hmac.new(
+        secret.encode("utf-8"),
+        f"{timestamp}.{body}".encode(),
         hashlib.sha256,
     ).hexdigest()
-    return f"t={timestamp},v1={sig}"
-
-
-class TestParseSignatureHeader:
-    def test_valid_header(self) -> None:
-        ts, sig = _parse_signature_header("t=1234567890,v1=abcdef0123456789")
-        assert ts == 1234567890
-        assert sig == "abcdef0123456789"
-
-    def test_missing_timestamp(self) -> None:
-        with pytest.raises(ValidationError, match="Invalid webhook signature header"):
-            _parse_signature_header("v1=abcdef")
-
-    def test_missing_signature(self) -> None:
-        with pytest.raises(ValidationError, match="Invalid webhook signature header"):
-            _parse_signature_header("t=1234567890")
-
-    def test_empty_header(self) -> None:
-        with pytest.raises(ValidationError):
-            _parse_signature_header("")
-
-    def test_extra_fields_ignored(self) -> None:
-        ts, sig = _parse_signature_header("t=123,v1=abc,v2=xyz,extra=yes")
-        assert ts == 123
-        assert sig == "abc"
+    return f"v1={digest}"
 
 
 class TestVerifyWebhookSignature:
-    def test_valid_signature(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        # Use now= to set the "current" time in ms
-        now_ms = ts * 1000.0
-        assert verify_webhook_signature(payload, header, SECRET, now=now_ms) is True
-
-    def test_valid_signature_bytes_payload(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        now_ms = ts * 1000.0
-        assert verify_webhook_signature(payload.encode("utf-8"), header, SECRET, now=now_ms) is True
-
-    def test_invalid_signature(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time())
-        header = f"t={ts},v1=00000000000000000000000000000000"
-        now_ms = ts * 1000.0
-        assert verify_webhook_signature(payload, header, SECRET, now=now_ms) is False
-
-    def test_expired_timestamp(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time()) - 600  # 10 minutes ago
-        header = _sign(payload, ts)
-        now_ms = int(time.time()) * 1000.0
+    def test_accepts_a_genuine_delivery(self) -> None:
         assert (
-            verify_webhook_signature(payload, header, SECRET, tolerance_seconds=300, now=now_ms)
+            verify_webhook_signature(PAYLOAD, _sign(PAYLOAD), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
+            is True
+        )
+
+    def test_accepts_a_bare_hex_digest(self) -> None:
+        bare = _sign(PAYLOAD).removeprefix("v1=")
+        assert verify_webhook_signature(PAYLOAD, bare, SIGNED_AT, SECRET, now=SIGNED_AT_MS) is True
+
+    def test_accepts_a_bytes_body(self) -> None:
+        assert (
+            verify_webhook_signature(
+                PAYLOAD.encode("utf-8"), _sign(PAYLOAD), SIGNED_AT, SECRET, now=SIGNED_AT_MS
+            )
+            is True
+        )
+
+    def test_rejects_a_tampered_body(self) -> None:
+        tampered = PAYLOAD.replace("user@example.com", "attacker@evil.com")
+        assert (
+            verify_webhook_signature(tampered, _sign(PAYLOAD), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
             is False
         )
 
-    def test_wrong_secret(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        now_ms = ts * 1000.0
-        assert verify_webhook_signature(payload, header, "wrong_secret", now=now_ms) is False
+    def test_rejects_the_wrong_secret(self) -> None:
+        assert (
+            verify_webhook_signature(
+                PAYLOAD, _sign(PAYLOAD), SIGNED_AT, "whsec_other", now=SIGNED_AT_MS
+            )
+            is False
+        )
 
-    def test_tampered_payload(self) -> None:
-        payload = '{"type":"agent.created","data":{"id":"agent_001"}}'
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        tampered = '{"type":"agent.created","data":{"id":"agent_002"}}'
-        now_ms = ts * 1000.0
-        assert verify_webhook_signature(tampered, header, SECRET, now=now_ms) is False
+    def test_rejects_outside_the_freshness_window(self) -> None:
+        assert (
+            verify_webhook_signature(
+                PAYLOAD,
+                _sign(PAYLOAD),
+                SIGNED_AT,
+                SECRET,
+                tolerance_seconds=300,
+                now=SIGNED_AT_MS + 301_000,
+            )
+            is False
+        )
+
+    def test_rejects_a_replay_whose_timestamp_was_edited(self) -> None:
+        # The captured signature is valid only for the timestamp it signed, so
+        # moving the clock forward breaks the MAC, not just the freshness check.
+        replayed_at = "2026-07-28T13:00:00.000Z"
+        assert (
+            verify_webhook_signature(
+                PAYLOAD,
+                _sign(PAYLOAD),
+                replayed_at,
+                SECRET,
+                now=SIGNED_AT_MS + 3_600_000,
+            )
+            is False
+        )
+
+    def test_rejects_an_unparseable_timestamp(self) -> None:
+        assert (
+            verify_webhook_signature(
+                PAYLOAD, _sign(PAYLOAD, "not-a-date"), "not-a-date", SECRET, now=SIGNED_AT_MS
+            )
+            is False
+        )
+
+    def test_rejects_a_non_hex_signature(self) -> None:
+        assert (
+            verify_webhook_signature(PAYLOAD, "v1=not-hex", SIGNED_AT, SECRET, now=SIGNED_AT_MS)
+            is False
+        )
 
 
 class TestConstructWebhookEvent:
-    def _make_signed_event(
-        self, event_type: str = "agent.created", data: dict | None = None
-    ) -> tuple[str, str, float]:
-        """Return (payload_str, signature_header, now_ms)."""
-        if data is None:
-            data = {"id": "agent_001"}
-        payload = json.dumps(
-            {
-                "id": "evt_001",
-                "type": event_type,
-                "createdAt": "2025-01-01T00:00:00Z",
-                "data": data,
-            }
+    def test_returns_the_delivery_flat(self) -> None:
+        event = construct_webhook_event(
+            PAYLOAD, _sign(PAYLOAD), SIGNED_AT, SECRET, now=SIGNED_AT_MS
         )
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        return payload, header, ts * 1000.0
-
-    def test_valid_event(self) -> None:
-        payload, header, now_ms = self._make_signed_event()
-        event = construct_webhook_event(payload, header, SECRET, now=now_ms)
 
         assert isinstance(event, WebhookEvent)
-        assert event.type.value == "agent.created"
-        assert event.data == {"id": "agent_001"}
-        assert event.id == "evt_001"
-        assert event.created_at == "2025-01-01T00:00:00Z"
+        assert event.event == WebhookEventType.MESSAGE_RECEIVED
+        assert event.occurred_at == SIGNED_AT
+        # Event-specific fields keep their wire names, alongside `event`.
+        assert event.model_extra is not None
+        assert event.model_extra["messageId"] == "cme9x2k1p0001s601abcdefgh"
+        assert event.model_extra["channel"] == "email"
+        assert event.model_extra["spam"] is False
+        assert "data" not in event.model_extra
 
-    def test_invalid_signature_raises(self) -> None:
-        payload = json.dumps({"type": "agent.created", "data": {"id": "1"}})
-        header = "t=0,v1=0000000000000000000000000000000000000000000000000000000000000000"
+    def test_an_unknown_event_name_parses_as_a_string(self) -> None:
+        # A new event on the platform must not break a deployed consumer.
+        body = json.dumps({"event": "widget.exploded", "occurredAt": SIGNED_AT})
+        event = construct_webhook_event(body, _sign(body), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
+        assert event.event == "widget.exploded"
+
+    def test_raises_on_an_invalid_signature(self) -> None:
         with pytest.raises(ValidationError, match="Invalid webhook signature"):
-            construct_webhook_event(payload, header, SECRET, now=0.0)
+            construct_webhook_event(PAYLOAD, "v1=deadbeef", SIGNED_AT, SECRET, now=SIGNED_AT_MS)
 
-    def test_missing_type_raises(self) -> None:
-        payload_dict = {"data": {"id": "1"}}
-        payload = json.dumps(payload_dict)
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        with pytest.raises(ValidationError, match="missing event type"):
-            construct_webhook_event(payload, header, SECRET, now=ts * 1000.0)
+    def test_raises_when_the_event_name_is_missing(self) -> None:
+        body = json.dumps({"occurredAt": SIGNED_AT})
+        with pytest.raises(ValidationError, match="missing event name"):
+            construct_webhook_event(body, _sign(body), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
 
-    def test_missing_data_raises(self) -> None:
-        payload_dict = {"type": "agent.created"}
-        payload = json.dumps(payload_dict)
-        ts = int(time.time())
-        header = _sign(payload, ts)
-        with pytest.raises(ValidationError, match="missing data"):
-            construct_webhook_event(payload, header, SECRET, now=ts * 1000.0)
+    def test_raises_when_occurred_at_is_missing(self) -> None:
+        body = json.dumps({"event": "message.sent"})
+        with pytest.raises(ValidationError, match="missing occurredAt"):
+            construct_webhook_event(body, _sign(body), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
 
-    def test_non_dict_payload_raises(self) -> None:
-        payload = json.dumps([1, 2, 3])
-        ts = int(time.time())
-        header = _sign(payload, ts)
+    def test_raises_on_a_non_dict_payload(self) -> None:
+        body = json.dumps([1, 2, 3])
         with pytest.raises(ValidationError, match="Invalid webhook payload format"):
-            construct_webhook_event(payload, header, SECRET, now=ts * 1000.0)
+            construct_webhook_event(body, _sign(body), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
+
+
+class TestPreFixSchemeRejected:
+    """Regression guards. These fail if the old scheme is reintroduced."""
+
+    def test_rejects_the_pre_fix_combined_signature_header(self) -> None:
+        # What this SDK used to expect. The platform has never sent it: the
+        # timestamp travels in X-Anima-Timestamp and the signature header holds
+        # only `v1=<hex>`.
+        unix = int(SIGNED_AT_MS // 1000)
+        digest = hmac.new(
+            SECRET.encode("utf-8"),
+            f"{unix}.{PAYLOAD}".encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+        assert (
+            verify_webhook_signature(
+                PAYLOAD, f"t={unix},v1={digest}", SIGNED_AT, SECRET, now=SIGNED_AT_MS
+            )
+            is False
+        )
+
+    def test_rejects_the_pre_fix_type_data_envelope(self) -> None:
+        # A correctly signed body in the old envelope shape still has no
+        # `event`, so it cannot be mistaken for a delivery.
+        body = json.dumps(
+            {
+                "id": "evt_1",
+                "type": "message.sent",
+                "createdAt": SIGNED_AT,
+                "data": {"messageId": "m1"},
+            }
+        )
+        with pytest.raises(ValidationError, match="missing event name"):
+            construct_webhook_event(body, _sign(body), SIGNED_AT, SECRET, now=SIGNED_AT_MS)
 
 
 WEBHOOK_RAW: dict = {
