@@ -299,24 +299,50 @@ is never returned by `get` or `list`. To remove auth on update, pass
 
 ## Webhook verification
 
-Verify incoming webhook signatures to ensure authenticity:
+Every delivery carries **two** headers, and you need both. The signature is an
+HMAC-SHA256 over `` f"{timestamp}.{raw_body}" ``, so a receiver that reads only
+`X-Anima-Signature` cannot recompute it:
+
+| Header | Contents |
+| --- | --- |
+| `X-Anima-Signature` | `v1=<hex>` |
+| `X-Anima-Timestamp` | ISO-8601, and part of the signed content |
+| `X-Anima-Event` | The event name |
+| `X-Anima-Delivery-Id` | Stable across retries — use it as your idempotency key |
 
 ```python
 from anima import Anima, AnimaError
 
-payload = request.body  # raw request body (str or bytes)
-sig = request.headers["anima-signature"]
+# The raw request body. A body that has been parsed and re-serialised will not
+# verify, even when the delivery is genuine — the MAC covers bytes.
+payload = request.body
+signature = request.headers["x-anima-signature"]
+timestamp = request.headers["x-anima-timestamp"]
 secret = "whsec_..."
 
 # Option 1: verify only
-is_valid = Anima.verify_webhook_signature(payload, sig, secret)
+is_valid = Anima.verify_webhook_signature(payload, signature, timestamp, secret)
 
 # Option 2: verify and parse in one step
 try:
-    event = Anima.construct_webhook_event(payload, sig, secret)
-    print(event.type, event.data)
+    event = Anima.construct_webhook_event(payload, signature, timestamp, secret)
+    # The payload is flat — there is no `data` envelope to unwrap. Event-specific
+    # fields keep their wire names and are available on the model.
+    print(event.event, event.occurred_at, event.model_extra["messageId"])
 except AnimaError:
     print("Invalid signature")
+```
+
+With FastAPI, the dependency does both and hands you the parsed event:
+
+```python
+from anima import fastapi_webhook_dependency
+
+webhook_dep = fastapi_webhook_dependency("whsec_...")
+
+@app.post("/webhooks")
+async def handle(event: WebhookEvent = Depends(webhook_dep)):
+    print(event.event, event.occurred_at)
 ```
 
 ## Error handling
