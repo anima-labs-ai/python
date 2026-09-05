@@ -11,6 +11,7 @@ def _identities_query(
     cursor: str | None = None,
     limit: int | None = None,
     status: str | None = None,
+    query: str | None = None,
 ) -> dict[str, str] | None:
     params: dict[str, str] = {}
     if cursor is not None:
@@ -19,6 +20,10 @@ def _identities_query(
         params["limit"] = str(limit)
     if status is not None:
         params["status"] = status
+    # A vault identity has no name of its own, so searching the owning agent's
+    # name and slug is the only text search that means anything here.
+    if query is not None:
+        params["query"] = query
     return params or None
 
 
@@ -55,6 +60,7 @@ class _SyncIdentitiesMixin(_SyncVaultBase):
         self,
         *,
         status: str | None = None,
+        query: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
@@ -63,16 +69,17 @@ class _SyncIdentitiesMixin(_SyncVaultBase):
             cursor: str | None = cursor,
             limit: int | None = limit,
             status: str | None = status,
+            query: str | None = query,
         ) -> PaginatedResponse[VaultIdentityListItem]:
             raw = self._client.request(
                 "GET",
                 "/vault/identities",
-                query=_identities_query(cursor=cursor, limit=limit, status=status),
+                query=_identities_query(cursor=cursor, limit=limit, status=status, query=query),
                 options=options,
             )
             return PaginatedResponse[VaultIdentityListItem].model_validate(raw)
 
-        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, status=status)
+        return SyncPageIterator(_fetch, cursor=cursor, limit=limit, status=status, query=query)
 
     def audit(
         self,
@@ -134,6 +141,7 @@ class _AsyncIdentitiesMixin(_AsyncVaultBase):
         self,
         *,
         status: str | None = None,
+        query: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
@@ -142,16 +150,17 @@ class _AsyncIdentitiesMixin(_AsyncVaultBase):
             cursor: str | None = cursor,
             limit: int | None = limit,
             status: str | None = status,
+            query: str | None = query,
         ) -> PaginatedResponse[VaultIdentityListItem]:
             raw = await self._client.request(
                 "GET",
                 "/vault/identities",
-                query=_identities_query(cursor=cursor, limit=limit, status=status),
+                query=_identities_query(cursor=cursor, limit=limit, status=status, query=query),
                 options=options,
             )
             return PaginatedResponse[VaultIdentityListItem].model_validate(raw)
 
-        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, status=status)
+        return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, status=status, query=query)
 
     def audit(
         self,

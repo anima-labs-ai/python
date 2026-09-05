@@ -20,35 +20,41 @@ class AuditResource:
         resource_type: str | None = None,
         resource_id: str | None = None,
         result: str | None = None,
+        query: str | None = None,
         from_: str | None = None,
         to: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> CursorPage[AuditLogOutput]:
-        query: dict[str, str] = {}
+        params: dict[str, str] = {}
         if actor_id is not None:
-            query["actorId"] = actor_id
+            params["actorId"] = actor_id
         if actor_type is not None:
-            query["actorType"] = actor_type
+            params["actorType"] = actor_type
         if action is not None:
-            query["action"] = action
+            params["action"] = action
         if resource_type is not None:
-            query["resourceType"] = resource_type
+            params["resourceType"] = resource_type
         if resource_id is not None:
-            query["resourceId"] = resource_id
+            params["resourceId"] = resource_id
         if result is not None:
-            query["result"] = result
+            params["result"] = result
+        # Free text across action, actor id, resource type and resource id. It
+        # narrows *with* the exact-match filters above rather than replacing
+        # them.
+        if query is not None:
+            params["query"] = query
         if from_ is not None:
-            query["from"] = from_
+            params["from"] = from_
         if to is not None:
-            query["to"] = to
+            params["to"] = to
         if cursor is not None:
-            query["cursor"] = cursor
+            params["cursor"] = cursor
         if limit is not None:
-            query["limit"] = str(limit)
+            params["limit"] = str(limit)
         raw = self._client.request(
-            "GET", f"/orgs/{org_id}/audit-logs", query=query, options=options
+            "GET", f"/orgs/{org_id}/audit-logs", query=params, options=options
         )
         return CursorPage[AuditLogOutput].model_validate(raw)
 
@@ -69,6 +75,7 @@ class AuditResource:
         actor_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
+        query: str | None = None,
         options: RequestOptions | None = None,
     ) -> AuditLogExportOutput:
         payload: dict[str, Any] = {}
@@ -84,6 +91,10 @@ class AuditResource:
             payload["action"] = action
         if resource_type is not None:
             payload["resourceType"] = resource_type
+        # Mirrors the list filter. An export that ignored the active search
+        # would hand back rows the screen had just filtered away.
+        if query is not None:
+            payload["query"] = query
         return AuditLogExportOutput.model_validate(
             self._client.request(
                 "POST", f"/orgs/{org_id}/audit-logs/export", payload, options=options
@@ -105,35 +116,41 @@ class AsyncAuditResource:
         resource_type: str | None = None,
         resource_id: str | None = None,
         result: str | None = None,
+        query: str | None = None,
         from_: str | None = None,
         to: str | None = None,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> CursorPage[AuditLogOutput]:
-        query: dict[str, str] = {}
+        params: dict[str, str] = {}
         if actor_id is not None:
-            query["actorId"] = actor_id
+            params["actorId"] = actor_id
         if actor_type is not None:
-            query["actorType"] = actor_type
+            params["actorType"] = actor_type
         if action is not None:
-            query["action"] = action
+            params["action"] = action
         if resource_type is not None:
-            query["resourceType"] = resource_type
+            params["resourceType"] = resource_type
         if resource_id is not None:
-            query["resourceId"] = resource_id
+            params["resourceId"] = resource_id
         if result is not None:
-            query["result"] = result
+            params["result"] = result
+        # Free text across action, actor id, resource type and resource id. It
+        # narrows *with* the exact-match filters above rather than replacing
+        # them.
+        if query is not None:
+            params["query"] = query
         if from_ is not None:
-            query["from"] = from_
+            params["from"] = from_
         if to is not None:
-            query["to"] = to
+            params["to"] = to
         if cursor is not None:
-            query["cursor"] = cursor
+            params["cursor"] = cursor
         if limit is not None:
-            query["limit"] = str(limit)
+            params["limit"] = str(limit)
         raw = await self._client.request(
-            "GET", f"/orgs/{org_id}/audit-logs", query=query, options=options
+            "GET", f"/orgs/{org_id}/audit-logs", query=params, options=options
         )
         return CursorPage[AuditLogOutput].model_validate(raw)
 
@@ -156,6 +173,7 @@ class AsyncAuditResource:
         actor_id: str | None = None,
         action: str | None = None,
         resource_type: str | None = None,
+        query: str | None = None,
         options: RequestOptions | None = None,
     ) -> AuditLogExportOutput:
         payload: dict[str, Any] = {}
@@ -171,6 +189,10 @@ class AsyncAuditResource:
             payload["action"] = action
         if resource_type is not None:
             payload["resourceType"] = resource_type
+        # Mirrors the list filter. An export that ignored the active search
+        # would hand back rows the screen had just filtered away.
+        if query is not None:
+            payload["query"] = query
         return AuditLogExportOutput.model_validate(
             await self._client.request(
                 "POST", f"/orgs/{org_id}/audit-logs/export", payload, options=options

@@ -39,6 +39,15 @@ class TenDlcStatus(str, Enum):
     REGISTERED = "REGISTERED"
     REJECTED = "REJECTED"
     NOT_REQUIRED = "NOT_REQUIRED"
+    #: The state every newly provisioned US long code starts in: US-destined
+    #: SMS is refused with TEN_DLC_NOT_REGISTERED until a campaign is approved,
+    #: though the number can still text non-US destinations.
+    #:
+    #: Missing from this enum since the contract added it (anima #314,
+    #: 2026-07-17), which made every phone response for a fresh US number raise
+    #: ValidationError rather than parse. The drift canary cannot catch this
+    #: class of gap: it landed before the pin the canary diffs from.
+    UNREGISTERED = "UNREGISTERED"
 
 
 class MessageChannel(str, Enum):
@@ -302,10 +311,26 @@ class InboxOutput(BaseModel):
     domain: str
     local_part: str = Field(alias="localPart")
     display_name: str | None = Field(None, alias="displayName")
-    agent_id: str | None = Field(None, alias="agentId")
+    #: Agent this inbox belongs to. Never ``None``: ``Inbox.agentId`` is NOT
+    #: NULL in the schema and unowned mailboxes were removed under "one agent,
+    #: one inbox". It was declared nullable until anima ``ad326da5``, which
+    #: invited callers to handle a state the database forbids.
+    agent_id: str = Field(alias="agentId")
     created_at: str = Field(alias="createdAt")
 
     model_config = {"populate_by_name": True}
+
+
+class InboxListItem(InboxOutput):
+    """An inbox as the list endpoint returns it.
+
+    Adds the two fields the single-inbox ``get()`` does not send. ``agent_name``
+    is carried on the row because ``agent_id`` alone is a cuid; without it every
+    caller wanting a name refetched the agent list and joined by hand.
+    """
+
+    agent_name: str = Field(alias="agentName")
+    unread_count: int = Field(alias="unreadCount")
 
 
 class PhoneCapabilities(BaseModel):
@@ -326,6 +351,133 @@ class PhoneIdentityOutput(BaseModel):
     #: support line and sales line can sound different.
     voice_id: str | None = Field(None, alias="voiceId")
     created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class PhoneIdentityListItem(PhoneIdentityOutput):
+    """A number plus the agent that owns it, as the org-wide list returns it.
+
+    ``phones.list()`` is scoped to one agent and needs no such joining; this
+    list spans agents, so the row has to say whose each number is.
+    """
+
+    agent_id: str = Field(alias="agentId")
+    agent_name: str = Field(alias="agentName")
+    agent_slug: str = Field(alias="agentSlug")
+
+
+SmsMessageDirection = Literal["INBOUND", "OUTBOUND"]
+
+
+class SmsThread(BaseModel):
+    """One SMS conversation.
+
+    An SMS conversation is the pair (agent, counterparty E.164) — SMS has no
+    In-Reply-To chain to thread on, so the pair IS the thread. ``thread_id`` is
+    the id of the conversation's first message, so listing messages with that
+    thread id returns the whole conversation.
+    """
+
+    thread_id: str = Field(alias="threadId")
+    agent_id: str = Field(alias="agentId")
+    #: The counterparty's phone number (E.164).
+    participant_address: str = Field(alias="participantAddress")
+    #: The agent's own number used in this conversation.
+    agent_address: str = Field(alias="agentAddress")
+    last_message_at: str = Field(alias="lastMessageAt")
+    #: First 140 characters of the most recent message's body.
+    last_message_snippet: str = Field(alias="lastMessageSnippet")
+    last_message_direction: SmsMessageDirection = Field(alias="lastMessageDirection")
+    message_count: int = Field(alias="messageCount")
+    #: Messages still carrying the ``unread`` label. Inbound texts start unread.
+    unread_count: int = Field(alias="unreadCount")
+
+    model_config = {"populate_by_name": True}
+
+
+class SmsThreadList(BaseModel):
+    """A page of SMS conversations.
+
+    ``{items, total, hasMore}`` with offset/limit — neither the
+    ``{items, pagination}`` envelope of :class:`PaginatedResponse` nor the flat
+    ``{items, nextCursor}`` of :class:`CursorPage`. Validating it as either
+    raises, which is why it is its own model and why the list method returns it
+    directly rather than a page iterator.
+    """
+
+    items: list[SmsThread]
+    #: Every conversation matching the query, not just this page. With the
+    #: unread filter on, it counts unread conversations.
+    total: int
+    has_more: bool = Field(alias="hasMore")
+
+    model_config = {"populate_by_name": True}
+
+
+class SmsThreadDetail(BaseModel):
+    """One SMS conversation with its message history."""
+
+    thread_id: str = Field(alias="threadId")
+    agent_id: str = Field(alias="agentId")
+    participant_address: str = Field(alias="participantAddress")
+    agent_address: str = Field(alias="agentAddress")
+    #: Chronological (oldest-first) reading order.
+    messages: list[MessageOutput]
+    message_count: int = Field(alias="messageCount")
+    #: True when the conversation holds more messages than this response
+    #: returned; the older ones precede ``messages``.
+    has_more: bool = Field(alias="hasMore")
+
+    model_config = {"populate_by_name": True}
+
+
+class SmsThreadStat(BaseModel):
+    """One agent's SMS conversation totals."""
+
+    agent_id: str = Field(alias="agentId")
+    conversations: int
+    #: Unread inbound messages across those conversations.
+    unread: int
+    last_message_at: str | None = Field(None, alias="lastMessageAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class SmsThreadStatList(BaseModel):
+    items: list[SmsThreadStat]
+
+    model_config = {"populate_by_name": True}
+
+
+SmsSuppressionReason = Literal["STOP_KEYWORD", "MANUAL"]
+
+
+class SmsSuppression(BaseModel):
+    """A recipient that SMS sends are refused for.
+
+    Sends to a suppressed number fail with ``RECIPIENT_OPTED_OUT`` until the
+    recipient texts START or an org owner lifts it.
+    """
+
+    id: str
+    #: Suppressed recipient number (E.164).
+    phone_number: str = Field(alias="phoneNumber")
+    #: Agent the suppression is scoped to, or ``None`` when workspace-wide.
+    agent_id: str | None = Field(None, alias="agentId")
+    reason: SmsSuppressionReason
+    #: Free-form origin marker, e.g. ``"inbound-stop-keyword"``.
+    source: str | None = None
+    created_at: str = Field(alias="createdAt")
+
+    model_config = {"populate_by_name": True}
+
+
+class SmsUnsuppressOutput(BaseModel):
+    #: The normalized number that was unsuppressed.
+    phone_number: str = Field(alias="phoneNumber")
+    #: How many suppression entries were removed.
+    removed: int
 
     model_config = {"populate_by_name": True}
 
