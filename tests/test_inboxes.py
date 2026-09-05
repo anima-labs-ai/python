@@ -5,12 +5,13 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from anima._http import AsyncHTTPClient
-from anima._types import InboxOutput
+from anima._types import InboxListItem, InboxOutput
 from anima.resources.inboxes import AsyncInboxesResource, InboxesResource
 
-from .conftest import INBOX_RAW, PAGINATED_INBOXES_RAW
+from .conftest import INBOX_LIST_ITEM_RAW, INBOX_RAW, PAGINATED_INBOXES_RAW
 
 
 class TestInboxesCreate:
@@ -50,12 +51,23 @@ class TestInboxesCreate:
         mock_http.request.assert_called_once_with("POST", "/inboxes", {}, options=None)
 
     def test_create_parses_nullable_fields(self, mock_http: MagicMock) -> None:
-        raw = {**INBOX_RAW, "displayName": None, "agentId": None}
-        mock_http.request.return_value = raw
+        mock_http.request.return_value = {**INBOX_RAW, "displayName": None}
         result = InboxesResource(mock_http).create(username="bare")
 
         assert result.display_name is None
-        assert result.agent_id is None
+
+    def test_create_rejects_a_null_agent_id(self, mock_http: MagicMock) -> None:
+        """agentId is NOT NULL — an unowned mailbox is not a state that exists.
+
+        This used to be parsed happily as ``None``. Inbox.agentId is NOT NULL in
+        the schema and unowned mailboxes were removed under "one agent, one
+        inbox", so a null here means the server sent something impossible and
+        the caller should hear about it rather than propagate a None.
+        """
+        mock_http.request.return_value = {**INBOX_RAW, "agentId": None}
+
+        with pytest.raises(ValidationError):
+            InboxesResource(mock_http).create(username="bare")
 
 
 class TestInboxesGet:
@@ -76,7 +88,12 @@ class TestInboxesList:
         items = result.items  # trigger lazy fetch
         mock_http.request.assert_called_once_with("GET", "/inboxes", query=None)
         assert len(items) == 1
-        assert isinstance(items[0], InboxOutput)
+        # The precise type, not just InboxOutput: the list carries agentName and
+        # unreadCount, and a caller reading either off an InboxOutput would not
+        # typecheck.
+        assert isinstance(items[0], InboxListItem)
+        assert items[0].agent_name == "Support Agent"
+        assert items[0].unread_count == 3
         assert result.pagination.has_more is False
 
     def test_list_with_params(self, mock_http: MagicMock) -> None:
@@ -89,11 +106,11 @@ class TestInboxesList:
 
     def test_list_auto_pagination_follows_cursor(self, mock_http: MagicMock) -> None:
         page_one = {
-            "items": [INBOX_RAW],
+            "items": [INBOX_LIST_ITEM_RAW],
             "pagination": {"nextCursor": "cur_2", "hasMore": True},
         }
         page_two = {
-            "items": [{**INBOX_RAW, "id": "inbox_002"}],
+            "items": [{**INBOX_LIST_ITEM_RAW, "id": "inbox_002"}],
             "pagination": {"nextCursor": None, "hasMore": False},
         }
         mock_http.request.side_effect = [page_one, page_two]

@@ -4,7 +4,7 @@ from typing import Any
 
 from .._http import AsyncHTTPClient, HTTPClient, RequestOptions
 from .._pagination import AsyncPageIterator, SyncPageIterator
-from .._types import InboxOutput, PaginatedResponse
+from .._types import InboxListItem, InboxOutput, PaginatedResponse
 
 
 def _to_list_query(
@@ -96,10 +96,10 @@ class InboxesResource:
         cursor: str | None = None,
         limit: int | None = None,
         query: str | None = None,
-    ) -> SyncPageIterator[InboxOutput]:
-        def _fetch(**kw: Any) -> PaginatedResponse[InboxOutput]:
+    ) -> SyncPageIterator[InboxListItem]:
+        def _fetch(**kw: Any) -> PaginatedResponse[InboxListItem]:
             raw = self._client.request("GET", "/inboxes", query=_to_list_query(**kw))
-            return PaginatedResponse[InboxOutput].model_validate(raw)
+            return PaginatedResponse[InboxListItem].model_validate(raw)
 
         return SyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
 
@@ -161,10 +161,10 @@ class AsyncInboxesResource:
         cursor: str | None = None,
         limit: int | None = None,
         query: str | None = None,
-    ) -> AsyncPageIterator[InboxOutput]:
-        async def _fetch(**kw: Any) -> PaginatedResponse[InboxOutput]:
+    ) -> AsyncPageIterator[InboxListItem]:
+        async def _fetch(**kw: Any) -> PaginatedResponse[InboxListItem]:
             raw = await self._client.request("GET", "/inboxes", query=_to_list_query(**kw))
-            return PaginatedResponse[InboxOutput].model_validate(raw)
+            return PaginatedResponse[InboxListItem].model_validate(raw)
 
         return AsyncPageIterator(_fetch, cursor=cursor, limit=limit, query=query)
 

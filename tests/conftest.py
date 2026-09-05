@@ -93,8 +93,17 @@ INBOX_RAW: dict[str, Any] = {
     "createdAt": "2025-01-01T00:00:00Z",
 }
 
+# The list endpoint returns InboxListItem, which adds two fields Get does not
+# send. Kept separate from INBOX_RAW so a fixture cannot quietly hand the list
+# a payload the real endpoint never produces.
+INBOX_LIST_ITEM_RAW: dict[str, Any] = {
+    **INBOX_RAW,
+    "agentName": "Support Agent",
+    "unreadCount": 3,
+}
+
 PAGINATED_INBOXES_RAW: dict[str, Any] = {
-    "items": [INBOX_RAW],
+    "items": [INBOX_LIST_ITEM_RAW],
     "pagination": {"nextCursor": None, "hasMore": False},
 }
 

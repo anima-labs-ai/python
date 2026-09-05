@@ -34,11 +34,22 @@ UNWRAPPED_RETURNS = [
     ("vault", "generate_password", "str"),
     ("phones", "list", "list[PhoneIdentityOutput]"),
     ("addresses", "list", "list[AddressOutput]"),
+    # Not iterators, deliberately. /phone/sms/threads is offset-paged and
+    # answers {items, total, hasMore}; /phone/sms/stats is an aggregate with no
+    # pagination at all. Wrapping either in a page iterator would report the
+    # first page as the whole list, so the concrete model is pinned here.
+    ("phones", "list_sms_threads", "SmsThreadList"),
+    ("phones", "sms_thread_stats", "SmsThreadStatList"),
 ]
 
 #: Paginated resources are the documented exception: the cursor has to travel
 #: with the page, so these return an iterator whose ``.items`` is page one.
-PAGINATED_RETURNS = [("messages", "list"), ("agents", "list")]
+PAGINATED_RETURNS = [
+    ("messages", "list"),
+    ("agents", "list"),
+    ("phones", "list_identities"),
+    ("phones", "list_sms_suppressions"),
+]
 
 
 @pytest.fixture(scope="module")
